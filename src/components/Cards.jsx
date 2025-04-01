@@ -73,7 +73,7 @@ const Cards = ({ searches , query,requery }) => {
             </div>
           ))}
           {/* <div className="flex gap-3 text-2xl  ">
-            <h1>MADE BY ❤️ HARSH PATEL</h1>
+            <h1>MADE BY ❤️ Max vibe </h1>
             <a
               target="_blank"
               href="https://www.instagram.com/harsh_patel_80874/"

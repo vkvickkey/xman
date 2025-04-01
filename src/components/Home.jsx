@@ -27,7 +27,7 @@ import  handleGenerateAudio2  from "./../utils/audioUtils2";
 const Home = () => {
   let navigate = useNavigate();
   const [home, sethome] = useState(null);
-  const [language, setlanguage] = useState("hindi");
+  const [language, setlanguage] = useState("tamil");
   const [details, setdetails] = useState([]);
   const [songlink, setsonglink] = useState([]);
   const [songlink2, setsonglink2] = useState([]);
@@ -60,20 +60,20 @@ const Home = () => {
     // "odia",
     // "assamese",
 
-    "hindi",
+    "tamil",
+    "malayalam",    
     "english",
-    "punjabi",
-    // "tamil",
-    // "telugu",
+    "telugu",
+    // "punjabi",
+    // "hindi",
     // "marathi",
-    "gujarati",
+    // "gujarati",
     // "bengali",
     // "kannada",
     // "bhojpuri",
-    // "malayalam",
     // "urdu",
     // "haryanvi",
-    "rajasthani",
+    // "rajasthani",
     // "odia",
     // "assamese",
   ];
@@ -279,7 +279,7 @@ const Home = () => {
         duration: 1500,
         style: {
           borderRadius: "10px",
-          background: "rgb(115 115 115)",
+          background: "rgb(11 115 115)",
           color: "#fff",
         },
       });
@@ -728,7 +728,7 @@ const Home = () => {
   // }, [details, page, language]);
 
   var title = songlink[0]?.name;
-  document.title = `${title ? title : "THE ULTIMATE SONGS"}`;
+  document.title = `${title ? title : "Max Vibe"}`;
   // console.log(details);
   // console.log(home);
   // console.log(page);
@@ -750,7 +750,7 @@ const Home = () => {
         <div className="flex   items-center sm:justify-center sm:pt-2 gap-3">
           <img className="w-[5vw] sm:w-[10vw] rounded-full" src={logo} alt="" />
           <h1 className="text-2xl text-slate-900 p-2 rounded-full bg-neutral-500 sm:text-xl  font-black">
-            THE ULTIMATE SONGS
+            MAX VIBE
           </h1>
         </div>
         <motion.div
@@ -799,7 +799,7 @@ const Home = () => {
           <a
             target="_blank"
             href={
-              "https://github.com/patelharsh80874/THE-ULTIMATE-SONGS-WEBAPP"
+              "https://github.com/vkvickkey/xman"
             }
             className="ml-4 sm:ml-2 cursor-pointer  text-3xl  text-zinc-500   ri-github-fill"
           ></a>
