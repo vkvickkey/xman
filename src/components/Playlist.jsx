@@ -109,36 +109,36 @@ const Playlist = () => {
       initial={{ opacity: 0, scale: 0 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.7 }}
-      className="w-full h-[100vh] bg-slate-700"
+      className="w-full h-[100vh] bg-slate-800"
     >
       <Toaster position="top-center" reverseOrder={false} />
-      <motion.div className="w-full h-[100vh] ">
+      <motion.div className="w-full h-[10vh] ">
         <motion.div
           initial={{ y: -50, scale: 0 }}
           animate={{ y: 0, scale: 1 }}
           transition={{ ease: Circ.easeIn, duration: 0.7, delay: 1 }}
-          className="search gap-3 w-full   sm:w-full h-[15vh] flex items-center justify-center "
+          className="search gap-3 w-full   sm:w-full h-[8vh] flex items-center justify-center "
         >
           <i
             onClick={() => navigate(-1)}
             className="ml-5 cursor-pointer text-3xl bg-green-500 rounded-full ri-arrow-left-line"
           ></i>
           <input
-            className=" bg-black rounded-md p-3 sm:text-sm text-white border-none outline-none w-[50%] sm:w-[50%] sm:h-[7vh] h-[10vh]"
+            className=" bg-black rounded-md p-3 sm:text-sm text-white border-none outline-none w-[50%] sm:w-[50%] sm:h-[4vh] h-[4vh]"
             onChange={(e) => setquery(e.target.value)}
-            placeholder="Search anything like 2023 hindi  "
+            placeholder="Search anything like 2025 tamil  "
             type="search"
             name=""
             id=""
           />
-          <h3
+          <h5
             onClick={() => searchClick()}
-            className="duration-300 cursor-pointer hover:text-slate-400 text-xl  bg-slate-400 p-2 rounded-md hover:bg-slate-600 hover:scale-90"
+            className="duration-900 cursor-pointer hover:text-slate-400 text-xl  bg-slate-100 p-2 rounded-md hover:bg-slate-900 hover:scale-90"
           >
-            Search <i className="  ri-search-2-line"></i>
-          </h3>
+            Search <i className="ri-search-2-line"></i>
+          </h5>
         </motion.div>
-        <motion.div className="w-full overflow-hidden overflow-y-auto h-[85vh]  sm:min-h-[85vh] flex flex-wrap p-5  gap-5  justify-center   bg-slate-700">
+        <motion.div className="w-full overflow-hidden overflow-y-auto h-[85vh]  sm:min-h-[85vh] flex flex-wrap p-5  gap-5  justify-center   bg-slate-900">
           {playlist?.map((e, i) => (
             <motion.div
               initial={{ scale: 0 }}

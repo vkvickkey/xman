@@ -805,10 +805,10 @@ const Home = () => {
           ></a>
         </motion.div>
       </motion.div>
-      <div className="w-full  bg-slate-800  min-h-[63vh] pt-[20vh] pb-[30vh]   text-zinc-300 p-5 flex flex-col gap-5 overflow-auto ">
+      <div className="w-full  bg-slate-900  min-h-[63vh] pt-[15vh] pb-[15vh]   text-zinc-300 p-5 flex flex-col gap-5 overflow-auto ">
         <div className="w-full   flex justify-end ">
           <Dropdown
-            className="w-[15%] text-sm sm:w-[50%]"
+            className="w-[10%] text-sm sm:w-[10%]"
             options={options}
             onChange={(e) => setlanguage(e.value)}
             placeholder={language ? ` ${language}  ` : "Select language"}
