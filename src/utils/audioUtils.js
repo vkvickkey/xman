@@ -53,14 +53,15 @@ const handleGenerateAudio = async ({
           "-metadata", `artist=${artist}`,
           "-metadata", `album=${album}`,
           "-metadata", `date=${year}`,
-          "-id3v2_version", "3",
-          "-c:a", "libmp3lame",
+          "-c:a", "aac", // Use AAC codec for M4A
           "-b:a", "320k", // Set bitrate to 320kbps
-          "output.mp3",
+          "-movflags", "+faststart", // Optimize for streaming
+          "output.m4a", // Change output file extension to .m4a
         ]);
+        
 
         // Read and download the output file
-        const output = await ffmpeg.readFile("output.mp3");
+        const output = await ffmpeg.readFile("output.m4a");
         if (!output || output.byteLength === 0) {
           throw new Error("FFmpeg failed to generate a valid output file.");
         }
@@ -71,7 +72,7 @@ const handleGenerateAudio = async ({
         // Trigger file download
         const link = document.createElement("a");
         link.href = url;
-        link.download = `${songName}.mp3`;
+        link.download = `${songName}.m4a`;
         document.body.appendChild(link);
         link.click();
         link.remove();
