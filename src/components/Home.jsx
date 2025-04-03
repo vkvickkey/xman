@@ -747,21 +747,19 @@ const Home = () => {
         transition={{ ease: Circ.easeIn, duration: 0.5 }}
         className="logo fixed  z-[99] top-0 w-full  duration-700  max-h-[20vh]  flex sm:block backdrop-blur-xl py-3  px-10 sm:px-5  items-center gap-3 "
       >
-        <div className="flex   items-center sm:justify-center sm:pt-2 gap-3">
+        <div className="flex   items-center sm:justify-center sm:pt-2 gap-3 w-[25%]">
           <img className="w-[5vw] sm:w-[10vw] rounded-full" src={logo} alt="" />
-          <h1 className="text-2xl text-slate-900 p-2 rounded-full bg-neutral-500 sm:text-xl  font-black">
-            MAX VIBE
-          </h1>
+          <h1 className="text-3xl text-slate-100 p-0 rounded-full sm:text-2xl font-bold whitespace-nowrap">MAX VIBE</h1>
         </div>
         <motion.div
           initial={{ opacity: 0, y: -50 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ ease: Circ.easeIn, duration: 1 }}
-          className="sm:flex sm:pt-3 text-zinc-500   sm:justify-center"
+          className="sm:flex sm:pt-3 ml-8 text-zinc-500   sm:justify-center"
         >
-          <h3 className="inline text-xl sm:hidden">Search : </h3>
+          {/* <h3 className="inline text-xl sm:hidden">Search : </h3> */}
           <Link
-            className=" text-xl sm:text-sm ml-3 sm:ml-0 sm:font-bold  p-1 rounded-md hover:text-black  hover:bg-neutral-500 duration-300 text-neutral-300  font-semibold "
+            className=" text-xl sm:text-sm ml-8 sm:ml-0 sm:font-bold  p-1 rounded-md hover:text-black  hover:bg-neutral-500 duration-300 text-neutral-300  font-semibold "
             to={"/songs"}
           >
             Songs
@@ -773,37 +771,39 @@ const Home = () => {
             Download Songs
           </Link> */}
           <Link
-            className="  text-xl sm:text-sm ml-3 sm:ml-0 sm:font-bold  p-1 rounded-md hover:text-black  hover:bg-neutral-500 duration-300 text-neutral-300  font-semibold "
+            className="  text-xl sm:text-sm ml-8 sm:ml-0 sm:font-bold  p-1 rounded-md hover:text-black  hover:bg-neutral-500 duration-300 text-neutral-300  font-semibold "
             to={"/playlist"}
           >
             PlayLists
           </Link>
           <Link
-            className="  text-xl sm:text-sm ml-3 sm:ml-0 sm:font-bold  p-1 rounded-md hover:text-black  hover:bg-neutral-500 duration-300 text-neutral-300  font-semibold"
+            className="  text-xl sm:text-sm ml-8 sm:ml-0 sm:font-bold  p-1 rounded-md hover:text-black  hover:bg-neutral-500 duration-300 text-neutral-300  font-semibold"
             to={"/artists"}
           >
             Artists
           </Link>
           <Link
-            className="  text-xl sm:text-sm ml-3 sm:ml-0 sm:font-bold  p-1 rounded-md hover:text-black  hover:bg-neutral-500 duration-300 text-neutral-300  font-semibold "
+            className="  text-xl sm:text-sm ml-8 sm:ml-0 sm:font-bold  p-1 rounded-md hover:text-black  hover:bg-neutral-500 duration-300 text-neutral-300  font-semibold "
             to={"/album"}
           >
             Album
           </Link>
           <Link
-            className=" text-xl sm:text-sm ml-3 sm:ml-0 sm:font-bold  p-1 rounded-md hover:text-black  hover:bg-neutral-500 duration-300 text-neutral-300  font-semibold"
+            className=" text-xl sm:text-sm ml-8 sm:ml-0 sm:font-bold  p-1 rounded-md hover:text-black  hover:bg-neutral-500 duration-300 text-neutral-300  font-semibold"
             to={"/likes"}
           >
             Likes
           </Link>
+        </motion.div>
+        <div className="w-full   flex justify-end">
           <a
             target="_blank"
             href={
               "https://github.com/vkvickkey/xman"
             }
-            className="ml-4 sm:ml-2 cursor-pointer  text-3xl  text-zinc-500   ri-github-fill"
+            className="ml-2 sm:ml-2 cursor-pointer  text-3xl  text-zinc-200   ri-github-fill"
           ></a>
-        </motion.div>
+          </div>
       </motion.div>
       <div className="w-full  bg-slate-900  min-h-[63vh] pt-[15vh] pb-[15vh]   text-zinc-300 p-5 flex flex-col gap-5 overflow-auto ">
         <div className="w-full   flex justify-end ">
