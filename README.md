@@ -1,3 +1,3 @@
 # xman
 
-maxvibe.vercel.app/
+https://maxvibe.vercel.app/
