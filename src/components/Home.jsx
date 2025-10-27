@@ -756,7 +756,7 @@ const Home = () => {
           initial={{ opacity: 0, y: -50 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ ease: Circ.easeIn, duration: 1 }}
-          className="sm:flex sm:pt-3 ml-8 text-zinc-500 sm:justify-center"
+          className="sm:flex sm:pt-3 sm:ml-8 text-zinc-500 ml-20 sm:justify-center"
         >
           {/* <h3 className="inline text-xl sm:hidden">Search : </h3> */}
           <Link
