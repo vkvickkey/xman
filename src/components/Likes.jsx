@@ -676,11 +676,11 @@ function Likes() {
   return (
     <div className="w-full h-screen bg-slate-700">
       <Toaster position="top-center" reverseOrder={false} />
-      <div className="w-full justify-between px-3 fixed z-[99] backdrop-blur-xl flex items-center gap-3 sm:h-[7vh]  h-[10vh]">
+      <div className="search fixed z-[99] bg-slate-700   gap-3 w-full   sm:w-full h-[15vh] flex items-center justify-center  px-3 fixed z-[99] backdrop-blur-xl flex items-center">
         <div className="flex items-center gap-3">
           <i
             onClick={() => navigate("/")}
-            className="text-3xl cursor-pointer  bg-green-500 rounded-full ri-arrow-left-line"
+            className="ml-2 cursor-pointer text-5xl bg-green-500 rounded-l-lg rounded-br-lg ri-arrow-left-line"
           ></i>
           <h1 className="text-xl text-zinc-300 sm:text-xs font-black">
             THE ULTIMATE SONGS

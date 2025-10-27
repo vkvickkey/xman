@@ -94,23 +94,23 @@ const Artists = () => {
         initial={{ y: -50, scale: 0 }}
         animate={{ y: 0, scale: 1 }}
         transition={{ ease: Circ.easeIn, duration: 0.7, delay: 1 }}
-         className="search gap-3 w-full    sm:w-full h-[15vh] flex items-center justify-center ">
+         className="search fixed z-[99] bg-slate-700   gap-3 w-full   sm:w-full h-[15vh] flex items-center justify-center  px-3 fixed z-[99] backdrop-blur-xl flex items-center ">
           <i
             onClick={() => navigate(-1)}
-            className="ml-5 cursor-pointer text-3xl bg-green-500 rounded-full ri-arrow-left-line"
+            className="ml-2 cursor-pointer text-6xl bg-green-200 rounded-l-lg ri-arrow-left-line"
           ></i>
           {/* <i className=" text-2xl ri-search-2-line"></i> */}
 
           <input
-            className=" bg-black rounded-md p-3 sm:text-sm text-white border-none outline-none w-[50%] sm:h-[7vh] sm:w-[50%] h-[10vh]"
+            className="bg-black rounded-md p-3 sm:text-sm text-white border-none outline-none w-[50%] sm:h-[7vh] sm:w-[50%] h-[10vh]"
             onChange={(e) => setquery(e.target.value)}
             placeholder="Search Artists by Name Like Arijit Singh , Shreya Ghoshal..."
             type="search"
             name=""
             id=""
           />
-           <h3 onClick={()=>searchClick()} className="duration-300 cursor-pointer hover:text-slate-400 text-xl  bg-slate-400 p-2 rounded-md hover:bg-slate-600 hover:scale-90">Search <i  
-          className="  ri-search-2-line"></i></h3>
+           <h3 onClick={()=>searchClick()} className="uration-300 hover:text-slate-200 text-xl bg-slate-400 bg-green-500 p-3 rounded-r-lg hover:bg-slate-600 hover:scale-90">Search<i  
+          className="ri-search-2-line"></i></h3>
         </motion.div>
         <motion.div 
         className="w-full overflow-hidden overflow-y-auto h-[85vh]  sm:min-h-[85vh]   flex flex-wrap px-5    gap-5 sm:gap-5  justify-center   bg-slate-700">

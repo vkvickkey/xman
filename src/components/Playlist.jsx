@@ -117,14 +117,14 @@ const Playlist = () => {
           initial={{ y: -50, scale: 0 }}
           animate={{ y: 0, scale: 1 }}
           transition={{ ease: Circ.easeIn, duration: 0.7, delay: 1 }}
-          className="search gap-3 w-full   sm:w-full h-[8vh] flex items-center justify-center "
+          className="search fixed z-[99]  gap-3 w-full   sm:w-full h-[15vh] flex items-center justify-center  px-3 fixed z-[99] backdrop-blur-xl flex items-center"
         >
           <i
             onClick={() => navigate(-1)}
-            className="ml-5 cursor-pointer text-3xl bg-green-500 rounded-full ri-arrow-left-line"
+            className="ml-5 cursor-pointer text-6xl bg-green-200 rounded-l-lg  ri-arrow-left-line"
           ></i>
           <input
-            className=" bg-black rounded-md p-3 sm:text-sm text-white border-none outline-none w-[50%] sm:w-[50%] sm:h-[4vh] h-[4vh]"
+            className="bg-black rounded-md p-3 sm:text-sm text-white border-none outline-none w-[50%] sm:h-[7vh] sm:w-[50%] h-[10vh]"
             onChange={(e) => setquery(e.target.value)}
             placeholder="Search anything like 2025 tamil  "
             type="search"
@@ -133,9 +133,9 @@ const Playlist = () => {
           />
           <h5
             onClick={() => searchClick()}
-            className="duration-900 cursor-pointer hover:text-slate-400 text-xl  bg-slate-100 p-2 rounded-md hover:bg-slate-900 hover:scale-90"
+            className="duration-300 hover:text-slate-400 text-xl bg-slate-200 bg-green-500 p-3 rounded-r-lg hover:bg-slate-600 hover:scale-90"
           >
-            Search <i className="ri-search-2-line"></i>
+            Search<i className="ri-search-2-line"></i>
           </h5>
         </motion.div>
         <motion.div className="w-full overflow-hidden overflow-y-auto h-[85vh]  sm:min-h-[85vh] flex flex-wrap p-5  gap-5  justify-center   bg-slate-900">

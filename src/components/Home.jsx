@@ -64,6 +64,7 @@ const Home = () => {
     "malayalam",    
     "english",
     "telugu",
+    "hindi",
     // "punjabi",
     // "hindi",
     // "marathi",
@@ -728,7 +729,7 @@ const Home = () => {
   // }, [details, page, language]);
 
   var title = songlink[0]?.name;
-  document.title = `${title ? title : "Max Vibe"}`;
+  document.title = `${title ? title : "Max-Vibe"}`;
   // console.log(details);
   // console.log(home);
   // console.log(page);
@@ -747,15 +748,15 @@ const Home = () => {
         transition={{ ease: Circ.easeIn, duration: 0.5 }}
         className="logo fixed  z-[99] top-0 w-full  duration-700  max-h-[20vh]  flex sm:block backdrop-blur-xl py-3  px-10 sm:px-5  items-center gap-3 "
       >
-        <div className="flex   items-center sm:justify-center sm:pt-2 gap-3 w-[25%]">
+        <div className="flex items-center sm:justify-center sm:pt-2 gap-2 w-[-10%]">
           <img className="w-[5vw] sm:w-[10vw] rounded-full" src={logo} alt="" />
-          <h1 className="text-3xl text-slate-100 p-0 rounded-full sm:text-2xl font-bold whitespace-nowrap">MAX VIBE</h1>
+          <h1 className="text-3xl text-slate-100 p-0 rounded-full sm:text-2xl font-bold whitespace-nowrap">MAX-VIBE</h1>
         </div>
         <motion.div
           initial={{ opacity: 0, y: -50 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ ease: Circ.easeIn, duration: 1 }}
-          className="sm:flex sm:pt-3 ml-8 text-zinc-500   sm:justify-center"
+          className="sm:flex sm:pt-3 ml-8 text-zinc-500 sm:justify-center"
         >
           {/* <h3 className="inline text-xl sm:hidden">Search : </h3> */}
           <Link
@@ -795,20 +796,20 @@ const Home = () => {
             Likes
           </Link>
         </motion.div>
-        <div className="w-full   flex justify-end">
+        <div className="w-full flex sm:justify-center items-center justify-end">
           <a
             target="_blank"
             href={
               "https://github.com/vkvickkey/xman"
             }
-            className="ml-2 sm:ml-2 cursor-pointer  text-3xl  text-zinc-200   ri-github-fill"
+            className="ml-2 sm:ml-4 cursor-pointer  text-3xl  text-zinc-100  ri-github-fill"
           ></a>
           </div>
       </motion.div>
-      <div className="w-full  bg-slate-900  min-h-[63vh] pt-[15vh] pb-[15vh]   text-zinc-300 p-5 flex flex-col gap-5 overflow-auto ">
-        <div className="w-full   flex justify-end ">
+      <div className="w-full  bg-slate-900  min-h-[40vh] pt-[20vh] pb-[15vh]  text-zinc-200 p-12 flex flex-col gap-1 overflow-auto ">
+        <div className="w-full flex justify-end ">
           <Dropdown
-            className="w-[10%] text-sm sm:w-[10%]"
+            className="w-[100%] text-sm sm:w-[100%] mb-8"
             options={options}
             onChange={(e) => setlanguage(e.value)}
             placeholder={language ? ` ${language}  ` : "Select language"}
