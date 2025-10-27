@@ -746,21 +746,21 @@ const Home = () => {
         initial={{ opacity: 0, y: -50 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ ease: Circ.easeIn, duration: 0.5 }}
-        className="logo fixed  z-[99] top-0 w-full  duration-700  max-h-[20vh]  flex sm:block backdrop-blur-xl py-3  px-10 sm:px-5  items-center gap-3 "
+        className="logo fixed flex items-center  z-[99] top-0 w-full  duration-200  max-h-[20vh]  flex sm:block backdrop-blur-xl py-3  px-10 sm:px-5  items-center gap-3 "
       >
         <div className="flex items-center sm:justify-center sm:pt-2 gap-2 w-[-10%]">
           <img className="w-[5vw] sm:w-[10vw] rounded-full" src={logo} alt="" />
-          <h1 className="text-3xl text-slate-100 p-0 rounded-full sm:text-2xl font-bold whitespace-nowrap">MAX-VIBE</h1>
+          <h1 className="text-3xl text-slate-100 p-0 rounded-full sm:text-2xl font-bold whitespace-nowrap">MAX-VIBE </h1>
         </div>
         <motion.div
           initial={{ opacity: 0, y: -50 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ ease: Circ.easeIn, duration: 1 }}
-          className="sm:flex sm:pt-3 sm:ml-8 text-zinc-500 ml-20 sm:justify-center"
+          className="sm:pt-3 sm:ml-4 text-zinc-500 ml-20 sm:justify-center"
         >
           {/* <h3 className="inline text-xl sm:hidden">Search : </h3> */}
           <Link
-            className=" text-xl sm:text-sm ml-8 sm:ml-0 sm:font-bold  p-1 rounded-md hover:text-black  hover:bg-neutral-500 duration-300 text-neutral-300  font-semibold "
+            className=" text-xl sm:text-sm ml-2 sm:ml-4 sm:font-bold  p-1 rounded-md hover:text-black  hover:bg-neutral-500 duration-300 text-neutral-300  font-semibold "
             to={"/songs"}
           >
             Songs
@@ -772,31 +772,31 @@ const Home = () => {
             Download Songs
           </Link> */}
           <Link
-            className="  text-xl sm:text-sm ml-8 sm:ml-0 sm:font-bold  p-1 rounded-md hover:text-black  hover:bg-neutral-500 duration-300 text-neutral-300  font-semibold "
+            className="  text-xl sm:text-sm ml-2 sm:ml-4 sm:font-bold  p-1 rounded-md hover:text-black  hover:bg-neutral-500 duration-300 text-neutral-300  font-semibold "
             to={"/playlist"}
           >
             PlayLists
           </Link>
           <Link
-            className="  text-xl sm:text-sm ml-8 sm:ml-0 sm:font-bold  p-1 rounded-md hover:text-black  hover:bg-neutral-500 duration-300 text-neutral-300  font-semibold"
+            className="  text-xl sm:text-sm ml-2 sm:ml-4 sm:font-bold  p-1 rounded-md hover:text-black  hover:bg-neutral-500 duration-300 text-neutral-300  font-semibold"
             to={"/artists"}
           >
             Artists
           </Link>
           <Link
-            className="  text-xl sm:text-sm ml-8 sm:ml-0 sm:font-bold  p-1 rounded-md hover:text-black  hover:bg-neutral-500 duration-300 text-neutral-300  font-semibold "
+            className="  text-xl sm:text-sm ml-2 sm:ml-4 sm:font-bold  p-1 rounded-md hover:text-black  hover:bg-neutral-500 duration-300 text-neutral-300  font-semibold "
             to={"/album"}
           >
             Album
           </Link>
           <Link
-            className=" text-xl sm:text-sm ml-8 sm:ml-0 sm:font-bold  p-1 rounded-md hover:text-black  hover:bg-neutral-500 duration-300 text-neutral-300  font-semibold"
+            className=" text-xl sm:text-sm ml-2 sm:ml-4 sm:font-bold  p-1 rounded-md hover:text-black  hover:bg-neutral-500 duration-300 text-neutral-300  font-semibold"
             to={"/likes"}
           >
             Likes
           </Link>
         </motion.div>
-        <div className="w-full flex sm:justify-center items-center justify-end">
+        <div className="w-full flex sm:justify-center items-center justify-end p-1 sm:p-2">
           <a
             target="_blank"
             href={
@@ -806,10 +806,10 @@ const Home = () => {
           ></a>
           </div>
       </motion.div>
-      <div className="w-full  bg-slate-900  min-h-[40vh] pt-[20vh] pb-[15vh]  text-zinc-200 p-12 flex flex-col gap-1 overflow-auto ">
-        <div className="w-full flex justify-end ">
+      <div className="w-full  bg-slate-900  min-h-[40vh] pt-[20vh] pb-[15vh]  text-zinc-200 p-2 flex flex-col gap-1 overflow-auto">
+        <div className="w-full flex justify-end dropdown-control">
           <Dropdown
-            className="w-[100%] text-sm sm:w-[100%] mb-8"
+            className=" w-[100%] text-sm sm:w-[100%] mb-8 p-2 rounded-xl"
             options={options}
             onChange={(e) => setlanguage(e.value)}
             placeholder={language ? ` ${language}  ` : "Select language"}
