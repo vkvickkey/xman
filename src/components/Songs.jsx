@@ -19,6 +19,7 @@ import toast, { Toaster } from "react-hot-toast";
 import InfiniteScroll from "react-infinite-scroll-component";
 import  handleGenerateAudio  from "./../utils/audioUtils";
 import  handleGenerateAudio2  from "./../utils/audioUtils2";
+import audioService from "../utils/audioService";
 
 const Songs = () => {
   const navigate = useNavigate();
@@ -125,19 +126,13 @@ const Songs = () => {
 
   function audioseter(i) {
     if (songlink[0]?.id === search[i].id) {
-      const audio = audioRef.current;
-      if (!audio.paused) {
-        audio.pause();
-        setaudiocheck(false);
-      } else {
-        setaudiocheck(true);
-        audio.play().catch((error) => {
-          console.error("Playback failed:", error);
-        });
-      }
+      // Toggle play/pause for the current track
+      audioService.togglePlayPause();
     } else {
       setindex(i);
       setsonglink([search[i]]);
+      // Use audio service to play the track
+      audioService.playTrack(search[i], search);
     }
   }
 
@@ -530,26 +525,10 @@ const Songs = () => {
   // };
 
   function next() {
-    if (index < search.length - 1) {
-      setindex(index++);
-      audioseter(index);
-      audioRef.current.play();
-    } else {
-      setindex(0);
-      setsonglink([search[0]]);
-      audioRef.current.play();
-    }
+    audioService.playNext();
   }
   function pre() {
-    if (index > 0) {
-      setindex(index--);
-      audioseter(index);
-      audioRef.current.play();
-    } else {
-      setindex(search.length - 1);
-      setsonglink([search[search.length - 1]]);
-      audioRef.current.play();
-    }
+    audioService.playPrevious();
   }
 
   // const handleDownloadSong = async (url, name, poster) => {
@@ -744,8 +723,7 @@ const Songs = () => {
     const isIOS = /(iPhone|iPod|iPad)/i.test(navigator.userAgent);
 
     if (!isIOS && songlink.length > 0) {
-      audioRef.current.play();
-      initializeMediaSession();
+      // Media session is handled in the audio service
     }
   }, [songlink]);
 
@@ -779,6 +757,15 @@ const Songs = () => {
   // }, [songlink]);
 
   var title = songlink[0]?.name;
+
+  // Add formatTime utility function
+  const formatTime = (seconds) => {
+    if (isNaN(seconds) || seconds < 0) return "0:00";
+    
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+  };
 
   document.title = `${title ? title : "THE ULTIMATE SONGS"}`;
   // console.log(search);
@@ -1086,21 +1073,37 @@ const Songs = () => {
               >
                 <i className="ri-skip-back-mini-fill"></i>
               </button>
-              <audio
-                className="w-[80%]"
-                ref={audioRef}
-                onPause={() => setaudiocheck(false)}
-                onPlay={() => setaudiocheck(true)}
-                controls
-                autoPlay
-                onEnded={next}
-                src={e?.downloadUrl[4]?.url}
-              ></audio>
+              
+              <div className="w-[80%] flex flex-col items-center">
+                <div className="w-full bg-gray-600 h-2 rounded-full overflow-hidden">
+                  <div 
+                    className="bg-green-500 h-full"
+                    style={{ width: `${audioService.getCurrentTime() / audioService.getDuration() * 100 || 0}%` }}
+                  ></div>
+                </div>
+                
+                <div className="w-full flex justify-between text-xs text-white mt-1">
+                  <span>{formatTime(audioService.getCurrentTime())}</span>
+                  <span>{formatTime(audioService.getDuration())}</span>
+                </div>
+              </div>
+              
+              <button
+                onClick={() => audioService.togglePlayPause()}
+                className="text-3xl text-white bg-green-600 cursor-pointer rounded-full w-12 h-12 flex items-center justify-center"
+              >
+                {audioService.getIsPlaying() ? (
+                  <i className="ri-pause-fill"></i>
+                ) : (
+                  <i className="ri-play-fill"></i>
+                )}
+              </button>
+              
               <button
                 onClick={next}
                 className="text-3xl text-white bg-zinc-800 cursor-pointer rounded-full"
               >
-                <i className="ri-skip-right-fill"></i>
+                <i className="ri-skip-forward-fill"></i>
               </button>
             </motion.div>
             <div className=" flex flex-col text-[1vw] items-center  gap-2">
