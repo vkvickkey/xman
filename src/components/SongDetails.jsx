@@ -1,5 +1,5 @@
 import axios from "axios";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   Link,
   Navigate,
@@ -24,6 +24,7 @@ import { useAnimate, stagger } from "framer-motion";
 import { Bounce, Expo, Power4, Sine } from "gsap/all";
 import { Circ } from "gsap/all";
 import toast, { Toaster } from "react-hot-toast";
+import audioService from "../utils/audioService";
 
 const SongDetails = () => {
   let { id } = useParams();
@@ -64,6 +65,9 @@ const SongDetails = () => {
   function audioseter(i) {
     setindex(i);
     setsonglink([details[i]]);
+    
+    // Use audio service to play the track
+    audioService.playTrack(details[i], details);
   }
 
   function likeset(e) {
@@ -214,22 +218,11 @@ const SongDetails = () => {
   }
 
   function next() {
-    if (index < details.length - 1) {
-      setindex(index++);
-      audioseter(index);
-    } else {
-      setindex(0);
-      setsonglink([details[0]]);
-    }
+    audioService.playNext();
   }
+  
   function pre() {
-    if (index > 0) {
-      setindex(index--);
-      audioseter(index);
-    } else {
-      setindex(details.length - 1);
-      setsonglink([details[details.length - 1]]);
-    }
+    audioService.playPrevious();
   }
 
   const handleDownloadSong = async (url, name) => {
@@ -273,6 +266,39 @@ const SongDetails = () => {
   }, [details, song]);
 
   useEffect(() => {
+    // Listen to audio service events to update UI
+    const handlePlay = () => {
+      // Update UI when audio plays
+    };
+    
+    const handlePause = () => {
+      // Update UI when audio pauses
+    };
+    
+    const handleTrackEnd = () => {
+      // Update UI when track ends
+    };
+    
+    const handleError = (error) => {
+      console.error('Audio error:', error);
+      toast.error('Error playing audio');
+    };
+    
+    audioService.on('play', handlePlay);
+    audioService.on('pause', handlePause);
+    audioService.on('trackended', handleTrackEnd);
+    audioService.on('error', handleError);
+    
+    // Cleanup listeners on unmount
+    return () => {
+      audioService.removeListener('play', handlePlay);
+      audioService.removeListener('pause', handlePause);
+      audioService.removeListener('trackended', handleTrackEnd);
+      audioService.removeListener('error', handleError);
+    };
+  }, []);
+  
+  useEffect(() => {
     likeset(songlink[0]);
   }, [details, song, like, songlink, like2, existingData]);
 
@@ -296,7 +322,14 @@ const SongDetails = () => {
   //   Getdetails();
   // }, []);
 
-  var title = songlink[0]?.name;
+  // Add formatTime utility function
+  const formatTime = (seconds) => {
+    if (isNaN(seconds) || seconds < 0) return "0:00";
+    
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+  };
 
   document.title = `${title ? title : "THE ULTIMATE SONGS"}`;
 
@@ -606,23 +639,42 @@ const SongDetails = () => {
               className="w-[35%]  sm:w-full h-[10vh] flex gap-3 sm:gap-1 items-center justify-center"
             >
               <button
-                onClick={pre}
+                onClick={() => audioService.playPrevious()}
                 className="text-3xl text-white bg-zinc-800 cursor-pointer rounded-full"
               >
                 <i className="ri-skip-back-mini-fill"></i>
               </button>
-              <audio
-                className="w-[80%]"
-                controls
-                autoPlay
-                onEnded={next}
-                src={e?.downloadUrl[4]?.url}
-              ></audio>
+              
+              <div className="w-[80%] flex flex-col items-center">
+                <div className="w-full bg-gray-600 h-2 rounded-full overflow-hidden">
+                  <div 
+                    className="bg-green-500 h-full"
+                    style={{ width: `${audioService.getCurrentTime() / audioService.getDuration() * 100 || 0}%` }}
+                  ></div>
+                </div>
+                
+                <div className="w-full flex justify-between text-xs text-white mt-1">
+                  <span>{formatTime(audioService.getCurrentTime())}</span>
+                  <span>{formatTime(audioService.getDuration())}</span>
+                </div>
+              </div>
+              
               <button
-                onClick={next}
+                onClick={() => audioService.togglePlayPause()}
+                className="text-3xl text-white bg-green-600 cursor-pointer rounded-full w-12 h-12 flex items-center justify-center"
+              >
+                {audioService.getIsPlaying() ? (
+                  <i className="ri-pause-fill"></i>
+                ) : (
+                  <i className="ri-play-fill"></i>
+                )}
+              </button>
+              
+              <button
+                onClick={() => audioService.playNext()}
                 className="text-3xl text-white bg-zinc-800 cursor-pointer rounded-full"
               >
-                <i className="ri-skip-right-fill"></i>
+                <i className="ri-skip-forward-fill"></i>
               </button>
             </motion.div>
             <div className="sm:hidden flex flex-col text-[1vw] items-center  gap-2">

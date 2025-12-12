@@ -23,6 +23,7 @@ import { Circ } from "gsap/all";
 import toast, { Toaster } from "react-hot-toast";
 import  handleGenerateAudio  from "./../utils/audioUtils";
 import  handleGenerateAudio2  from "./../utils/audioUtils2";
+import { useAudioPlayer } from "../contexts/AudioPlayerContext";
 
 const Home = () => {
   let navigate = useNavigate();
@@ -37,10 +38,15 @@ const Home = () => {
   var [index2, setindex2] = useState("");
   var [page, setpage] = useState(1);
   var [page2, setpage2] = useState(Math.floor(Math.random() * 50));
-  const audioRef = useRef();
+  
+  // Remove the old audioRef since we're using the global player
+  // const audioRef = useRef();
   const [audiocheck, setaudiocheck] = useState(true);
   // const [selectedSongIds, setSelectedSongIds] = useState([]);
   const [suggSong, setsuggSong] = useState([]);
+  
+  // Use the audio player context
+  const { playSong, queueSong, playNextSong, currentSong, isPlaying } = useAudioPlayer();
 
   const options = [
     // "hindi",
@@ -117,45 +123,13 @@ const Home = () => {
   };
 
   function audioseter(i) {
-    if (songlink[0]?.id === details[i].id) {
-      const audio = audioRef.current;
-      if (!audio.paused) {
-        audio.pause();
-        setaudiocheck(false);
-      } else {
-        setaudiocheck(true);
-        audio.play().catch((error) => {
-          console.error("Playback failed:", error);
-        });
-      }
-    } else {
-      setindex2(null);
-      // setsonglinkchecker(1);
-      setsonglink2([]);
-      setindex(i);
-      setsonglink([details[i]]);
-    }
+    // Update the global player with the selected song
+    playSong(details[i]);
   }
 
   function audioseter2(i) {
-    if (songlink2[0]?.id === suggSong[i].id) {
-      const audio = audioRef.current;
-      if (!audio.paused) {
-        audio.pause();
-        setaudiocheck(false);
-      } else {
-        setaudiocheck(true);
-        audio.play().catch((error) => {
-          console.error("Playback failed:", error);
-        });
-      }
-    } else {
-      setindex(null);
-      // setsonglinkchecker(2);
-      setsonglink([]);
-      setindex2(i);
-      setsonglink2([suggSong[i]]);
-    }
+    // Update the global player with the selected song
+    playSong(suggSong[i]);
   }
 
   // Function to get a random subset of IDs without duplicates
@@ -841,21 +815,13 @@ const Home = () => {
                 </div>
 
                 <img
-                  className={`absolute top-4 w-[20%] sm:w-[25%] rounded-md ${
-                    i === index ? "block" : "hidden"
-                  } `}
+                  className={`absolute top-4 w-[20%] sm:w-[25%] rounded-md ${details[i]?.id === currentSong?.id ? "block" : "hidden"}`}
                   src={wavs}
                   alt=""
                 />
-                {songlink.length > 0 && (
+                {currentSong && (
                   <i
-                    className={`absolute top-20 sm:top-16 w-full  flex items-center justify-center text-5xl  opacity-90  duration-300 rounded-md  ${
-                      t.id === songlink[0]?.id ? "block" : "hidden"
-                    } ${
-                      audiocheck
-                        ? "ri-pause-circle-fill"
-                        : "ri-play-circle-fill"
-                    }`}
+                    className={`absolute top-20 sm:top-16 w-full  flex items-center justify-center text-5xl  opacity-90  duration-300 rounded-md  ${details[i]?.id === currentSong?.id ? "block" : "hidden"} ${isPlaying ? "ri-pause-circle-fill" : "ri-play-circle-fill"}`}
                   ></i>
                 )}
 
@@ -866,9 +832,7 @@ const Home = () => {
                   className="flex flex-col"
                 >
                   <h3
-                    className={`text-sm sm:text-xs leading-none  font-bold ${
-                      i === index && "text-green-300"
-                    }`}
+                    className={`text-sm sm:text-xs leading-none  font-bold ${details[i]?.id === currentSong?.id && "text-green-300"}`}
                   >
                     {t.name}
                   </h3>

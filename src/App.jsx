@@ -12,13 +12,14 @@ import Songs from "./components/Songs";
 import Likes from "./components/Likes";
 import SongDetails from "./components/SongDetails";
 import Import from "./components/Import";
-
-
-
+import AudioPlayer from "./components/AudioPlayer";
+import { useAudioPlayer } from "./contexts/AudioPlayerContext";
 
 const App = () => {
+  const { currentSong, isPlaying, queue, currentIndex, playNext, playPrev, togglePlayPause, setPlayerVolume, setPlayerCrossfade, setPlayerAutoplay, queueSong, removeFromQueue } = useAudioPlayer();
+
   return (
-    <div className="w-full h-screen">
+    <div className="w-full min-h-screen pb-20"> {/* Added pb-20 to account for fixed player */}
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/songs" element={<Songs />} />
@@ -33,6 +34,21 @@ const App = () => {
         <Route path="/likes" element={<Likes/>} />
         <Route path="/import" element={<Import/>} />
       </Routes>
+      <AudioPlayer 
+        currentSong={currentSong}
+        isPlaying={isPlaying}
+        onPlayPause={togglePlayPause}
+        onNext={playNext}
+        onPrev={playPrev}
+        onVolumeChange={setPlayerVolume}
+        onSeek={() => {}} // Implement seek if needed
+        onSetCrossfade={setPlayerCrossfade}
+        onSetAutoplay={setPlayerAutoplay}
+        onQueueSong={queueSong}
+        onRemoveFromQueue={removeFromQueue}
+        queue={queue}
+        currentIndex={currentIndex}
+      />
     </div>
   );
 };
