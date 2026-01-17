@@ -1,40 +1,150 @@
-/* Dropdown.css */
-.dropdown {
+/* Glassmorphism Dropdown Container */
+.Dropdown-root {
   position: relative;
   display: inline-block;
+  width: 100%;
+  /* Ensure it spans the width controlled by parent */
+  font-family: "Inter", "Segoe UI", sans-serif;
+  /* Crisp sans-serif */
 }
 
-.dropdown-toggle {
-  background-color: #007bff;
-  color: white;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 4px;
+/* The Main Button (Control) */
+.Dropdown-control {
+  /* Glass effect */
+  background: rgba(20, 20, 20, 0.6);
+  /* Deep dark background base */
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+
+  /* Borders and Shape */
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  /* Rounded corners */
+  padding: 12px 20px;
+
+  /* Typography */
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+
+  /* Glow and Shadow */
+  box-shadow:
+    0 4px 6px rgba(0, 0, 0, 0.3),
+    /* Depth shadow */
+    0 0 0 1px rgba(255, 255, 255, 0.05) inset,
+    /* Subtle inner border */
+    0 0 15px rgba(138, 43, 226, 0.4);
+  /* Soft Purple Glow (#8A2BE2) */
+
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
   cursor: pointer;
-  font-size: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-.dropdown-toggle:hover {
-  background-color: #0056b3;
+/* Hover State - "Floating" effect */
+.Dropdown-control:hover {
+  background: rgba(30, 30, 30, 0.8);
+  border-color: rgba(191, 64, 255, 0.5);
+  /* Purple tint on border (#BF40FF) */
+  box-shadow:
+    0 10px 20px rgba(0, 0, 0, 0.4),
+    0 0 25px rgba(217, 102, 255, 0.6);
+  /* Vibrant purple cyan glow (#D966FF) */
+  transform: translateY(-2px);
 }
 
-.dropdown-menu {
-  position: absolute;
-  background-color: white;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  margin-top: 5px;
-  padding: 0;
-  list-style: none;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+/* Active/Open State */
+.Dropdown-root.is-open .Dropdown-control {
+  background: rgba(40, 40, 40, 0.9);
+  border-color: rgba(191, 64, 255, 0.8);
+  box-shadow: 0 0 30px rgba(191, 64, 255, 0.5);
+}
+
+/* The Arrow (Chevron) */
+.Dropdown-arrow {
+  border-color: #fff transparent transparent;
+  border-width: 6px 6px 0;
+  top: 18px;
+  /* Adjust vertical center */
+  right: 20px;
+  margin-left: 10px;
+  opacity: 0.8;
+  transition: transform 0.3s ease;
+}
+
+.Dropdown-root.is-open .Dropdown-arrow {
+  transform: rotate(180deg);
+  border-color: #D966FF transparent transparent;
+  /* Lighter purple cyan when open */
+}
+
+/* Placeholder Text */
+.Dropdown-placeholder {
+  color: rgba(255, 255, 255, 0.95);
+  display: flex;
+  align-items: center;
+}
+
+/* Plus Icon using pseudo-element */
+.Dropdown-placeholder::before {
+  content: '+';
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  margin-right: 10px;
+  font-weight: 400;
+  font-size: 18px;
+  color: #BF40FF;
+  /* Light magenta to match glow */
+  background: rgba(191, 64, 255, 0.1);
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  line-height: 1;
+}
+
+/* The Dropdown Menu (Options list) */
+.Dropdown-menu {
+  background: rgba(20, 20, 20, 0.95);
+  /* Deep black/grey */
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  /* Matching rounded corners */
+  margin-top: 8px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  /* Clip corners */
   z-index: 1000;
+  width: 100%;
 }
 
-.dropdown-item {
-  padding: 10px 20px;
+/* Option Items */
+.Dropdown-option {
+  padding: 12px 20px;
+  color: rgba(255, 255, 255, 0.8);
+  transition: all 0.2s ease;
   cursor: pointer;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
 }
 
-.dropdown-item:hover {
-  background-color: #f1f1f1;
+.Dropdown-option:last-child {
+  border-bottom: none;
+}
+
+.Dropdown-option:hover {
+  background: rgba(191, 64, 255, 0.2);
+  /* Purple hover tint */
+  color: #fff;
+  padding-left: 24px;
+  /* Slight movement on hover */
+}
+
+.Dropdown-option.is-selected {
+  color: #ffffff;
+  font-weight: 600;
 }

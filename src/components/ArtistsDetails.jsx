@@ -18,8 +18,8 @@ import { useAnimate, stagger } from "framer-motion";
 import { Bounce, Expo, Power4, Sine } from "gsap/all";
 import { Circ } from "gsap/all";
 import toast, { Toaster } from "react-hot-toast";
-import  handleGenerateAudio  from "./../utils/audioUtils";
-import  handleGenerateAudio2  from "./../utils/audioUtils2";
+import handleGenerateAudio from "./../utils/audioUtils";
+import handleGenerateAudio2 from "./../utils/audioUtils2";
 
 const ArtistsDetails = () => {
   const navigate = useNavigate();
@@ -54,7 +54,7 @@ const ArtistsDetails = () => {
       setdetails((prevState) => [...prevState, ...newData]);
       sethasMore(newData.length > 0);
       setpage(page + 1);
-      if (page>=5 && details.length===0) {
+      if (page >= 5 && details.length === 0) {
         navigate(-1);
       }
     } catch (error) {
@@ -399,19 +399,19 @@ const ArtistsDetails = () => {
           // toast.loading(`Song ${name} Downloading...`, {
           //   id: 'loading-toast' // Set a unique ID for the loading toast
           // });
-  
+
           // Perform the download
           const res = await fetch(url);
           const blob = await res.blob();
           const link = document.createElement("a");
           link.href = URL.createObjectURL(blob);
           link.download = `${name}.mp3`;
-  
+
           document.body.appendChild(link);
           link.click();
-  
+
           document.body.removeChild(link);
-  
+
           resolve(); // Resolve the promise once the download is complete
         } catch (error) {
           console.log("Error fetching or downloading files", error);
@@ -461,7 +461,7 @@ const ArtistsDetails = () => {
 
   function seccall() {
     const intervalId = setInterval(() => {
-      if (!details.length>0) {
+      if (!details.length > 0) {
         Getdetails();
       }
     }, 2000);
@@ -489,7 +489,7 @@ const ArtistsDetails = () => {
   }, [details]);
 
 
-  
+
 
   useEffect(() => {
     likeset(songlink[0]);
@@ -521,7 +521,7 @@ const ArtistsDetails = () => {
   }, [songlink]);
 
   var title = songlink[0]?.name;
-  document.title = `${title ? title : "THE ULTIMATE SONGS"}`;
+  document.title = `${title ? title : "MAX-VIBE"}`;
   // console.log(details);
   // console.log(details);
   // console.log(page)
@@ -533,15 +533,15 @@ const ArtistsDetails = () => {
       initial={{ opacity: 0, scale: 0 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.7 }}
-      className=" w-full h-screen  bg-slate-700"
+      className=" w-full h-screen  bg-black"
     >
       <Toaster position="top-center" reverseOrder={false} />
       <div className="w-full fixed z-[99] backdrop-blur-xl flex items-center gap-3 sm:h-[7vh]  h-[10vh]">
         <i
           onClick={() => navigate(-1)}
-          className="text-3xl cursor-pointer ml-5 bg-green-500 rounded-full ri-arrow-left-line"
+          className="ml-5 cursor-pointer text-4xl p-2 bg-white/5 backdrop-blur-2xl border border-white/10 rounded-full shadow-purple-glow hover:bg-purple-gradient text-white transition-all duration-300 ease-out ri-arrow-left-line"
         ></i>
-        <h1 className="text-xl text-zinc-300 font-black">THE ULTIMATE SONGS</h1>
+        <h1 className="text-xl text-white font-black">MAX-VIBE</h1>
       </div>
 
       {/* <div className="w-full text-white p-10 sm:p-3 sm:gap-3 h-[65vh] overflow-y-auto flex sm:block flex-wrap gap-7 justify-center ">
@@ -597,17 +597,17 @@ const ArtistsDetails = () => {
         next={newdata}
         hasMore={hasMore}
         loader={
-          page > 2 && <h1 className="bg-slate-700 text-zinc-300">Loading...</h1>
+          page > 2 && <h1 className="bg-black text-white">Loading...</h1>
         }
-        endMessage={<p className="bg-slate-700 text-zinc-300">No more items</p>}
-        // endMessage={()=>nomoredata()}
+        endMessage={<p className="bg-black text-white text-center py-4">No more items</p>}
+      // endMessage={()=>nomoredata()}
       >
-        <div className="flex w-full pt-[15vh] sm:pt-[10vh] pb-[30vh] sm:pb-[35vh] text-white p-10 sm:p-3 sm:gap-3 bg-slate-700 min-h-[65vh] overflow-y-auto  sm:block flex-wrap gap-5 justify-center ">
+        <div className="flex w-full pt-[15vh] sm:pt-[10vh] pb-[30vh] sm:pb-[35vh] text-white p-10 sm:p-3 sm:gap-3 bg-black min-h-[65vh] overflow-y-auto  sm:block flex-wrap gap-5 justify-center ">
           {details?.map((d, i) => (
             <div
               title="click on song image or name to play the song"
               key={i}
-              className="items-center justify-center relative hover:scale-95 sm:hover:scale-100 duration-150 w-[40%] flex mb-3 sm:mb-3 sm:w-full sm:flex sm:items-center sm:gap-3  rounded-md h-[10vw] sm:h-[15vh] cursor-pointer bg-slate-600  "
+              className="items-center justify-center relative hover:scale-95 sm:hover:scale-100 duration-150 w-[40%] flex mb-3 sm:mb-3 sm:w-full sm:flex sm:items-center sm:gap-3 rounded-xl h-[10vw] sm:h-[15vh] cursor-pointer bg-white/5 border border-white/10 backdrop-blur-md hover:bg-white/10 hover:border-white/20 transition-all shadow-lg hover:shadow-purple-glow"
             >
               <div
                 onClick={() => audioseter(i)}
@@ -622,27 +622,24 @@ const ArtistsDetails = () => {
                   src={d.image[2].url}
                   alt=""
                 />
-                <p className="pl-1 text-green-400">{i + 1}</p>
+                <p className="pl-1 text-white opacity-50">{i + 1}</p>
                 <img
-                  className={`absolute top-0 w-[8%] sm:w-[10%] rounded-md ${
-                    d.id === songlink[0]?.id ? "block" : "hidden"
-                  } `}
+                  className={`absolute top-0 w-[8%] sm:w-[10%] rounded-md ${d.id === songlink[0]?.id ? "block" : "hidden"
+                    } `}
                   src={wavs}
                   alt=""
                 />
-                 {songlink.length>0 && <i className={`absolute top-0 sm:h-[15vh] w-[10vw] h-full flex items-center justify-center text-5xl sm:w-[15vh]  opacity-90  duration-300 rounded-md ${
-                      d.id === songlink[0]?.id ? "block" : "hidden"
-                    } ${audiocheck ? "ri-pause-circle-fill" :"ri-play-circle-fill" }`}></i>}
+                {songlink.length > 0 && <i className={`absolute top-0 sm:h-[15vh] w-[10vw] h-full flex items-center justify-center text-5xl sm:w-[15vh]  opacity-90  duration-300 rounded-md ${d.id === songlink[0]?.id ? "block" : "hidden"
+                  } ${audiocheck ? "ri-pause-circle-fill" : "ri-play-circle-fill"}`}></i>}
                 <div className="ml-3 sm:ml-3 flex justify-center items-center gap-5 mt-2">
                   <div className="flex flex-col">
                     <h3
-                      className={`text-sm sm:text-xs leading-none  font-bold ${
-                        d.id === songlink[0]?.id && "text-green-300"
-                      }`}
+                      className={`text-sm sm:text-xs leading-none  font-bold ${d.id === songlink[0]?.id && "text-white"
+                        }`}
                     >
                       {d.name}
                     </h3>
-                    <h4 className="text-xs sm:text-[2.5vw] text-zinc-300 ">
+                    <h4 className="text-xs sm:text-[2.5vw] text-white opacity-60 ">
                       {d.album.name}
                     </h4>
                   </div>
@@ -707,7 +704,7 @@ const ArtistsDetails = () => {
               animate={{ x: 0, opacity: 1, scale: 1 }}
               className="w-[25vw] sm:w-full  flex gap-3 items-center sm:justify-center rounded-md  h-[7vw] sm:h-[30vw]"
             >
-              <p className="text-green-400">{index+1}</p>
+              <p className="text-white opacity-50">{index + 1}</p>
               <motion.img
                 initial={{ x: -50, opacity: 0, scale: 0 }}
                 animate={{ x: 0, opacity: 1, scale: 1 }}
@@ -727,9 +724,8 @@ const ArtistsDetails = () => {
 
               <i
                 onClick={() => likehandle(e)}
-                className={`text-xl hover:scale-150 sm:hover:scale-100 duration-300 cursor-pointer ${
-                  like ? "text-red-500" : "text-zinc-300"
-                }  ri-heart-3-fill`}
+                className={`text-xl hover:scale-150 sm:hover:scale-100 duration-300 cursor-pointer ${like ? "text-red-500" : "text-zinc-300"
+                  }  ri-heart-3-fill`}
               ></i>
 
               {/* <i
@@ -766,13 +762,13 @@ const ArtistsDetails = () => {
             >
               <i
                 onClick={() => pre()}
-                className="text-3xl text-white bg-zinc-800 cursor-pointer rounded-full ri-skip-back-mini-fill"
+                className="text-3xl text-white bg-white/10 shadow-purple-glow cursor-pointer rounded-full ri-skip-back-mini-fill"
               ></i>
               <audio
                 className="w-[80%] "
                 ref={audioRef}
-                onPause={()=>setaudiocheck(false)}
-                onPlay={()=>setaudiocheck(true)}
+                onPause={() => setaudiocheck(false)}
+                onPlay={() => setaudiocheck(true)}
                 controls
                 autoPlay
                 onEnded={() => next()}
@@ -780,7 +776,7 @@ const ArtistsDetails = () => {
               ></audio>
               <i
                 onClick={() => next()}
-                className=" text-3xl text-white bg-zinc-800 cursor-pointer rounded-full ri-skip-right-fill"
+                className=" text-3xl text-white bg-white/10 shadow-purple-glow cursor-pointer rounded-full ri-skip-right-fill"
               ></i>
             </motion.div>
             <div className=" flex flex-col text-[1vw] items-center  gap-2">
@@ -850,7 +846,7 @@ const ArtistsDetails = () => {
                   320kbps <br />
                   <p className="text-xs"> High quality</p>
                 </p> */}
-                 <p
+                <p
 
                   // onClick={() =>
                   //   handleDownloadSong(
@@ -864,12 +860,12 @@ const ArtistsDetails = () => {
 
                   onClick={() =>
                     handleGenerateAudio2({
-                      audioUrl:  e?.downloadUrl[4].url,
+                      audioUrl: e?.downloadUrl[4].url,
                       imageUrl: e?.image[2]?.url,
-                      songName:  e?.name,
+                      songName: e?.name,
                       year: e?.year,
                       album: e?.album.name,
-                      artist:e?.artists.primary.map(artist => artist.name).join(",")
+                      artist: e?.artists.primary.map(artist => artist.name).join(",")
                     })
                   }
 
@@ -893,12 +889,12 @@ const ArtistsDetails = () => {
 
                   onClick={() =>
                     handleGenerateAudio({
-                      audioUrl:  e?.downloadUrl[4].url,
+                      audioUrl: e?.downloadUrl[4].url,
                       imageUrl: e?.image[2]?.url,
-                      songName:  e?.name,
+                      songName: e?.name,
                       year: e?.year,
                       album: e?.album.name,
-                      artist:e?.artists.primary.map(artist => artist.name).join(",")
+                      artist: e?.artists.primary.map(artist => artist.name).join(",")
                     })
                   }
 

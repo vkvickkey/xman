@@ -2,50 +2,107 @@
 @tailwind components;
 @tailwind utilities;
 
-
-
-@media only screen and (max-width: 600px) {
-  
-    ::-webkit-scrollbar{
-        display: none;
-    }
-
+@layer base {
+  body {
+    @apply bg-black text-white;
+    margin: 0;
+    padding: 0;
+    @apply font-poppins;
   }
-
-::-webkit-scrollbar{
-    width: 7px;
-    height: 7px;
-  background-color: gray;
-
-}
-::-webkit-scrollbar-thumb{
-    background-color: #47646e;
-    border-radius: 10px;
 }
 
- audio {
+
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+* {
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
+}
+
+/* Custom Sleek Scrollbar for Horizontal Lists */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  /* Firefox */
+  scrollbar-color: rgba(138, 43, 226, 0.3) transparent;
+  /* Firefox */
+}
+
+/* Track */
+.custom-scrollbar::-webkit-scrollbar-track {
+  display: block;
+  background: transparent;
+  /* Deep black background visible beneath */
+  border-radius: 10px;
+}
+
+/* Dimensions */
+.custom-scrollbar::-webkit-scrollbar {
+  display: block;
+  width: 8px;
+  /* Vertical scrollbar width */
+  height: 8px;
+  /* Horizontal scrollbar width */
+  background: transparent;
+}
+
+/* Thumb (Scroll Handle) */
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-image: linear-gradient(135deg, rgba(138, 43, 226, 0.6), rgba(191, 64, 255, 0.6));
+  /* Purple Gradient */
+  border-radius: 20px;
+  /* Fully rounded ends */
+
+  /* Glassmorphism & Glow */
+  backdrop-filter: blur(4px);
+  /* Attempt to blur background behind (limited support in scrollbars) */
+  box-shadow:
+    inset 0 0 6px rgba(0, 0, 0, 0.2),
+    /* Inner shadow for depth */
+    0 0 10px rgba(138, 43, 226, 0.5);
+  /* Soft outer neon glow */
+
+  transition: all 0.3s ease-in-out;
+  border: 2px solid transparent;
+  /* Creates padding effect if background-clip is used, but straight color is better here for gradient */
+  background-clip: padding-box;
+}
+
+/* Hover State - Intensified Glow and Opacity */
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-image: linear-gradient(135deg, rgba(138, 43, 226, 0.9), rgba(191, 64, 255, 0.9));
+  box-shadow:
+    inset 0 0 6px rgba(0, 0, 0, 0.3),
+    0 0 15px rgba(191, 64, 255, 0.8);
+  /* Stronger glow */
+  cursor: pointer;
+}
+
+audio {
   outline: none;
 }
 
- audio::-webkit-media-controls-panel {
-  background-color:#bbbbbb;
-  /* border-radius: 50%; */
+audio::-webkit-media-controls-panel {
+  background-color: #bbbbbb;
 }
 
- audio::-webkit-media-controls-play-button {
-  background-color:#1e293b80;
+audio::-webkit-media-controls-play-button {
+  background-color: #1e293b80;
   border-radius: 50%;
 }
 
- audio::-webkit-media-controls-play-button:hover {
+audio::-webkit-media-controls-play-button:hover {
   background-color: #1e293bc2;
   transition: all 0.3s;
 }
 
 audio::-webkit-media-controls-current-time-display,
 audio::-webkit-media-controls-time-remaining-display {
-  color:rgb(0, 0, 0);
-  /* font-weight: bold; */
+  color: rgb(0, 0, 0);
 }
-
-

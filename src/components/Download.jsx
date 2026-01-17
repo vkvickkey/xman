@@ -10,8 +10,8 @@ const Download = () => {
   const [query, setquery] = useState("");
   const [requery, setrequery] = useState("");
   const [searches, setsearches] = useState([]);
-  
-    // console.log(searches);
+
+  // console.log(searches);
 
   const Getserches = async () => {
     try {
@@ -40,11 +40,11 @@ const Download = () => {
     }
 
     return () => clearInterval(interval);
-  }, [query,searches]);
+  }, [query, searches]);
 
   useEffect(() => {
-    if(query !== ""){
-     Getserches();
+    if (query !== "") {
+      Getserches();
     }
   }, [query]);
 
@@ -53,24 +53,30 @@ const Download = () => {
       <div className="w-full h-[15vh] flex sm:block sm:mb-[15vh]  justify-between px-10 sm:px-5 bg-gray-500">
         <div className="logo h-[15vh] flex sm:block  items-center gap-3 ">
           <div className="flex items-center sm:justify-center sm:pt-2 gap-3">
-          <img className="w-[5vw] sm:w-[15vw] rounded-full" src={logo} alt="" />
-          <h1 className="text-2xl sm:text-xl  font-black">THE ULTIMATE SONGS</h1>
+            <img className="w-[5vw] sm:w-[15vw] rounded-full" src={logo} alt="" />
+            <h1 className="text-2xl sm:text-xl  font-black">MAX-VIBE</h1>
           </div>
-         <div className="sm:flex sm:justify-center">
-         <Link className=" text-xl ml-3 sm:font-bold text-blue-900 font-semibold " to={"/playlist"}>
-            PlayLists
-          </Link>
-          <Link className=" text-xl ml-3 sm:font-bold text-blue-900 font-semibold " to={"/artists"}>
-          Artists
-          </Link>
-         </div>
-          
+          <div className="sm:flex sm:justify-center">
+            <Link className=" text-xl ml-3 sm:font-bold text-blue-900 font-semibold " to={"/playlist"}>
+              PlayLists
+            </Link>
+            <Link className=" text-xl ml-3 sm:font-bold text-blue-900 font-semibold " to={"/artists"}>
+              Artists
+            </Link>
+          </div>
+
         </div>
         <div className="search gap-3 w-[30%]  sm:w-full h-[15vh] flex items-center justify-center ">
           <i className="  text-2xl ri-search-2-line"></i>
           <input
             className=" bg-black rounded-md p-3 sm:text-xl text-white border-none outline-none w-[80%] h-[10vh]"
             onChange={(e) => setquery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                Getserches();
+                e.target.blur();
+              }
+            }}
             value={query}
             placeholder="Search Song For Download"
             type="search"
@@ -79,9 +85,9 @@ const Download = () => {
           />
         </div>
       </div>
-     
-        <Cards searches={searches.data?.results} query={query} requery={requery} />
-      
+
+      <Cards searches={searches.data?.results} query={query} requery={requery} />
+
     </div>
   );
 };

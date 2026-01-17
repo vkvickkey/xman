@@ -127,7 +127,7 @@ const Import = () => {
           onClick={() => navigate(-1)}
           className="text-3xl cursor-pointer ml-5 bg-green-500 rounded-full ri-arrow-left-line"
         ></i>
-        <h1 className="text-xl text-zinc-300 font-black">THE ULTIMATE SONGS</h1>
+        <h1 className="text-xl text-zinc-300 font-black">MAX-VIBE</h1>
       </div>
       <div className="w-full flex flex-col gap-10  items-center h-[90vh] ">
         <h1 className="text-4xl font-black text-zinc-400 ">Import Songs</h1>
@@ -153,7 +153,7 @@ const Import = () => {
               </button>
             </div>
           ) : (
-              <img className="w-full h-full scale-[300%]" src={Loading} alt="" />
+            <img className="w-full h-full scale-[300%]" src={Loading} alt="" />
           )}
         </div>
       </div>
