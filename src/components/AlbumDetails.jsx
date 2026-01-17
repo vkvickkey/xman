@@ -1,6 +1,6 @@
 import axios from "axios";
 import React, { useEffect, useRef, useState } from "react";
-import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
+import { Link, Navigate, useLocation, useNavigate, useParams } from "react-router-dom";
 import Loading from "./Loading";
 import wavs from "../../public/wavs.gif";
 import {
@@ -17,17 +17,19 @@ import { useAnimate, stagger } from "framer-motion";
 import { Bounce, Expo, Power4, Sine } from "gsap/all";
 import { Circ } from "gsap/all";
 import toast, { Toaster } from "react-hot-toast";
-import  handleGenerateAudio  from "./../utils/audioUtils";
-import  handleGenerateAudio2  from "./../utils/audioUtils2";
+import handleGenerateAudio from "./../utils/audioUtils";
+import handleGenerateAudio2 from "./../utils/audioUtils2";
+import { removeSourceAttribution } from "../utils/stringUtils";
+
+import JSZip from "jszip";
+import { saveAs } from "file-saver";
 
 const AlbumDetails = () => {
   const navigate = useNavigate();
-  let location = useLocation();
-  let id = location.pathname;
-  let newid = id.split("/");
-  let finalid = newid[3];
+  const { id } = useParams();
 
   const [details, setdetails] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [songlink, setsonglink] = useState([]);
   var [index, setindex] = useState("");
   const [like, setlike] = useState(false);
@@ -36,18 +38,99 @@ const AlbumDetails = () => {
   const audioRef = useRef();
   const [audiocheck, setaudiocheck] = useState(true);
   const [isFFmpegLoaded, setisFFmpegLoaded] = useState(false);
+  const [isDownloadingAll, setIsDownloadingAll] = useState(false);
+
+  const handleDownloadAll = async () => {
+    if (!details || details.length === 0) {
+      toast.error("No songs to download.");
+      return;
+    }
+
+    setIsDownloadingAll(true);
+    const zip = new JSZip();
+    const folder = zip.folder(details[0]?.album?.name || "Album");
+    let downloadedCount = 0;
+
+    toast.loading(`Starting download for ${details.length} songs...`, { id: "download-all" });
+
+    try {
+      // Process songs sequentially to avoid overwhelming the network/browser
+      for (let i = 0; i < details.length; i++) {
+        const song = details[i];
+        const safeName = song.name ? song.name.replace(/[^a-z0-9]/gi, '_').toLowerCase() : `track_${i + 1}`;
+
+        // Try highest quality first, then fallback
+        const downloadUrl = song.downloadUrl?.[4]?.url || song.downloadUrl?.[2]?.url || song.downloadUrl?.[0]?.url;
+
+        if (downloadUrl) {
+          try {
+            toast.loading(`Downloading ${i + 1}/${details.length}: ${song.name || "Unknown"}`, { id: "download-all" });
+            const response = await fetch(downloadUrl);
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+            const blob = await response.blob();
+            folder.file(`${safeName}.mp3`, blob);
+            downloadedCount++;
+          } catch (err) {
+            console.error(`Failed to download ${song.name}`, err);
+          }
+        }
+      }
+
+      if (downloadedCount === 0) {
+        toast.error("Failed to download any songs. Check your connection.", { id: "download-all" });
+      } else {
+        toast.loading("Zipping files...", { id: "download-all" });
+        const content = await zip.generateAsync({ type: "blob" });
+        saveAs(content, `${details[0]?.album?.name || "Album"}.zip`);
+        toast.success(`Downloaded ${downloadedCount} songs!`, { id: "download-all" });
+      }
+
+    } catch (error) {
+      console.error("Error during batch download:", error);
+      toast.error("An error occurred during download.", { id: "download-all" });
+    } finally {
+      setIsDownloadingAll(false);
+    }
+  };
 
 
   const Getdetails = async () => {
     try {
+      setLoading(true);
       const { data } = await axios.get(
-        // `https://saavn.dev/api/albums?id=${finalid}`
-        // `https://jiosaavan-harsh-patel.vercel.app/albums?id=${finalid}`
-        `https://jiosavan-api-with-playlist.vercel.app/api/albums?id=${finalid}`
+        `https://jiosavan-api-with-playlist.vercel.app/api/albums?id=${id}`
       );
+
+      // Check if the response matches the "sample" data indicating an invalid album ID (likely a song ID)
+      if (
+        data.data.name === "" ||
+        (data.data.songs &&
+          data.data.songs[0]?.name === "This is a sample trailer - testing")
+      ) {
+        try {
+          // Attempt to fetch song details to get the correct album ID
+          const songRes = await axios.get(
+            `https://jiosavan-api-with-playlist.vercel.app/api/songs/${id}`
+          );
+          const songData = songRes.data.data;
+          const song = Array.isArray(songData) ? songData[0] : songData;
+
+          if (song && song.album && song.album.id) {
+            // Redirect to the correct album page
+            navigate(`/albums/details/${song.album.id}`, { replace: true });
+            return;
+          }
+        } catch (songError) {
+          console.log("Error fetching song details for fallback:", songError);
+        }
+      }
+
       setdetails(data.data.songs);
+      setLoading(false);
     } catch (error) {
       console.log("error", error);
+      setLoading(false);
     }
   };
 
@@ -267,7 +350,7 @@ const AlbumDetails = () => {
   //         },
   //       ],
   //     });
-  
+
   //     navigator.mediaSession.setActionHandler("play", function () {
   //       // Handle play action
   //       if (audioRef.current) {
@@ -276,7 +359,7 @@ const AlbumDetails = () => {
   //         });
   //       }
   //     });
-  
+
   //     navigator.mediaSession.setActionHandler("pause", function () {
   //       // Handle pause action
   //       if (audioRef.current) {
@@ -285,11 +368,11 @@ const AlbumDetails = () => {
   //         });
   //       }
   //     });
-  
+
   //     navigator.mediaSession.setActionHandler("previoustrack", function () {
   //       pre();
   //     });
-  
+
   //     navigator.mediaSession.setActionHandler("nexttrack", function () {
   //       next();
   //     });
@@ -300,7 +383,7 @@ const AlbumDetails = () => {
 
   const initializeMediaSession = () => {
     const isIOS = /(iPhone|iPod|iPad)/i.test(navigator.userAgent);
-  
+
     if (!isIOS && "mediaSession" in navigator) {
       navigator.mediaSession.metadata = new MediaMetadata({
         title: songlink[0]?.name || "",
@@ -313,7 +396,7 @@ const AlbumDetails = () => {
           },
         ],
       });
-  
+
       navigator.mediaSession.setActionHandler("play", function () {
         // Handle play action
         if (audioRef.current) {
@@ -322,7 +405,7 @@ const AlbumDetails = () => {
           });
         }
       });
-  
+
       navigator.mediaSession.setActionHandler("pause", function () {
         // Handle pause action
         if (audioRef.current) {
@@ -331,11 +414,11 @@ const AlbumDetails = () => {
           });
         }
       });
-  
+
       navigator.mediaSession.setActionHandler("previoustrack", function () {
         pre();
       });
-  
+
       navigator.mediaSession.setActionHandler("nexttrack", function () {
         next();
       });
@@ -343,7 +426,7 @@ const AlbumDetails = () => {
       console.warn("MediaSession API is not supported or the device is iOS.");
     }
   };
-  
+
 
   function next() {
     if (index < details.length - 1) {
@@ -391,19 +474,19 @@ const AlbumDetails = () => {
           // toast.loading(`Song ${name} Downloading...`, {
           //   id: 'loading-toast' // Set a unique ID for the loading toast
           // });
-  
+
           // Perform the download
           const res = await fetch(url);
           const blob = await res.blob();
           const link = document.createElement("a");
           link.href = URL.createObjectURL(blob);
           link.download = `${name}.mp3`;
-  
+
           document.body.appendChild(link);
           link.click();
-  
+
           document.body.removeChild(link);
-  
+
           resolve(); // Resolve the promise once the download is complete
         } catch (error) {
           console.log("Error fetching or downloading files", error);
@@ -452,7 +535,7 @@ const AlbumDetails = () => {
   // };
 
   // let isFFmpegLoaded = false;
-  
+
   // const handleGenerateAudio = async ({
   //   audioUrl,
   //   imageUrl,
@@ -464,7 +547,7 @@ const AlbumDetails = () => {
   //   const ffmpeg = new FFmpeg({
   //     log: true,
   //   });
-  
+
   //   // Add toast notification for the promise
   //   toast.promise(
   //     (async () => {
@@ -474,7 +557,7 @@ const AlbumDetails = () => {
   //           console.log("Loading FFmpeg")
   //           const coreURL = "/ffmpeg/ffmpeg-core.js";
   //           const wasmURL = "/ffmpeg/ffmpeg-core.wasm";
-  
+
   //           await ffmpeg.load({
   //             coreURL: await toBlobURL(coreURL, "text/javascript"),
   //             wasmURL: await toBlobURL(wasmURL, "application/wasm"),
@@ -483,15 +566,15 @@ const AlbumDetails = () => {
   //           console.log(isFFmpegLoaded)
   //         }
   //         console.log(ffmpeg)
-  
+
   //         // Fetch the audio and image files
   //         const audioBuffer = await fetchFile(audioUrl);
   //         const imageBuffer = await fetchFile(imageUrl);
-  
+
   //         // Write files to FFmpeg's virtual file system
   //         await ffmpeg.writeFile("input.mp3", audioBuffer);
   //         await ffmpeg.writeFile("cover.jpg", imageBuffer);
-  
+
   //         // Execute FFmpeg command to embed metadata and re-encode the audio
   //         await ffmpeg.exec([
   //           "-i", "input.mp3", 
@@ -507,18 +590,18 @@ const AlbumDetails = () => {
   //           "-b:a", "320k",  // Set bitrate to 320kbps
   //           "output.mp3"
   //         ]);
-  
+
   //         // Read the output file
   //         const output = await ffmpeg.readFile("output.mp3");
-  
+
   //         if (!output || output.byteLength === 0) {
   //           throw new Error("FFmpeg failed to generate a valid output file.");
   //         }
-  
+
   //         // Create a downloadable blob
   //         const blob = new Blob([output.buffer], { type: "audio/mpeg" });
   //         const url = URL.createObjectURL(blob);
-  
+
   //         // Trigger file download
   //         const link = document.createElement("a");
   //         link.href = url;
@@ -538,35 +621,21 @@ const AlbumDetails = () => {
   //   );
   // };
 
-  function seccall() {
-    const intervalId = setInterval(() => {
-      if (details.length === 0) {
-        Getdetails();
-      }
-    }, 3000);
-    return intervalId;
-  }
-
   useEffect(() => {
-    var interval = seccall();
-
-    return () => clearInterval(interval);
-  }, [details, like, songlink, like2, existingData]);
+    if (id) {
+      Getdetails();
+    }
+  }, [id]);
 
   useEffect(() => {
     likeset(songlink[0]);
   }, [details, like, songlink, like2, existingData]);
 
   useEffect(() => {
-    // Retrieve all data from localStorage
     const allData = localStorage.getItem("likeData");
 
-    // Check if data exists in localStorage
     if (allData) {
-      // Parse the JSON string to convert it into a JavaScript object
       const parsedData = JSON.parse(allData);
-
-      // Now you can use the parsedData object
       setexistingData(parsedData);
     } else {
       console.log("No data found in localStorage.");
@@ -575,7 +644,7 @@ const AlbumDetails = () => {
 
   useEffect(() => {
     const isIOS = /(iPhone|iPod|iPad)/i.test(navigator.userAgent);
-  
+
     if (!isIOS && songlink.length > 0) {
       audioRef.current.play();
       initializeMediaSession();
@@ -588,7 +657,7 @@ const AlbumDetails = () => {
 
   var title = songlink[0]?.name;
 
-  document.title = `${title ? title : "THE ULTIMATE SONGS"}`;
+  document.title = `${title ? title : "MAX-VIBE"}`;
   // console.log(finalid);
   // console.log(details);
   // console.log(songscount);
@@ -596,20 +665,40 @@ const AlbumDetails = () => {
   // console.log(index);
   // console.log(like);
   // console.log(existingData);
-  return details.length ? (
+  if (loading) return <Loading />;
+
+  return (
     <motion.div
       initial={{ opacity: 0, scale: 0 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.7 }}
-      className=" w-full h-screen  bg-slate-700"
+      className=" w-full h-screen  bg-black"
     >
       <Toaster position="top-center" reverseOrder={false} />
       <div className="w-full fixed z-[99] backdrop-blur-xl flex items-center gap-3 sm:h-[7vh]  h-[10vh]">
         <i
           onClick={() => navigate(-1)}
-          className="text-3xl cursor-pointer ml-5 bg-green-500 rounded-full ri-arrow-left-line"
+          className="ml-5 cursor-pointer text-4xl p-2 bg-white/5 backdrop-blur-2xl border border-white/10 rounded-full shadow-purple-glow hover:bg-purple-gradient text-white transition-all duration-300 ease-out ri-arrow-left-line"
         ></i>
-        <h1 className="text-xl text-zinc-300 font-black">THE ULTIMATE SONGS</h1>
+        <h1 className="text-xl text-white font-black">MAX-VIBE</h1>
+        <button
+          onClick={handleDownloadAll}
+          disabled={isDownloadingAll}
+          className={`ml-auto mr-5 px-4 py-2 rounded-full border border-white/10 backdrop-blur-md shadow-purple-glow transition-all duration-300 ${isDownloadingAll
+            ? "bg-white/10 cursor-not-allowed text-white/50"
+            : "bg-white/5 hover:bg-purple-gradient text-white"
+            }`}
+        >
+          {isDownloadingAll ? (
+            <span className="flex items-center gap-2">
+              <i className="ri-loader-4-line animate-spin"></i> Downloading...
+            </span>
+          ) : (
+            <span className="flex items-center gap-2">
+              <i className="ri-download-cloud-2-line"></i> Download All
+            </span>
+          )}
+        </button>
       </div>
 
       {/* <div className="w-full relative text-white p-10 sm:p-3 sm:gap-3 h-[65vh] overflow-y-auto flex sm:block flex-wrap gap-7 justify-center ">
@@ -666,12 +755,12 @@ const AlbumDetails = () => {
           </div>
       </div> */}
 
-      <div className="flex w-full bg-slate-700 pt-[15vh] sm:pt-[10vh] pb-[25vh] sm:pb-[35vh] text-white p-10 sm:p-3 sm:gap-3 min-h-[65vh] overflow-y-auto  sm:block flex-wrap gap-5 justify-center ">
+      <div className="flex w-full bg-black pt-[15vh] sm:pt-[10vh] pb-[25vh] sm:pb-[35vh] text-white p-10 sm:p-3 sm:gap-3 min-h-[65vh] overflow-y-auto  sm:block flex-wrap gap-5 justify-center ">
         {details?.map((d, i) => (
           <div
             title="click on song image or name to play the song"
             key={i}
-            className="items-center justify-center relative hover:scale-95 sm:hover:scale-100 duration-150 w-[40%] flex mb-3 sm:mb-3 sm:w-full sm:flex sm:items-center sm:gap-3  rounded-md h-[10vw] sm:h-[15vh] cursor-pointer bg-slate-600  "
+            className="items-center justify-center relative hover:scale-95 sm:hover:scale-100 duration-150 w-[40%] flex mb-3 sm:mb-3 sm:w-full sm:flex sm:items-center sm:gap-3 rounded-xl h-[10vw] sm:h-[15vh] cursor-pointer bg-white/5 border border-white/10 backdrop-blur-md hover:bg-white/10 hover:border-white/20 transition-all shadow-lg hover:shadow-purple-glow"
           >
             <div
               onClick={() => audioseter(i)}
@@ -686,27 +775,24 @@ const AlbumDetails = () => {
                 src={d.image[2].url}
                 alt=""
               />
-              <p className="pl-1 text-green-400">{i + 1}</p>
+              <p className="pl-1 text-white opacity-50">{i + 1}</p>
               <img
-                className={`absolute top-0 w-[8%] sm:w-[10%] rounded-md ${
-                  d.id === songlink[0]?.id ? "block" : "hidden"
-                } `}
+                className={`absolute top-0 w-[8%] sm:w-[10%] rounded-md ${d.id === songlink[0]?.id ? "block" : "hidden"
+                  } `}
                 src={wavs}
                 alt=""
               />
-               {songlink.length>0 && <i className={`absolute top-0 sm:h-[15vh] w-[10vw] h-full flex items-center justify-center text-5xl sm:w-[15vh]  opacity-90  duration-300 rounded-md ${
-                      d.id === songlink[0]?.id ? "block" : "hidden"
-                    } ${audiocheck ? "ri-pause-circle-fill" :"ri-play-circle-fill" }`}></i>}
+              {songlink.length > 0 && <i className={`absolute top-0 sm:h-[15vh] w-[10vw] h-full flex items-center justify-center text-5xl sm:w-[15vh]  opacity-90  duration-300 rounded-md ${d.id === songlink[0]?.id ? "block" : "hidden"
+                } ${audiocheck ? "ri-pause-circle-fill" : "ri-play-circle-fill"}`}></i>}
               <div className="ml-3 sm:ml-3 flex justify-center items-center gap-5 mt-2">
                 <div className="flex flex-col">
                   <h3
-                    className={`text-sm sm:text-xs leading-none  font-bold ${
-                      d.id === songlink[0]?.id && "text-green-300"
-                    }`}
+                    className={`text-sm sm:text-xs leading-none  font-bold ${d.id === songlink[0]?.id && "text-white"
+                      }`}
                   >
-                    {d.name}
+                    {removeSourceAttribution(d.name)}
                   </h3>
-                  <h4 className="text-xs sm:text-[2.5vw] text-zinc-300 ">
+                  <h4 className="text-xs sm:text-[2.5vw] text-white opacity-60 ">
                     {d.album.name}
                   </h4>
                 </div>
@@ -770,7 +856,7 @@ const AlbumDetails = () => {
               animate={{ x: 0, opacity: 1, scale: 1 }}
               className="w-[25vw] sm:w-full  flex gap-3 items-center sm:justify-center rounded-md  h-[7vw] sm:h-[30vw]"
             >
-              <p className=" text-green-400">{index+1}</p>
+              <p className=" text-white opacity-50">{index + 1}</p>
               <motion.img
                 initial={{ x: -50, opacity: 0, scale: 0 }}
                 animate={{ x: 0, opacity: 1, scale: 1 }}
@@ -790,9 +876,8 @@ const AlbumDetails = () => {
 
               <i
                 onClick={() => likehandle(e)}
-                className={`text-xl hover:scale-150 sm:hover:scale-100 duration-300 cursor-pointer ${
-                  like ? "text-red-500" : "text-zinc-300"
-                }  ri-heart-3-fill`}
+                className={`text-xl hover:scale-150 sm:hover:scale-100 duration-300 cursor-pointer ${like ? "text-red-500" : "text-zinc-300"
+                  }  ri-heart-3-fill`}
               ></i>
               {/* <i
                 onClick={() => navigate(`/songs/details/${e.id}`)}
@@ -838,8 +923,8 @@ const AlbumDetails = () => {
               <audio
                 className="w-[80%] "
                 ref={audioRef}
-                onPause={()=>setaudiocheck(false)}
-                onPlay={()=>setaudiocheck(true)}
+                onPause={() => setaudiocheck(false)}
+                onPlay={() => setaudiocheck(true)}
                 controls
                 autoPlay
                 onEnded={() => next()}
@@ -908,7 +993,7 @@ const AlbumDetails = () => {
                   320kbps <br />
                   <p className="text-xs"> High quality</p>
                 </p> */}
-                 <p
+                <p
                   // onClick={() =>
                   //   handleDownloadSong(
                   //     e.downloadUrl[4].url,
@@ -920,12 +1005,12 @@ const AlbumDetails = () => {
 
                   onClick={() =>
                     handleGenerateAudio2({
-                      audioUrl:  e?.downloadUrl[4].url,
+                      audioUrl: e?.downloadUrl[4].url,
                       imageUrl: e?.image[2]?.url,
-                      songName:  e?.name,
+                      songName: e?.name,
                       year: e?.year,
                       album: e?.album.name,
-                      artist:e?.artists.primary.map(artist => artist.name).join(",")
+                      artist: e?.artists.primary.map(artist => artist.name).join(",")
                     })
                   }
 
@@ -949,12 +1034,12 @@ const AlbumDetails = () => {
 
                   onClick={() =>
                     handleGenerateAudio({
-                      audioUrl:  e?.downloadUrl[4].url,
+                      audioUrl: e?.downloadUrl[4].url,
                       imageUrl: e?.image[2]?.url,
-                      songName:  e?.name,
+                      songName: e?.name,
                       year: e?.year,
                       album: e?.album.name,
-                      artist:e?.artists.primary.map(artist => artist.name).join(",")
+                      artist: e?.artists.primary.map(artist => artist.name).join(",")
                     })
                   }
 
@@ -970,8 +1055,6 @@ const AlbumDetails = () => {
         ))}
       </motion.div>
     </motion.div>
-  ) : (
-    <Loading />
   );
 };
 

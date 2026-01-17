@@ -17,8 +17,9 @@ import { Bounce, Expo, Power4, Sine } from "gsap/all";
 import { Circ } from "gsap/all";
 import toast, { Toaster } from "react-hot-toast";
 import InfiniteScroll from "react-infinite-scroll-component";
-import  handleGenerateAudio  from "./../utils/audioUtils";
-import  handleGenerateAudio2  from "./../utils/audioUtils2";
+import handleGenerateAudio from "./../utils/audioUtils";
+import handleGenerateAudio2 from "./../utils/audioUtils2";
+import { removeSourceAttribution } from "../utils/stringUtils";
 
 const Songs = () => {
   const navigate = useNavigate();
@@ -780,7 +781,7 @@ const Songs = () => {
 
   var title = songlink[0]?.name;
 
-  document.title = `${title ? title : "THE ULTIMATE SONGS"}`;
+  document.title = `${title ? title : "MAX-VIBE"}`;
   // console.log(search);
   // console.log(page);
   // console.log(hasMore);
@@ -790,42 +791,43 @@ const Songs = () => {
       initial={{ opacity: 0, scale: 0 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.7 }}
-      className="w-full  min-h-screen overflow-hidden bg-slate-700 "
+      className="w-full  min-h-screen overflow-hidden bg-black "
     >
       <Toaster position="top-center" reverseOrder={false} />
       <motion.div
         initial={{ y: -50, scale: 0 }}
         animate={{ y: 0, scale: 1 }}
         transition={{ ease: Circ.easeIn, duration: 0.7, delay: 0.7 }}
-        className="search fixed z-[99] bg-slate-700   gap-3 w-full   sm:w-full h-[15vh] flex items-center justify-center  px-3 fixed z-[99] backdrop-blur-xl flex items-center"
+        className="search fixed z-[99] bg-black/80 backdrop-blur-xl gap-3 w-full sm:w-full h-[15vh] flex items-center justify-center px-3 border-b border-white/5"
       >
         <i
           onClick={() => navigate(-1)}
-          className="ml-2 cursor-pointer text-6xl bg-green-200 rounded-l-lg ri-arrow-left-line"
+          className="ml-2 cursor-pointer text-4xl p-2 bg-white/5 backdrop-blur-2xl border border-white/10 rounded-full shadow-purple-glow hover:bg-purple-gradient text-white transition-all duration-300 ease-out ri-arrow-left-line"
         ></i>
         {/* <i className=" text-2xl ri-search-2-line"></i> */}
 
         <input
-          className=" bg-black rounded-md p-3 sm:text-sm text-white border-none outline-none w-[50%] sm:h-[7vh] sm:w-[50%] h-[10vh]"
+          className="bg-white/5 backdrop-blur-2xl border border-white/10 rounded-full shadow-purple-glow focus:shadow-purple-glow focus:border-white/20 p-4 sm:text-sm text-white outline-none w-[50%] sm:h-[7vh] sm:w-[50%] h-[10vh] placeholder-white/40 transition-all duration-300 ease-out tracking-wide font-sans"
           onChange={(e) => setquery(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              searchClick();
+            }
+          }}
           placeholder="Search Songs"
           type="search"
           name=""
           id=""
         />
-        <h3
-          onClick={() => searchClick()}
-          className="duration-300 hover:text-slate-400 text-xl bg-slate-200 bg-green-500 p-3 rounded-r-lg hover:bg-slate-600 hover:scale-90 "
-        >
-          Search<i className="ri-search-2-line"></i>
-        </h3>
+        <h3 onClick={() => searchClick()} className="ml-2 cursor-pointer text-xl p-4 bg-white/5 backdrop-blur-2xl border border-white/10 rounded-full shadow-purple-glow hover:bg-purple-gradient text-white transition-all duration-300 ease-out flex items-center gap-2 hover:scale-95">Search<i
+          className="ri-search-2-line"></i></h3>
       </motion.div>
       {/* <div className="w-full text-white mt-[3vh] p-10 sm:p-3 sm:gap-3 h-[64vh] overflow-y-auto flex sm:block flex-wrap gap-7 justify-center ">
         {search?.map((d, i) => (
           <div
             key={i}
             onClick={() => audioseter(i)}
-            className=" relative hover:scale-90 sm:hover:scale-100 duration-150 w-[15vw] sm:mb-3 sm:w-full sm:flex sm:items-center sm:gap-3  rounded-md h-[20vw] sm:h-[15vh] cursor-pointer  "
+            className=" relative hover:scale-90 sm:hover:scale-100 duration-150 w-[15vw] sm:mb-3 sm:w-[100%] sm:flex sm:items-center sm:gap-3  rounded-md h-[20vw] sm:h-[15vh] cursor-pointer  "
           >
             <motion.img
               initial={{ scale: 0 }}
@@ -880,53 +882,49 @@ const Songs = () => {
         next={newdata}
         hasMore={hasMore}
         loader={
-          page > 2 && <h1 className="bg-slate-700 text-zinc-300">Loading...</h1>
+          page > 2 && <h1 className="bg-black text-white">Loading...</h1>
         }
-        endMessage={<p className="bg-slate-700 text-zinc-300">No more items</p>}
-        // endMessage={()=>nomoredata()}
+        endMessage={<p className="bg-black text-white">No more items</p>}
+      // endMessage={()=>nomoredata()}
       >
-        <div className="pt-[10vh] pb-[30vh]  overflow-hidden overflow-y-auto">
-          <div className="flex w-full bg-slate-700  text-white p-10 sm:p-3 sm:gap-3  sm:block flex-wrap gap-5 justify-center ">
-            {search?.map((d, i) => (
+        <div className="flex w-full pt-[20vh] sm:pt-[10vh] pb-[25vh] sm:pb-[35vh] text-white p-10 sm:p-3 sm:gap-3 bg-black min-h-[65vh] overflow-y-auto  sm:block flex-wrap gap-5 justify-center ">
+          {search?.map((d, i) => (
+            <div
+              title="click on song image or name to play the song"
+              key={i}
+              className="items-center justify-center relative hover:scale-95 sm:hover:scale-100 duration-150 w-[40%] flex mb-3 sm:mb-3 sm:w-full sm:flex sm:items-center sm:gap-3 rounded-xl h-[10vw] sm:h-[15vh] cursor-pointer bg-white/5 border border-white/10 backdrop-blur-md hover:bg-white/10 hover:border-white/20 transition-all shadow-lg hover:shadow-purple-glow"
+            >
               <div
-                title="click on song image or name to play the song"
-                key={i}
-                className="items-center justify-center relative hover:scale-95 sm:hover:scale-100 duration-150 w-[40%] flex mb-3 sm:mb-3 sm:w-full sm:flex sm:items-center sm:gap-3  rounded-md h-[10vw] sm:h-[15vh] cursor-pointer bg-slate-600  "
+                onClick={() => audioseter(i)}
+                className="flex w-[80%] items-center"
               >
-                <div
-                  onClick={() => audioseter(i)}
-                  className="flex w-[80%] items-center"
-                >
-                  <motion.img
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ delay: 0.7 }}
-                    viewport={{ once: true }}
-                    className="w-[10vw] h-[10vw] sm:h-[15vh] sm:w-[15vh] rounded-md"
-                    src={d.image[2].url}
-                    alt=""
-                  />
-                  <p className="pl-1 text-green-400">{i + 1}</p>
-                  <img
-                    className={`absolute top-0 w-[8%] sm:w-[10%] rounded-md ${
-                      d.id === songlink[0]?.id ? "block" : "hidden"
+                <motion.img
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 0.7 }}
+                  viewport={{ once: true }}
+                  className="w-[10vw] h-[10vw] sm:h-[15vh] sm:w-[15vh] rounded-md"
+                  src={d.image[2].url}
+                  alt=""
+                />
+                <p className="pl-1 text-white opacity-50">{i + 1}</p>
+                <img
+                  className={`absolute top-0 w-[8%] sm:w-[10%] rounded-md ${d.id === songlink[0]?.id ? "block" : "hidden"
                     } `}
-                    src={wavs}
-                    alt=""
-                  />
-                  {songlink.length > 0 && (
-                    <i
-                      className={`absolute top-0 sm:h-[15vh] w-[10vw] h-full flex items-center justify-center text-5xl sm:w-[15vh]  opacity-90  duration-300 rounded-md ${
-                        d.id === songlink[0]?.id ? "block" : "hidden"
-                      } ${
-                        audiocheck
-                          ? "ri-pause-circle-fill"
-                          : "ri-play-circle-fill"
+                  src={wavs}
+                  alt=""
+                />
+                {songlink.length > 0 && (
+                  <i
+                    className={`absolute top-0 sm:h-[15vh] w-[10vw] h-full flex items-center justify-center text-5xl sm:w-[15vh]  opacity-90  duration-300 rounded-md ${d.id === songlink[0]?.id ? "block" : "hidden"
+                      } ${audiocheck
+                        ? "ri-pause-circle-fill"
+                        : "ri-play-circle-fill"
                       }`}
-                    ></i>
-                  )}
+                  ></i>
+                )}
 
-                  {/* { audiocheck ?  <i
+                {/* { audiocheck ?  <i
                       className={`absolute top-0 w-[10vw] h-full flex items-center justify-center text-5xl sm:w-full opacity-0 hover:opacity-70 duration-300 rounded-md ri-pause-circle-fill ${
                         d.id === songlink[0]?.id ? "block" : "hidden"
                       } `}
@@ -936,52 +934,51 @@ const Songs = () => {
                     } `}
                   ></i> } */}
 
-                  <div className="ml-3 sm:ml-3 flex justify-center items-center gap-5 mt-2">
-                    <div className="flex flex-col">
-                      <h3
-                        className={`text-sm sm:text-xs leading-none  font-bold ${
-                          d.id === songlink[0]?.id && "text-green-300"
+                <div className="ml-3 sm:ml-3 flex justify-center items-center gap-5 mt-2">
+                  <div className="flex flex-col">
+                    <h3
+                      className={`text-sm sm:text-xs leading-none  font-bold ${search[i].id === songlink[0]?.id && "text-white"
                         }`}
-                      >
-                        {d.name}
-                      </h3>
-                      <h4 className="text-xs sm:text-[2.5vw] text-zinc-300 ">
-                        {d.album.name}
-                      </h4>
-                    </div>
+                    >
+                      {removeSourceAttribution(d.name)}
+                    </h3>
+                    <h4 className="text-xs sm:text-[2.5vw] text-white opacity-60 ">
+                      {d.album.name}
+                    </h4>
                   </div>
                 </div>
+              </div>
 
-                {existingData?.find((element) => element?.id == d?.id) ? (
-                  <i
-                    title="Unlike"
-                    onClick={() => likehandle2(d)}
-                    className={` text-xl m-auto flex w-[3vw] sm:w-[9vw] rounded-full justify-center items-center h-[3vw] sm:h-[9vw]   duration-300 cursor-pointer text-red-500  ri-heart-3-fill`}
-                  ></i>
-                ) : (
-                  <i
-                    title="Like"
-                    onClick={() => likehandle2(d)}
-                    className={` text-xl m-auto flex w-[3vw] sm:w-[9vw] rounded-full justify-center items-center h-[3vw] sm:h-[9vw]   duration-300 cursor-pointer text-zinc-300  ri-heart-3-fill`}
-                  ></i>
-                )}
+              {existingData?.find((element) => element?.id == d?.id) ? (
+                <i
+                  title="Unlike"
+                  onClick={() => likehandle2(d)}
+                  className={` text-xl m-auto flex w-[3vw] sm:w-[9vw] rounded-full justify-center items-center h-[3vw] sm:h-[9vw]   duration-300 cursor-pointer text-red-500  ri-heart-3-fill`}
+                ></i>
+              ) : (
+                <i
+                  title="Like"
+                  onClick={() => likehandle2(d)}
+                  className={` text-xl m-auto flex w-[3vw] sm:w-[9vw] rounded-full justify-center items-center h-[3vw] sm:h-[9vw]   duration-300 cursor-pointer text-white/40  ri-heart-3-fill`}
+                ></i>
+              )}
 
-                {/* <i
+              {/* <i
                 onClick={() => likehandle(d)}
                 className={`text-xl m-auto flex w-[3vw] sm:w-[9vw] rounded-full justify-center items-center h-[3vw] sm:h-[9vw]  bg-red-500   text-zinc-300 hover:scale-150 sm:hover:scale-100 duration-300 cursor-pointer ${
                   like ? "text-red-500" : "text-zinc-300"
                 }  ri-heart-3-fill`}
               ></i> */}
 
-                {/* <i
+              {/* <i
               title="Remove Song "
               onClick={() => removehandle(d.id)}
               className="m-auto flex w-[3vw] sm:w-[9vw] rounded-full justify-center items-center h-[3vw] sm:h-[9vw] text-xl bg-red-500  duration-300 cursor-pointer text-zinc-300 ri-dislike-fill"
             ></i> */}
-              </div>
-            ))}
+            </div>
+          ))}
 
-            {/* <div className="flex gap-3 text-2xl  ">
+          {/* <div className="flex gap-3 text-2xl  ">
           <h1>MADE BY ❤️ HARSH PATEL</h1>
           <a
             target="_blank"
@@ -990,20 +987,19 @@ const Songs = () => {
             <i className=" ri-instagram-fill"></i>
           </a>
         </div> */}
-            {search.length > 0 && !hasMore && (
-              <div
-                className={`w-full flex flex-col items-center  justify-center`}
+          {search.length > 0 && !hasMore && (
+            <div
+              className={`w-full flex flex-col items-center  justify-center`}
+            >
+              <button
+                onClick={newdata}
+                className={` bg-red-400 shadow-2xl py-2 px-1 rounded-md`}
               >
-                <button
-                  onClick={newdata}
-                  className={` bg-red-400 shadow-2xl py-2 px-1 rounded-md`}
-                >
-                  Load more
-                </button>
-                <span>wait for some seconds after click</span>
-              </div>
-            )}
-          </div>
+                Load more
+              </button>
+              <span>wait for some seconds after click</span>
+            </div>
+          )}
         </div>
       </InfiniteScroll>
 
@@ -1026,7 +1022,7 @@ const Songs = () => {
               animate={{ x: 0, opacity: 1, scale: 1 }}
               className="w-[25vw] sm:w-full  flex gap-3 items-center sm:justify-center rounded-md  h-[7vw] sm:h-[30vw]"
             >
-              <p className=" text-green-400">{index + 1}</p>
+              <p className=" text-white opacity-50">{index + 1}</p>
               <motion.img
                 initial={{ x: -50, opacity: 0, scale: 0 }}
                 animate={{ x: 0, opacity: 1, scale: 1 }}
@@ -1047,9 +1043,8 @@ const Songs = () => {
 
               <i
                 onClick={() => likehandle(e)}
-                className={`text-xl hover:scale-150 sm:hover:scale-100 duration-300 cursor-pointer ${
-                  like ? "text-red-500" : "text-zinc-300"
-                }  ri-heart-3-fill`}
+                className={`text-xl hover:scale-150 sm:hover:scale-100 duration-300 cursor-pointer ${like ? "text-red-500" : "text-white/40"
+                  }  ri-heart-3-fill`}
               ></i>
               {/* <i onClick={()=>navigate(`/songs/details/${e.id}`)} className="text-zinc-300 text-xl hover:scale-150 sm:hover:scale-100 duration-300 cursor-pointer ri-information-fill"></i> */}
               {/*               
@@ -1167,12 +1162,12 @@ const Songs = () => {
 
                   onClick={() =>
                     handleGenerateAudio2({
-                      audioUrl:  e?.downloadUrl[4].url,
+                      audioUrl: e?.downloadUrl[4].url,
                       imageUrl: e?.image[2]?.url,
-                      songName:  e?.name,
+                      songName: e?.name,
                       year: e?.year,
                       album: e?.album.name,
-                      artist:e?.artists.primary.map(artist => artist.name).join(",")
+                      artist: e?.artists.primary.map(artist => artist.name).join(",")
                     })
                   }
 
@@ -1220,16 +1215,16 @@ const Songs = () => {
                   // }
                   onClick={() =>
                     handleGenerateAudio({
-                      audioUrl:  e?.downloadUrl[4].url,
+                      audioUrl: e?.downloadUrl[4].url,
                       imageUrl: e?.image[2]?.url,
-                      songName:  e?.name,
+                      songName: e?.name,
                       year: e?.year,
                       album: e?.album.name,
-                      artist:e?.artists.primary.map(artist => artist.name).join(",")
+                      artist: e?.artists.primary.map(artist => artist.name).join(",")
                     })
                   }
 
-                  className="duration-300 cursor-pointer  hover:text-slate-400 hover:bg-slate-600 hover:scale-90 w-fit p-1 sm:text-sm font-semibold rounded-md shadow-2xl bg-slate-400 flex flex-col items-center"
+                  className="duration-300 cursor-pointer hover:text-white hover:bg-purple-gradient hover:scale-90 w-fit p-1 sm:text-sm font-semibold rounded-md shadow-purple-glow bg-white/10 border border-white/10 flex flex-col items-center"
                 >
                   320kbps <br />
                   <p className="text-xs text-center">

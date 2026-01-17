@@ -17,8 +17,12 @@ import { useAnimate, stagger } from "framer-motion";
 import { Bounce, Expo, Power4, Sine } from "gsap/all";
 import { Circ } from "gsap/all";
 import toast, { Toaster } from "react-hot-toast";
-import  handleGenerateAudio  from "./../utils/audioUtils";
-import  handleGenerateAudio2  from "./../utils/audioUtils2";
+import handleGenerateAudio from "./../utils/audioUtils";
+import handleGenerateAudio2 from "./../utils/audioUtils2";
+import { removeSourceAttribution } from "../utils/stringUtils";
+
+import JSZip from "jszip";
+import { saveAs } from "file-saver";
 
 const PlaylistDetails = () => {
   const navigate = useNavigate();
@@ -35,7 +39,61 @@ const PlaylistDetails = () => {
   const [existingData, setexistingData] = useState(null);
   const audioRef = useRef();
   const [audiocheck, setaudiocheck] = useState(true);
+  const [isDownloadingAll, setIsDownloadingAll] = useState(false);
   // settitle(songlink.name);
+
+  const handleDownloadAll = async () => {
+    if (!details || details.length === 0) {
+      toast.error("No songs to download.");
+      return;
+    }
+
+    setIsDownloadingAll(true);
+    const zip = new JSZip();
+    const folder = zip.folder("Playlist"); // Playlist name might not be directly available in 'details' array items effortlessly, using generic name
+    let downloadedCount = 0;
+
+    toast.loading(`Starting download for ${details.length} songs...`, { id: "download-all-playlist" });
+
+    try {
+      for (let i = 0; i < details.length; i++) {
+        const song = details[i];
+        const safeName = song.name ? song.name.replace(/[^a-z0-9]/gi, '_').toLowerCase() : `track_${i + 1}`;
+
+        // Try highest quality first, then fallback
+        const downloadUrl = song.downloadUrl?.[4]?.url || song.downloadUrl?.[2]?.url || song.downloadUrl?.[0]?.url;
+
+        if (downloadUrl) {
+          try {
+            toast.loading(`Downloading ${i + 1}/${details.length}: ${song.name || "Unknown"}`, { id: "download-all-playlist" });
+            const response = await fetch(downloadUrl);
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+            const blob = await response.blob();
+            folder.file(`${safeName}.mp3`, blob);
+            downloadedCount++;
+          } catch (err) {
+            console.error(`Failed to download ${song.name}`, err);
+          }
+        }
+      }
+
+      if (downloadedCount === 0) {
+        toast.error("Failed to download any songs. Check your connection.", { id: "download-all-playlist" });
+      } else {
+        toast.loading("Zipping files...", { id: "download-all-playlist" });
+        const content = await zip.generateAsync({ type: "blob" });
+        saveAs(content, `Playlist_${finalid}.zip`);
+        toast.success(`Downloaded ${downloadedCount} songs!`, { id: "download-all-playlist" });
+      }
+
+    } catch (error) {
+      console.error("Error during batch download:", error);
+      toast.error("An error occurred during download.", { id: "download-all-playlist" });
+    } finally {
+      setIsDownloadingAll(false);
+    }
+  };
 
   const Getdetails = async () => {
     try {
@@ -355,7 +413,7 @@ const PlaylistDetails = () => {
   //     console.error("Error generating audio:", error);
   //   }
   // };
-  
+
 
   // const initializeMediaSession = () => {
   //   if ("mediaSession" in navigator) {
@@ -497,7 +555,7 @@ const PlaylistDetails = () => {
 
   var title = songlink[0]?.name;
 
-  document.title = `${title ? title : "THE ULTIMATE SONGS"}`;
+  document.title = `${title ? title : "MAX-VIBE"}`;
   // console.log(finalid);
   // console.log(details);
   // console.log(songscount);
@@ -506,14 +564,32 @@ const PlaylistDetails = () => {
   // console.log(like);
 
   return details.length ? (
-    <div className=" w-full h-screen  bg-slate-700">
+    <div className=" w-full h-screen  bg-black">
       <Toaster position="top-center" reverseOrder={false} />
       <div className="w-full fixed backdrop-blur-xl z-[99] flex items-center gap-3 sm:h-[7vh]  h-[10vh]">
         <i
           onClick={() => navigate(-1)}
-          className="text-3xl cursor-pointer ml-5 bg-green-500 rounded-full ri-arrow-left-line"
+          className="ml-5 cursor-pointer text-4xl p-2 bg-white/5 backdrop-blur-2xl border border-white/10 rounded-full shadow-purple-glow hover:bg-purple-gradient text-white transition-all duration-300 ease-out ri-arrow-left-line"
         ></i>
-        <h1 className="text-xl text-zinc-300 font-black">THE ULTIMATE SONGS</h1>
+        <h1 className="text-xl text-white font-black">MAX-VIBE</h1>
+        <button
+          onClick={handleDownloadAll}
+          disabled={isDownloadingAll}
+          className={`ml-auto mr-5 px-4 py-2 rounded-full border border-white/10 backdrop-blur-md shadow-purple-glow transition-all duration-300 ${isDownloadingAll
+            ? "bg-white/10 cursor-not-allowed text-white/50"
+            : "bg-white/5 hover:bg-purple-gradient text-white"
+            }`}
+        >
+          {isDownloadingAll ? (
+            <span className="flex items-center gap-2">
+              <i className="ri-loader-4-line animate-spin"></i> Downloading...
+            </span>
+          ) : (
+            <span className="flex items-center gap-2">
+              <i className="ri-download-cloud-2-line"></i> Download All
+            </span>
+          )}
+        </button>
       </div>
 
       {/* <div className="w-full text-white p-10 sm:p-3 sm:gap-3 h-[65vh] overflow-y-auto flex sm:block flex-wrap gap-7 justify-center ">
@@ -573,12 +649,12 @@ const PlaylistDetails = () => {
         </div>
       </div> */}
 
-      <div className="flex w-full pt-[15vh] sm:pt-[10vh] pb-[25vh] sm:pb-[35vh] text-white p-10 sm:p-3 sm:gap-3 bg-slate-700 min-h-[65vh] overflow-y-auto  sm:block flex-wrap gap-5 justify-center ">
+      <div className="flex w-full pt-[15vh] sm:pt-[10vh] pb-[25vh] sm:pb-[35vh] text-white p-10 sm:p-3 sm:gap-3 bg-black min-h-[65vh] overflow-y-auto  sm:block flex-wrap gap-5 justify-center ">
         {details?.map((d, i) => (
           <div
             title="click on song image or name to play the song"
             key={i}
-            className="items-center justify-center relative hover:scale-95 sm:hover:scale-100 duration-150 w-[40%] flex mb-3 sm:mb-3 sm:w-full sm:flex sm:items-center sm:gap-3  rounded-md h-[10vw] sm:h-[15vh] cursor-pointer bg-slate-600  "
+            className="items-center justify-center relative hover:scale-95 sm:hover:scale-100 duration-150 w-[40%] flex mb-3 sm:mb-3 sm:w-full sm:flex sm:items-center sm:gap-3 rounded-xl h-[10vw] sm:h-[15vh] cursor-pointer bg-white/5 border border-white/10 backdrop-blur-md hover:bg-white/10 hover:border-white/20 transition-all shadow-lg hover:shadow-purple-glow"
           >
             <div
               onClick={() => audioseter(i)}
@@ -593,33 +669,29 @@ const PlaylistDetails = () => {
                 src={d.image[2].url}
                 alt=""
               />
-              <p className="pl-1 text-green-400">{i + 1}</p>
+              <p className="pl-1 text-white opacity-50">{i + 1}</p>
               <img
-                className={`absolute top-0 w-[8%] sm:w-[10%] rounded-md ${
-                  d.id === songlink[0]?.id ? "block" : "hidden"
-                } `}
+                className={`absolute top-0 w-[8%] sm:w-[10%] rounded-md ${d.id === songlink[0]?.id ? "block" : "hidden"
+                  } `}
                 src={wavs}
                 alt=""
               />
               {songlink.length > 0 && (
                 <i
-                  className={`absolute top-0 sm:h-[15vh] w-[10vw] h-full flex items-center justify-center text-5xl sm:w-[15vh]  opacity-90  duration-300 rounded-md ${
-                    d.id === songlink[0]?.id ? "block" : "hidden"
-                  } ${
-                    audiocheck ? "ri-pause-circle-fill" : "ri-play-circle-fill"
-                  }`}
+                  className={`absolute top-0 sm:h-[15vh] w-[10vw] h-full flex items-center justify-center text-5xl sm:w-[15vh]  opacity-90  duration-300 rounded-md ${d.id === songlink[0]?.id ? "block" : "hidden"
+                    } ${audiocheck ? "ri-pause-circle-fill" : "ri-play-circle-fill"
+                    }`}
                 ></i>
               )}
               <div className="ml-3 sm:ml-3 flex justify-center items-center gap-5 mt-2">
                 <div className="flex flex-col">
                   <h3
-                    className={`text-sm sm:text-xs leading-none  font-bold ${
-                      d.id === songlink[0]?.id && "text-green-300"
-                    }`}
+                    className={`text-sm sm:text-xs leading-none  font-bold ${d.id === songlink[0]?.id && "text-white"
+                      }`}
                   >
-                    {d.name}
+                    {removeSourceAttribution(d.name)}
                   </h3>
-                  <h4 className="text-xs sm:text-[2.5vw] text-zinc-300 ">
+                  <h4 className="text-xs sm:text-[2.5vw] text-white opacity-60 ">
                     {d.album.name}
                   </h4>
                 </div>
@@ -683,7 +755,7 @@ const PlaylistDetails = () => {
               animate={{ x: 0, opacity: 1, scale: 1 }}
               className="w-[25vw] sm:w-full  flex gap-3 items-center sm:justify-center rounded-md  h-[7vw] sm:h-[30vw]"
             >
-              <p className=" text-green-400">{index + 1}</p>
+              <p className=" text-white opacity-50">{index + 1}</p>
               <motion.img
                 initial={{ x: -50, opacity: 0, scale: 0 }}
                 animate={{ x: 0, opacity: 1, scale: 1 }}
@@ -692,7 +764,7 @@ const PlaylistDetails = () => {
                 alt=""
               />
               <h3 className=" sm:w-[30%] text-white text-xs font-semibold">
-                {e?.name}
+                {removeSourceAttribution(e?.name)}
               </h3>
               {/* <i
                 onClick={() => handleDownloadSong(e.downloadUrl[4].url, e.name)}
@@ -700,9 +772,8 @@ const PlaylistDetails = () => {
               ></i> */}
               <i
                 onClick={() => likehandle(e)}
-                className={`text-xl hover:scale-150 sm:hover:scale-100 duration-300 cursor-pointer ${
-                  like ? "text-red-500" : "text-zinc-300"
-                }  ri-heart-3-fill`}
+                className={`text-xl hover:scale-150 sm:hover:scale-100 duration-300 cursor-pointer ${like ? "text-red-500" : "text-zinc-300"
+                  }  ri-heart-3-fill`}
               ></i>
 
               {/* <i
@@ -744,7 +815,7 @@ const PlaylistDetails = () => {
             >
               <button
                 onClick={() => pre()}
-                className="text-3xl text-white bg-zinc-800 cursor-pointer rounded-full"
+                className="text-3xl text-white bg-white/10 shadow-purple-glow cursor-pointer rounded-full"
               >
                 <i className="ri-skip-back-mini-fill"></i>
               </button>
@@ -760,7 +831,7 @@ const PlaylistDetails = () => {
               ></audio>
               <button
                 onClick={() => next()}
-                className="text-3xl text-white bg-zinc-800 cursor-pointer rounded-full"
+                className="text-3xl text-white bg-white/10 shadow-purple-glow cursor-pointer rounded-full"
               >
                 <i className="ri-skip-right-fill"></i>
               </button>
@@ -837,12 +908,12 @@ const PlaylistDetails = () => {
 
                   onClick={() =>
                     handleGenerateAudio2({
-                      audioUrl:  e?.downloadUrl[4].url,
+                      audioUrl: e?.downloadUrl[4].url,
                       imageUrl: e?.image[2]?.url,
-                      songName:  e?.name,
+                      songName: e?.name,
                       year: e?.year,
                       album: e?.album.name,
-                      artist:e?.artists.primary.map(artist => artist.name).join(",")
+                      artist: e?.artists.primary.map(artist => artist.name).join(",")
                     })
                   }
 

@@ -24,6 +24,7 @@ import { useAnimate, stagger } from "framer-motion";
 import { Bounce, Expo, Power4, Sine } from "gsap/all";
 import { Circ } from "gsap/all";
 import toast, { Toaster } from "react-hot-toast";
+import { removeSourceAttribution } from "../utils/stringUtils";
 
 const SongDetails = () => {
   let { id } = useParams();
@@ -298,21 +299,21 @@ const SongDetails = () => {
 
   var title = songlink[0]?.name;
 
-  document.title = `${title ? title : "THE ULTIMATE SONGS"}`;
+  document.title = `${title ? title : "MAX-VIBE"}`;
 
   // console.log(id);
   //   console.log(song);
   //   console.log(song[0]?.artists?.primary);
 
   return details.length ? (
-    <div className="w-full h-screen  bg-slate-700">
+    <div className="w-full h-screen  bg-black">
       <Toaster position="top-center" reverseOrder={false} />
       <div className="w-full flex items-center gap-3 sm:h-[7vh]  h-[10vh]">
         <i
           onClick={() => Navigate(-1)}
-          className="text-3xl cursor-pointer ml-5 bg-green-500 rounded-full ri-arrow-left-line"
+          className="ml-5 cursor-pointer text-4xl p-2 bg-white/5 backdrop-blur-2xl border border-white/10 rounded-full shadow-purple-glow hover:bg-purple-gradient text-white transition-all duration-300 ease-out ri-arrow-left-line"
         ></i>
-        <h1 className="text-xl text-zinc-300 font-black">THE ULTIMATE SONGS</h1>
+        <h1 className="text-xl text-white font-black">MAX-VIBE</h1>
       </div>
       <div className="px-7 w-full h-[65vh] overflow-hidden overflow-y-auto">
         {song?.map((e, i) => (
@@ -327,9 +328,9 @@ const SongDetails = () => {
                 alt=""
               />
             </div>
-            <div className="w-[80%] sm:w-full flex flex-col gap-1 h-full text-zinc-300 ">
-              <p className="text-3xl flex  gap-5  font-bold text-zinc-100">
-                {e.name}
+            <div className="w-[80%] sm:w-full flex flex-col gap-1 h-full text-white ">
+              <p className="text-3xl flex  gap-5  font-bold text-white">
+                {removeSourceAttribution(e.name)}
                 {existingData.find((element) => element.id == e.id) ? (
                   <i
                     onClick={() => likehandle2(e)}
@@ -338,7 +339,7 @@ const SongDetails = () => {
                 ) : (
                   <i
                     onClick={() => likehandle2(e)}
-                    className={`text-xl  w-[3vw] sm:w-[9vw] rounded-full  h-[3vw] sm:h-[9vw]   duration-300 cursor-pointer text-zinc-300  ri-heart-3-fill`}
+                    className={`text-xl  w-[3vw] sm:w-[9vw] rounded-full  h-[3vw] sm:h-[9vw]   duration-300 cursor-pointer text-white/40  ri-heart-3-fill`}
                   ></i>
                 )}
               </p>
@@ -355,7 +356,7 @@ const SongDetails = () => {
               <p>{e.copyright}</p>
               <div className="sm:hidden mt-2 flex flex-col text-[1vw] items-start  gap-2">
                 <div>
-                  <h3 className="font-bold text-sm text-slate-200">
+                  <h3 className="font-bold text-sm text-white/80">
                     Download Options
                   </h3>
                 </div>
@@ -367,7 +368,7 @@ const SongDetails = () => {
                         e.name + " 12kbps"
                       )
                     }
-                    className="duration-300 cursor-pointer hover:text-slate-400 hover:bg-slate-600 hover:scale-90 w-fit p-1 font-semibold rounded-md shadow-2xl  bg-slate-600 flex flex-col items-center"
+                    className="duration-300 cursor-pointer hover:text-white hover:bg-purple-gradient hover:scale-90 w-fit p-1 font-semibold rounded-md shadow-purple-glow bg-white/10 border border-white/10 flex flex-col items-center"
                   >
                     12kbps <br />
                     <p className="text-xs">Very low quality</p>
@@ -379,7 +380,7 @@ const SongDetails = () => {
                         e.name + " 48kbps"
                       )
                     }
-                    className="duration-300 cursor-pointer  hover:text-slate-400 hover:bg-slate-600 hover:scale-90 w-fit p-1 font-semibold rounded-md shadow-2xl bg-slate-600 flex flex-col items-center"
+                    className="duration-300 cursor-pointer hover:text-white hover:bg-purple-gradient hover:scale-90 w-fit p-1 font-semibold rounded-md shadow-purple-glow bg-white/10 border border-white/10 flex flex-col items-center"
                   >
                     48kbps <br />
                     <p className="text-xs">Low quality</p>
@@ -391,7 +392,7 @@ const SongDetails = () => {
                         e.name + " 96kbps"
                       )
                     }
-                    className="duration-300 cursor-pointer  hover:text-slate-400 hover:bg-slate-600 hover:scale-90 w-fit p-1 font-semibold rounded-md shadow-2xl bg-slate-600 flex flex-col items-center"
+                    className="duration-300 cursor-pointer hover:text-white hover:bg-purple-gradient hover:scale-90 w-fit p-1 font-semibold rounded-md shadow-purple-glow bg-white/10 border border-white/10 flex flex-col items-center"
                   >
                     96kbps <br />
                     <p className="text-xs">Fair quality</p>
@@ -403,7 +404,7 @@ const SongDetails = () => {
                         e.name + " 160kbps"
                       )
                     }
-                    className="duration-300 cursor-pointer  hover:text-slate-400 hover:bg-slate-600 hover:scale-90 w-fit p-1 font-semibold rounded-md shadow-2xl bg-slate-600 flex flex-col items-center"
+                    className="duration-300 cursor-pointer hover:text-white hover:bg-purple-gradient hover:scale-90 w-fit p-1 font-semibold rounded-md shadow-purple-glow bg-white/10 border border-white/10 flex flex-col items-center"
                   >
                     160kbps <br />
                     <p className="text-xs">Good quality</p>
@@ -415,7 +416,7 @@ const SongDetails = () => {
                         e.name + " 320kbps"
                       )
                     }
-                    className="duration-300 cursor-pointer  hover:text-slate-400 hover:bg-slate-600 hover:scale-90 w-fit p-1 font-semibold rounded-md shadow-2xl bg-slate-600 flex flex-col items-center"
+                    className="duration-300 cursor-pointer hover:text-white hover:bg-purple-gradient hover:scale-90 w-fit p-1 font-semibold rounded-md shadow-purple-glow bg-white/10 border border-white/10 flex flex-col items-center"
                   >
                     320kbps <br />
                     <p className="text-xs"> High quality</p>
@@ -442,7 +443,7 @@ const SongDetails = () => {
           </div>
         </div> */}
 
-        <div className="playlists w-full mt-3  flex flex-col gap-3 text-zinc-300 ">
+        <div className="playlists w-full mt-3  flex flex-col gap-3 text-white ">
           <h3 className="text-xl h-[5vh] font-semibold">Artists</h3>
           <div className="playlistsdata px-5 sm:px-3 flex flex-shrink  gap-5 overflow-x-auto overflow-hidden w-full ">
             {song[0]?.artists?.primary?.map((p, i) => (
@@ -473,7 +474,7 @@ const SongDetails = () => {
           </div>
         </div>
 
-        <div className="trending songs flex flex-col gap-3 w-full  text-zinc-300 ">
+        <div className="trending songs flex flex-col gap-3 w-full  text-white ">
           <h3 className="text-xl h-[5vh] font-semibold">Similar Songs</h3>
           <motion.div className="songs px-5 sm:px-3 flex flex-shrink  gap-5 overflow-x-auto overflow-hidden w-full ">
             {details?.map((t, i) => (
@@ -494,9 +495,8 @@ const SongDetails = () => {
                   alt=""
                 />
                 <img
-                  className={`absolute top-4 w-[20%] sm:w-[25%] rounded-md ${
-                    i === index ? "block" : "hidden"
-                  } `}
+                  className={`absolute top-4 w-[20%] sm:w-[25%] rounded-md ${i === index ? "block" : "hidden"
+                    } `}
                   src={wavs}
                   alt=""
                 />
@@ -507,13 +507,12 @@ const SongDetails = () => {
                   className="flex flex-col"
                 >
                   <h3
-                    className={`text-sm sm:text-xs leading-none  font-bold ${
-                      i === index && "text-green-300"
-                    }`}
+                    className={`text-sm sm:text-xs leading-none  font-bold ${i === index && "text-white"
+                      }`}
                   >
-                    {t.name}
+                    {removeSourceAttribution(t.name)}
                   </h3>
-                  <h4 className="text-xs sm:text-[2.5vw] text-zinc-300 ">
+                  <h4 className="text-xs sm:text-[2.5vw] text-white/60 ">
                     {t.album.name}
                   </h4>
                 </motion.div>
@@ -525,7 +524,7 @@ const SongDetails = () => {
       <motion.div
         className={
           songlink.length > 0
-            ? `duration-700 rounded-full  sm:rounded-none sm:rounded-t-[30%]  flex  gap-3 items-center  w-full min-h-[20vh] sm:min-h-[28vh] bg-slate-600  `
+            ? `duration-700 rounded-full  sm:rounded-none sm:rounded-t-[30%]  flex  gap-3 items-center  w-full min-h-[20vh] sm:min-h-[28vh] bg-black/80 backdrop-blur-xl border-t border-white/5 `
             : "block"
         }
       >
@@ -554,7 +553,7 @@ const SongDetails = () => {
                 alt=""
               />
               <h3 className=" sm:w-[30%] text-white text-xs font-semibold">
-                {e?.name}
+                {removeSourceAttribution(e?.name)}
               </h3>
               <i
                 onClick={() => handleDownloadSong(e.downloadUrl[4].url, e.name)}
@@ -562,9 +561,8 @@ const SongDetails = () => {
               ></i>
               <i
                 onClick={() => likehandle(e)}
-                className={`text-xl hover:scale-150 sm:hover:scale-100 duration-300 cursor-pointer ${
-                  like ? "text-red-500" : "text-zinc-300"
-                }  ri-heart-3-fill`}
+                className={`text-xl hover:scale-150 sm:hover:scale-100 duration-300 cursor-pointer ${like ? "text-red-500" : "text-white/40"
+                  }  ri-heart-3-fill`}
               ></i>
 
               {/* <i
@@ -607,7 +605,7 @@ const SongDetails = () => {
             >
               <button
                 onClick={pre}
-                className="text-3xl text-white bg-zinc-800 cursor-pointer rounded-full"
+                className="text-3xl text-white bg-white/10 shadow-purple-glow cursor-pointer rounded-full"
               >
                 <i className="ri-skip-back-mini-fill"></i>
               </button>
@@ -620,14 +618,14 @@ const SongDetails = () => {
               ></audio>
               <button
                 onClick={next}
-                className="text-3xl text-white bg-zinc-800 cursor-pointer rounded-full"
+                className="text-3xl text-white bg-white/10 shadow-purple-glow cursor-pointer rounded-full"
               >
                 <i className="ri-skip-right-fill"></i>
               </button>
             </motion.div>
             <div className="sm:hidden flex flex-col text-[1vw] items-center  gap-2">
               <div>
-                <h3 className="font-bold text-sm text-slate-400">
+                <h3 className="font-bold text-sm text-white/50">
                   Download Options
                 </h3>
               </div>
@@ -636,7 +634,7 @@ const SongDetails = () => {
                   onClick={() =>
                     handleDownloadSong(e.downloadUrl[0].url, e.name + " 12kbps")
                   }
-                  className="duration-300 cursor-pointer hover:text-slate-400 hover:bg-slate-600 hover:scale-90 w-fit p-1 font-semibold rounded-md shadow-2xl bg-slate-400 flex flex-col items-center"
+                  className="duration-300 cursor-pointer hover:text-white hover:bg-purple-gradient hover:scale-90 w-fit p-1 font-semibold rounded-md shadow-purple-glow bg-white/10 border border-white/10 flex flex-col items-center"
                 >
                   12kbps <br />
                   <p className="text-xs">Very low quality</p>
@@ -645,7 +643,7 @@ const SongDetails = () => {
                   onClick={() =>
                     handleDownloadSong(e.downloadUrl[1].url, e.name + " 48kbps")
                   }
-                  className="duration-300 cursor-pointer  hover:text-slate-400 hover:bg-slate-600 hover:scale-90 w-fit p-1 font-semibold rounded-md shadow-2xl bg-slate-400 flex flex-col items-center"
+                  className="duration-300 cursor-pointer  hover:text-white hover:bg-purple-gradient hover:scale-90 w-fit p-1 font-semibold rounded-md shadow-purple-glow bg-white/10 border border-white/10 flex flex-col items-center"
                 >
                   48kbps <br />
                   <p className="text-xs">Low quality</p>
@@ -654,7 +652,7 @@ const SongDetails = () => {
                   onClick={() =>
                     handleDownloadSong(e.downloadUrl[2].url, e.name + " 96kbps")
                   }
-                  className="duration-300 cursor-pointer  hover:text-slate-400 hover:bg-slate-600 hover:scale-90 w-fit p-1 font-semibold rounded-md shadow-2xl bg-slate-400 flex flex-col items-center"
+                  className="duration-300 cursor-pointer  hover:text-white hover:bg-purple-gradient hover:scale-90 w-fit p-1 font-semibold rounded-md shadow-purple-glow bg-white/10 border border-white/10 flex flex-col items-center"
                 >
                   96kbps <br />
                   <p className="text-xs">Fair quality</p>
@@ -666,7 +664,7 @@ const SongDetails = () => {
                       e.name + " 160kbps"
                     )
                   }
-                  className="duration-300 cursor-pointer  hover:text-slate-400 hover:bg-slate-600 hover:scale-90 w-fit p-1 font-semibold rounded-md shadow-2xl bg-slate-400 flex flex-col items-center"
+                  className="duration-300 cursor-pointer  hover:text-white hover:bg-purple-gradient hover:scale-90 w-fit p-1 font-semibold rounded-md shadow-purple-glow bg-white/10 border border-white/10 flex flex-col items-center"
                 >
                   160kbps <br />
                   <p className="text-xs">Good quality</p>
@@ -678,7 +676,7 @@ const SongDetails = () => {
                       e.name + " 320kbps"
                     )
                   }
-                  className="duration-300 cursor-pointer  hover:text-slate-400 hover:bg-slate-600 hover:scale-90 w-fit p-1 font-semibold rounded-md shadow-2xl bg-slate-400 flex flex-col items-center"
+                  className="duration-300 cursor-pointer  hover:text-white hover:bg-purple-gradient hover:scale-90 w-fit p-1 font-semibold rounded-md shadow-purple-glow bg-white/10 border border-white/10 flex flex-col items-center"
                 >
                   320kbps <br />
                   <p className="text-xs"> High quality</p>

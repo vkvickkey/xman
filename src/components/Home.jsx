@@ -1,10 +1,12 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Link, Navigate, json, useNavigate } from "react-router-dom";
+
 import logo from "./../../public/logo3.jpg";
 import axios from "axios";
 import Loading from "./Loading";
 import Dropdown from "react-dropdown";
 import "react-dropdown/style.css";
+import "./style.css";
 import wavs from "../../public/wavs.gif";
 import wait from "../../public/wait.gif";
 import {
@@ -21,13 +23,15 @@ import { useAnimate, stagger } from "framer-motion";
 import { Bounce, Expo, Power4, Sine } from "gsap/all";
 import { Circ } from "gsap/all";
 import toast, { Toaster } from "react-hot-toast";
-import  handleGenerateAudio  from "./../utils/audioUtils";
-import  handleGenerateAudio2  from "./../utils/audioUtils2";
+import handleGenerateAudio from "./../utils/audioUtils";
+import handleGenerateAudio2 from "./../utils/audioUtils2";
+import { removeSourceAttribution } from "../utils/stringUtils";
+import useHorizontalScroll from "../utils/useHorizontalScroll";
 
 const Home = () => {
   let navigate = useNavigate();
   const [home, sethome] = useState(null);
-  const [language, setlanguage] = useState("tamil");
+  const [language, setlanguage] = useState(localStorage.getItem("language") || "Tamil");
   const [details, setdetails] = useState([]);
   const [songlink, setsonglink] = useState([]);
   const [songlink2, setsonglink2] = useState([]);
@@ -41,6 +45,20 @@ const Home = () => {
   const [audiocheck, setaudiocheck] = useState(true);
   // const [selectedSongIds, setSelectedSongIds] = useState([]);
   const [suggSong, setsuggSong] = useState([]);
+
+  // Refs for horizontal scrolling
+  const detailsRef = useRef(null);
+  const suggRef = useRef(null);
+  const chartsRef = useRef(null);
+  const playlistsRef = useRef(null);
+  const albumsRef = useRef(null);
+
+  // Initialize scroll hooks
+  useHorizontalScroll(detailsRef);
+  useHorizontalScroll(suggRef);
+  useHorizontalScroll(chartsRef);
+  useHorizontalScroll(playlistsRef);
+  useHorizontalScroll(albumsRef);
 
   const options = [
     // "hindi",
@@ -59,12 +77,11 @@ const Home = () => {
     // "rajasthani",
     // "odia",
     // "assamese",
-
-    "tamil",
-    "malayalam",    
-    "english",
-    "telugu",
-    "hindi",
+    "Tamil",
+    "Malayalam",
+    "English",
+    "Telugu",
+    "Hindi",
     // "punjabi",
     // "hindi",
     // "marathi",
@@ -83,7 +100,7 @@ const Home = () => {
     detailsseter();
     try {
       const { data } = await axios.get(
-        `https://jiosaavan-harsh-patel.vercel.app/modules?language=${language}`
+        `https://jiosaavan-harsh-patel.vercel.app/modules?language=${language.toLowerCase()}`
       );
       sethome(data.data);
     } catch (error) {
@@ -96,8 +113,7 @@ const Home = () => {
       //   `https://saavn.dev/search/songs?query=${language}&page=${page}&limit=20`
       // );
       const { data } = await axios.get(
-        `https://jiosavan-api-with-playlist.vercel.app/api/search/songs?query=${language}&page=${
-          language === "english" ? page : page2
+        `https://jiosavan-api-with-playlist.vercel.app/api/search/songs?query=${language.toLowerCase()}&page=${language.toLowerCase() === "english" ? page : page2
         }&limit=20`
         // `https://saavn.dev/api/search/songs?query=${language}&page=${page2}&limit=20`
         // `https://jiosaavan-harsh-patel.vercel.app/search/songs?query=${language}&page=${
@@ -130,7 +146,6 @@ const Home = () => {
       }
     } else {
       setindex2(null);
-      // setsonglinkchecker(1);
       setsonglink2([]);
       setindex(i);
       setsonglink([details[i]]);
@@ -151,7 +166,6 @@ const Home = () => {
       }
     } else {
       setindex(null);
-      // setsonglinkchecker(2);
       setsonglink([]);
       setindex2(i);
       setsonglink2([suggSong[i]]);
@@ -280,7 +294,7 @@ const Home = () => {
         duration: 1500,
         style: {
           borderRadius: "10px",
-          background: "rgb(11 115 115)",
+          background: "linear-gradient(to right, #8A2BE2, #BF40FF)",
           color: "#fff",
         },
       });
@@ -321,8 +335,9 @@ const Home = () => {
           duration: 1500,
           style: {
             borderRadius: "10px",
-            background: "rgb(115 115 115)",
+            background: "#1a1a1a",
             color: "#fff",
+            border: "1px solid rgba(255,255,255,0.1)",
           },
         });
 
@@ -740,63 +755,57 @@ const Home = () => {
   // console.log(songlinkchecker);
 
   return details.length > 0 ? (
-    <div className="w-full h-screen  bg-slate-800">
+    <div className="w-full h-screen bg-black text-white">
       <Toaster position="top-center" reverseOrder={false} />
       <motion.div
         initial={{ opacity: 0, y: -50 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ ease: Circ.easeIn, duration: 0.5 }}
-        className="logo fixed flex items-center  z-[99] top-0 w-full  duration-200  max-h-[20vh]  flex sm:block backdrop-blur-xl py-3  px-10 sm:px-5  items-center gap-3 "
+        className="logo fixed flex items-center z-[99] top-0 w-full duration-200 max-h-[20vh] flex sm:block backdrop-blur-xl py-3 px-10 sm:px-5 items-center gap-3 border-b border-white/5"
       >
         <div className="flex items-center sm:justify-center sm:pt-2 gap-2 w-[-10%]">
-          <img className="w-[5vw] sm:w-[10vw] rounded-full" src={logo} alt="" />
-          <h1 className="text-3xl text-slate-100 p-0 rounded-full sm:text-2xl font-bold whitespace-nowrap">MAX-VIBE </h1>
+          <img className="w-[5vw] sm:w-[10vw] rounded-full shadow-purple-glow" src={logo} alt="" />
+          <h1 className="text-3xl text-white p-0 rounded-full sm:text-2xl font-bold whitespace-nowrap">MAX-VIBE</h1>
         </div>
         <motion.div
           initial={{ opacity: 0, y: -50 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ ease: Circ.easeIn, duration: 1 }}
-          className="sm:pt-3 sm:ml-4 text-zinc-500 ml-20 sm:justify-center"
+          className="sm:pt-3 sm:ml-4 text-white ml-20 sm:justify-center"
         >
           {/* <h3 className="inline text-xl sm:hidden">Search : </h3> */}
           <Link
-            className=" text-xl sm:text-sm ml-2 sm:ml-4 sm:font-bold  p-1 rounded-md hover:text-black  hover:bg-neutral-500 duration-300 text-neutral-300  font-semibold "
+            className="ml-2 sm:ml-4 px-4 py-2 text-xl sm:text-sm font-bold text-white rounded-xl bg-white/5 backdrop-blur-md border border-white/10 shadow-purple-glow hover:bg-purple-gradient hover:shadow-purple-glow hover:border-white/20 transition-all duration-300 ease-out"
             to={"/songs"}
           >
             Songs
           </Link>
-          {/* <Link
-            className=" text-xl sm:text-sm ml-3 sm:font-bold text-blue-900 font-semibold "
-            to={"/download"}
-          >
-            Download Songs
-          </Link> */}
           <Link
-            className="  text-xl sm:text-sm ml-2 sm:ml-4 sm:font-bold  p-1 rounded-md hover:text-black  hover:bg-neutral-500 duration-300 text-neutral-300  font-semibold "
+            className="ml-2 sm:ml-4 px-4 py-2 text-xl sm:text-sm font-bold text-white rounded-xl bg-white/5 backdrop-blur-md border border-white/10 shadow-purple-glow hover:bg-purple-gradient hover:shadow-purple-glow hover:border-white/20 transition-all duration-300 ease-out"
             to={"/playlist"}
           >
             PlayLists
           </Link>
           <Link
-            className="  text-xl sm:text-sm ml-2 sm:ml-4 sm:font-bold  p-1 rounded-md hover:text-black  hover:bg-neutral-500 duration-300 text-neutral-300  font-semibold"
-            to={"/artists"}
-          >
-            Artists
-          </Link>
-          <Link
-            className="  text-xl sm:text-sm ml-2 sm:ml-4 sm:font-bold  p-1 rounded-md hover:text-black  hover:bg-neutral-500 duration-300 text-neutral-300  font-semibold "
+            className="ml-2 sm:ml-4 px-4 py-2 text-xl sm:text-sm font-bold text-white rounded-xl bg-white/5 backdrop-blur-md border border-white/10 shadow-purple-glow hover:bg-purple-gradient hover:shadow-purple-glow hover:border-white/20 transition-all duration-300 ease-out"
             to={"/album"}
           >
             Album
           </Link>
           <Link
-            className=" text-xl sm:text-sm ml-2 sm:ml-4 sm:font-bold  p-1 rounded-md hover:text-black  hover:bg-neutral-500 duration-300 text-neutral-300  font-semibold"
+            className="ml-2 sm:ml-4 px-4 py-2 text-xl sm:text-sm font-bold text-white rounded-xl bg-white/5 backdrop-blur-md border border-white/10 shadow-purple-glow hover:bg-purple-gradient hover:shadow-purple-glow hover:border-white/20 transition-all duration-300 ease-out"
+            to={"/artists"}
+          >
+            Artists
+          </Link>
+          <Link
+            className="ml-2 sm:ml-4 px-4 py-2 text-xl sm:text-sm font-bold text-white rounded-xl bg-white/5 backdrop-blur-md border border-white/10 shadow-purple-glow hover:bg-purple-gradient hover:shadow-purple-glow hover:border-white/20 transition-all duration-300 ease-out"
             to={"/likes"}
           >
             Likes
           </Link>
         </motion.div>
-        <div className="w-full flex sm:justify-center items-center justify-end p-1 sm:p-2">
+        {/* <div className="w-full flex sm:justify-center items-center justify-end p-1 sm:p-2">
           <a
             target="_blank"
             href={
@@ -804,21 +813,42 @@ const Home = () => {
             }
             className="ml-2 sm:ml-4 cursor-pointer  text-3xl  text-zinc-100  ri-github-fill"
           ></a>
-          </div>
+        </div> */}
       </motion.div>
-      <div className="w-full  bg-slate-900  min-h-[40vh] pt-[20vh] pb-[15vh]  text-zinc-200 p-2 flex flex-col gap-1 overflow-auto">
+      <div className="w-full  bg-black  min-h-[40vh] pt-[20vh] pb-[15vh]  text-white p-2 flex flex-col gap-1 overflow-auto">
         <div className="w-full flex justify-end dropdown-control">
           <Dropdown
             className=" w-[100%] text-sm sm:w-[100%] mb-8 p-2 rounded-xl"
             options={options}
-            onChange={(e) => setlanguage(e.value)}
+            onChange={(e) => {
+              setlanguage(e.value);
+              localStorage.setItem("language", e.value);
+            }}
             placeholder={language ? ` ${language}  ` : "Select language"}
           />
         </div>
 
         <div className="trending songs flex flex-col gap-3 w-full ">
-          <h3 className="text-xl h-[5vh] font-semibold">{language} Songs</h3>
-          <motion.div className="songs px-5 sm:px-3 flex flex-shrink  gap-5 overflow-x-auto overflow-hidden w-full ">
+          <div className="relative w-full py-3 px-6 mb-2 flex items-center justify-between rounded-3xl bg-white/5 backdrop-blur-2xl border-t border-l border-r border-white/10 border-b-0 shadow-xl overflow-hidden shrink-0 group">
+            {/* Ambient Bottom Glow */}
+            <div className="absolute bottom-0 left-0 w-full h-[2px] bg-gradient-to-r from-[#8A2BE2] via-[#BF40FF] to-[#8A2BE2] blur-[1px] shadow-[0_0_20px_rgba(191,64,255,0.6)]"></div>
+
+            {/* Left Icon */}
+            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-black/20 border border-white/5 backdrop-blur-md shadow-[inset_0_1px_4px_rgba(255,255,255,0.1)] cursor-pointer hover:bg-white/10 hover:scale-105 transition-all duration-300">
+              <i className="ri-arrow-left-s-line text-white text-xl"></i>
+            </div>
+
+            {/* Center Title */}
+            <h3 className="text-2xl font-bold text-white/90 tracking-wide capitalize drop-shadow-lg font-sans">
+              {language} Songs
+            </h3>
+
+            {/* Right Icon */}
+            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-black/20 border border-white/5 backdrop-blur-md shadow-[inset_0_1px_4px_rgba(255,255,255,0.1)] cursor-pointer hover:bg-white/10 hover:scale-105 transition-all duration-300">
+              <i className="ri-settings-4-line text-white text-xl"></i>
+            </div>
+          </div>
+          <motion.div ref={detailsRef} className="songs custom-scrollbar px-5 sm:px-3 flex flex-shrink gap-5 overflow-x-auto w-full pb-4">
             {details?.map((t, i) => (
               <motion.div
                 //  whileHover={{  y: 0,scale: 0.9 }}
@@ -837,24 +867,20 @@ const Home = () => {
                   alt=""
                 />
                 <div className="flex  items-center ">
-                  <p className=" text-green-400">{i + 1}</p>
+                  <p className=" font-bold text-transparent bg-clip-text bg-gradient-to-r from-p-violet to-p-magenta">{i + 1}</p>
                 </div>
 
                 <img
-                  className={`absolute top-4 w-[20%] sm:w-[25%] rounded-md ${
-                    i === index ? "block" : "hidden"
-                  } `}
+                  className={`absolute top-4 w-[20%] sm:w-[25%] rounded-md ${i === index ? "block" : "hidden"
+                    } `}
                   src={wavs}
                   alt=""
                 />
                 {songlink.length > 0 && (
-                  <i
-                    className={`absolute top-20 sm:top-16 w-full  flex items-center justify-center text-5xl  opacity-90  duration-300 rounded-md  ${
-                      t.id === songlink[0]?.id ? "block" : "hidden"
-                    } ${
-                      audiocheck
-                        ? "ri-pause-circle-fill"
-                        : "ri-play-circle-fill"
+                  <i className={`absolute top-20 sm:top-16 w-full  flex items-center justify-center text-5xl text-p-magenta drop-shadow-[0_0_15px_rgba(191,64,255,0.8)] opacity-90  duration-300 rounded-md  ${t.id === songlink[0]?.id ? "block" : "hidden"
+                    } ${audiocheck
+                      ? "ri-pause-circle-fill"
+                      : "ri-play-circle-fill"
                     }`}
                   ></i>
                 )}
@@ -866,13 +892,12 @@ const Home = () => {
                   className="flex flex-col"
                 >
                   <h3
-                    className={`text-sm sm:text-xs leading-none  font-bold ${
-                      i === index && "text-green-300"
-                    }`}
+                    className={`text-sm sm:text-xs leading-none  font-bold ${i === index ? "text-p-magenta shadow-purple-glow" : "text-white"
+                      }`}
                   >
-                    {t.name}
+                    {removeSourceAttribution(t.name)}
                   </h3>
-                  <h4 className="text-xs sm:text-[2.5vw] text-zinc-300 ">
+                  <h4 className="text-xs sm:text-[2.5vw] text-white/60 ">
                     {t.album.name}
                   </h4>
                 </motion.div>
@@ -889,9 +914,9 @@ const Home = () => {
           <div className="trending songs flex flex-col gap-3 w-full ">
             <h3 className="text-xl h-[5vh] font-semibold">
               Songs for you{" "}
-              <sub className="text-gray-400">(based on your liked songs)</sub>
+              <sub className="text-white/50">(based on your liked songs)</sub>
             </h3>
-            <motion.div className="songs px-5 sm:px-3 flex flex-shrink  gap-5 overflow-x-auto overflow-hidden w-full ">
+            <motion.div ref={suggRef} className="songs custom-scrollbar px-5 sm:px-3 flex flex-shrink gap-5 overflow-x-auto w-full pb-4">
               {suggSong?.map((t, i) => (
                 <motion.div
                   //  whileHover={{  y: 0,scale: 0.9 }}
@@ -910,24 +935,20 @@ const Home = () => {
                     alt=""
                   />
                   <div className="flex  items-center ">
-                    <p className=" text-green-400">{i + 1}</p>
+                    <p className=" font-bold text-transparent bg-clip-text bg-gradient-to-r from-p-violet to-p-magenta">{i + 1}</p>
                   </div>
 
                   <img
-                    className={`absolute top-4 w-[20%] sm:w-[25%] rounded-md ${
-                      i === index2 ? "block" : "hidden"
-                    } `}
+                    className={`absolute top-4 w-[20%] sm:w-[25%] rounded-md ${i === index2 ? "block" : "hidden"
+                      } `}
                     src={wavs}
                     alt=""
                   />
                   {songlink2.length > 0 && (
-                    <i
-                      className={`absolute top-20 sm:top-16 w-full  flex items-center justify-center text-5xl  opacity-90  duration-300 rounded-md  ${
-                        t.id === songlink2[0]?.id ? "block" : "hidden"
-                      } ${
-                        audiocheck
-                          ? "ri-pause-circle-fill"
-                          : "ri-play-circle-fill"
+                    <i className={`absolute top-20 sm:top-16 w-full  flex items-center justify-center text-5xl text-p-magenta drop-shadow-[0_0_15px_rgba(191,64,255,0.8)] opacity-90  duration-300 rounded-md  ${t.id === songlink2[0]?.id ? "block" : "hidden"
+                      } ${audiocheck
+                        ? "ri-pause-circle-fill"
+                        : "ri-play-circle-fill"
                       }`}
                     ></i>
                   )}
@@ -939,13 +960,12 @@ const Home = () => {
                     className="flex flex-col"
                   >
                     <h3
-                      className={`text-sm sm:text-xs leading-none  font-bold ${
-                        t.id === songlink2[0]?.id && "text-green-300"
-                      }`}
+                      className={`text-sm sm:text-xs leading-none  font-bold ${t.id === songlink2[0]?.id ? "text-p-magenta shadow-purple-glow" : "text-white"
+                        }`}
                     >
-                      {t.name}
+                      {removeSourceAttribution(t.name)}
                     </h3>
-                    <h4 className="text-xs sm:text-[2.5vw] text-zinc-300 ">
+                    <h4 className="text-xs sm:text-[2.5vw] text-white/70 ">
                       {t.album.name}
                     </h4>
                   </motion.div>
@@ -977,8 +997,26 @@ const Home = () => {
           </div>
         </div>  */}
         <div className="charts w-full flex flex-col gap-3   ">
-          <h3 className="text-xl h-[5vh] font-semibold">Charts</h3>
-          <div className="chartsdata px-5 sm:px-3 flex flex-shrink  gap-5 overflow-x-auto overflow-hidden w-full ">
+          <div className="relative w-full py-3 px-6 mb-2 flex items-center justify-between rounded-3xl bg-white/5 backdrop-blur-2xl border-t border-l border-r border-white/10 border-b-0 shadow-xl overflow-hidden shrink-0 group">
+            {/* Ambient Bottom Glow */}
+            <div className="absolute bottom-0 left-0 w-full h-[2px] bg-gradient-to-r from-[#8A2BE2] via-[#BF40FF] to-[#8A2BE2] blur-[1px] shadow-[0_0_20px_rgba(191,64,255,0.6)]"></div>
+
+            {/* Left Icon */}
+            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-black/20 border border-white/5 backdrop-blur-md shadow-[inset_0_1px_4px_rgba(255,255,255,0.1)] cursor-pointer hover:bg-white/10 hover:scale-105 transition-all duration-300">
+              <i className="ri-arrow-left-s-line text-white text-xl"></i>
+            </div>
+
+            {/* Center Title */}
+            <h3 className="text-2xl font-bold text-white/90 tracking-wide capitalize drop-shadow-lg font-sans">
+              Charts
+            </h3>
+
+            {/* Right Icon */}
+            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-black/20 border border-white/5 backdrop-blur-md shadow-[inset_0_1px_4px_rgba(255,255,255,0.1)] cursor-pointer hover:bg-white/10 hover:scale-105 transition-all duration-300">
+              <i className="ri-settings-4-line text-white text-xl"></i>
+            </div>
+          </div>
+          <div ref={chartsRef} className="chartsdata custom-scrollbar px-5 sm:px-3 flex flex-shrink gap-5 overflow-x-auto w-full pb-4">
             {home?.charts?.map((c, i) => (
               <motion.div
                 initial={{ y: -100, scale: 0.5 }}
@@ -1007,8 +1045,26 @@ const Home = () => {
           </div>
         </div>
         <div className="playlists w-full  flex flex-col gap-3 ">
-          <h3 className="text-xl h-[5vh] font-semibold">Playlists</h3>
-          <div className="playlistsdata px-5 sm:px-3 flex flex-shrink  gap-5 overflow-x-auto overflow-hidden w-full ">
+          <div className="relative w-full py-3 px-6 mb-2 flex items-center justify-between rounded-3xl bg-white/5 backdrop-blur-2xl border-t border-l border-r border-white/10 border-b-0 shadow-xl overflow-hidden shrink-0 group">
+            {/* Ambient Bottom Glow */}
+            <div className="absolute bottom-0 left-0 w-full h-[2px] bg-gradient-to-r from-[#8A2BE2] via-[#BF40FF] to-[#8A2BE2] blur-[1px] shadow-[0_0_20px_rgba(191,64,255,0.6)]"></div>
+
+            {/* Left Icon */}
+            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-black/20 border border-white/5 backdrop-blur-md shadow-[inset_0_1px_4px_rgba(255,255,255,0.1)] cursor-pointer hover:bg-white/10 hover:scale-105 transition-all duration-300">
+              <i className="ri-arrow-left-s-line text-white text-xl"></i>
+            </div>
+
+            {/* Center Title */}
+            <h3 className="text-2xl font-bold text-white/90 tracking-wide capitalize drop-shadow-lg font-sans">
+              Playlists
+            </h3>
+
+            {/* Right Icon */}
+            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-black/20 border border-white/5 backdrop-blur-md shadow-[inset_0_1px_4px_rgba(255,255,255,0.1)] cursor-pointer hover:bg-white/10 hover:scale-105 transition-all duration-300">
+              <i className="ri-settings-4-line text-white text-xl"></i>
+            </div>
+          </div>
+          <div ref={playlistsRef} className="playlistsdata custom-scrollbar px-5 sm:px-3 flex flex-shrink gap-5 overflow-x-auto w-full pb-4">
             {home?.playlists?.map((p, i) => (
               <motion.div
                 initial={{ y: -100, scale: 0.5 }}
@@ -1037,8 +1093,26 @@ const Home = () => {
           </div>
         </div>
         <div className="albums w-full flex flex-col gap-3 ">
-          <h3 className="text-xl h-[5vh] font-semibold">Albums</h3>
-          <div className="albumsdata  px-5 sm:px-3 flex flex-shrink  gap-5 overflow-x-auto overflow-hidden w-full ">
+          <div className="relative w-full py-3 px-6 mb-2 flex items-center justify-between rounded-3xl bg-white/5 backdrop-blur-2xl border-t border-l border-r border-white/10 border-b-0 shadow-xl overflow-hidden shrink-0 group">
+            {/* Ambient Bottom Glow */}
+            <div className="absolute bottom-0 left-0 w-full h-[2px] bg-gradient-to-r from-[#8A2BE2] via-[#BF40FF] to-[#8A2BE2] blur-[1px] shadow-[0_0_20px_rgba(191,64,255,0.6)]"></div>
+
+            {/* Left Icon */}
+            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-black/20 border border-white/5 backdrop-blur-md shadow-[inset_0_1px_4px_rgba(255,255,255,0.1)] cursor-pointer hover:bg-white/10 hover:scale-105 transition-all duration-300">
+              <i className="ri-arrow-left-s-line text-white text-xl"></i>
+            </div>
+
+            {/* Center Title */}
+            <h3 className="text-2xl font-bold text-white/90 tracking-wide capitalize drop-shadow-lg font-sans">
+              Albums
+            </h3>
+
+            {/* Right Icon */}
+            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-black/20 border border-white/5 backdrop-blur-md shadow-[inset_0_1px_4px_rgba(255,255,255,0.1)] cursor-pointer hover:bg-white/10 hover:scale-105 transition-all duration-300">
+              <i className="ri-settings-4-line text-white text-xl"></i>
+            </div>
+          </div>
+          <div ref={albumsRef} className="albumsdata custom-scrollbar px-5 sm:px-3 flex flex-shrink gap-5 overflow-x-auto w-full pb-4">
             {home?.albums?.map((a, i) => (
               <motion.div
                 initial={{ y: -100, scale: 0.5 }}
@@ -1060,21 +1134,18 @@ const Home = () => {
                   // transition={{ease:Circ.easeIn,duration:0.05}}
                   className="leading-none"
                 >
-                  {a.name}
+                  {removeSourceAttribution(a.name)}
                 </motion.h3>
               </motion.div>
             ))}
           </div>
         </div>
         <div>
-          <p className="font-semibold text-neutral-400 sm:text-sm">
-            <b>THE ULTIMATE SONGS</b> is not affiliated with JioSaavn. All
-            trademarks and copyrights belong to their respective owners. All
-            media, images, and songs are the property of their respective
-            owners. This site is for educational purposes only.
+          <p className="font-semibold text-white/50 sm:text-sm">
+            <b></b>
           </p>
         </div>
-      </div>
+      </div >
 
       <motion.div
         className={
@@ -1098,7 +1169,7 @@ const Home = () => {
 
               className="w-[25vw] sm:w-full  flex gap-3 items-center sm:justify-center rounded-md  h-[7vw] sm:h-[30vw]"
             >
-              <p className=" text-green-400">{index + 1}</p>
+              <p className=" font-bold text-transparent bg-clip-text bg-gradient-to-r from-p-violet to-p-magenta">{index + 1}</p>
               <motion.img
                 initial={{ x: -100, opacity: 0, scale: 0 }}
                 animate={{ x: 0, opacity: 1, scale: 1 }}
@@ -1110,7 +1181,7 @@ const Home = () => {
               />
 
               <h3 className=" sm:w-[30%] text-white text-xs font-semibold">
-                {e?.name}
+                {removeSourceAttribution(e?.name)}
               </h3>
               {/* <i
                 onClick={() => handleDownloadSong(e.downloadUrl[4].url, e.name)}
@@ -1118,9 +1189,8 @@ const Home = () => {
               ></i> */}
               <i
                 onClick={() => likehandle(e)}
-                className={`text-xl hover:scale-150 sm:hover:scale-100 duration-300 cursor-pointer ${
-                  like ? "text-red-500" : "text-zinc-300"
-                }  ri-heart-3-fill`}
+                className={`text-xl hover:scale-150 sm:hover:scale-100 duration-300 cursor-pointer ${like ? "text-p-magenta drop-shadow-[0_0_10px_rgba(191,64,255,0.8)]" : "text-white"
+                  }  ri-heart-3-fill`}
               ></i>
               {/* <i onClick={()=>navigate(`songs/details/${e.id}`)} className="text-zinc-300 text-xl hover:scale-150 sm:hover:scale-100 duration-300 cursor-pointer ri-information-fill"></i> */}
 
@@ -1159,7 +1229,7 @@ const Home = () => {
             >
               <button
                 onClick={pre}
-                className="text-3xl text-white bg-zinc-800 cursor-pointer rounded-full"
+                className="text-3xl text-white bg-white/10 hover:bg-white/20 border border-white/5 cursor-pointer rounded-full"
               >
                 <i className="ri-skip-back-mini-fill"></i>
               </button>
@@ -1175,14 +1245,14 @@ const Home = () => {
               ></audio>
               <button
                 onClick={next}
-                className="text-3xl text-white bg-zinc-800 cursor-pointer rounded-full"
+                className="text-3xl text-white bg-white/10 hover:bg-white/20 border border-white/5 cursor-pointer rounded-full"
               >
                 <i className="ri-skip-right-fill"></i>
               </button>
             </motion.div>
             <div className=" flex flex-col text-[1vw] items-center  gap-2">
               <div>
-                <h3 className="font-bold text-sm text-slate-400">
+                <h3 className="font-bold text-sm text-white/70">
                   Download Options
                 </h3>
               </div>
@@ -1238,7 +1308,7 @@ const Home = () => {
                   320kbps <br />
                   <p className="text-xs"> High quality</p>
                 </p> */}
-                 <p
+                <p
                   // onClick={() =>
                   //   handleDownloadSong(
                   //     e.downloadUrl[4].url,
@@ -1250,16 +1320,16 @@ const Home = () => {
 
                   onClick={() =>
                     handleGenerateAudio2({
-                      audioUrl:  e?.downloadUrl[4].url,
+                      audioUrl: e?.downloadUrl[4].url,
                       imageUrl: e?.image[2]?.url,
-                      songName:  e?.name,
+                      songName: e?.name,
                       year: e?.year,
                       album: e?.album.name,
-                      artist:e?.artists.primary.map(artist => artist.name).join(",")
+                      artist: e?.artists.primary.map(artist => artist.name).join(",")
                     })
                   }
 
-                  className="duration-300 cursor-pointer  hover:text-slate-400 hover:bg-slate-600 hover:scale-90 w-fit p-1 sm:text-sm font-semibold rounded-md shadow-2xl bg-slate-400 flex flex-col items-center"
+                  className="duration-300 cursor-pointer  hover:text-white hover:bg-white/20 hover:scale-90 w-fit p-1 sm:text-sm font-semibold rounded-md shadow-2xl bg-white/10 border border-white/10 flex flex-col items-center"
                 >
                   Highest quality with <br />
                   <p className="text-xs text-center">FLAC Format</p>
@@ -1276,20 +1346,20 @@ const Home = () => {
 
                   onClick={() =>
                     handleGenerateAudio({
-                      audioUrl:  e?.downloadUrl[4].url,
+                      audioUrl: e?.downloadUrl[4].url,
                       imageUrl: e?.image[2]?.url,
-                      songName:  e?.name,
+                      songName: e?.name,
                       year: e?.year,
                       album: e?.album.name,
-                      artist:e?.artists.primary.map(artist => artist.name).join(",")
+                      artist: e?.artists.primary.map(artist => artist.name).join(",")
                     })
                   }
 
-                  className="duration-300 cursor-pointer  hover:text-slate-400 hover:bg-slate-600 hover:scale-90 w-fit p-1 sm:text-sm font-semibold rounded-md shadow-2xl bg-slate-400 flex flex-col items-center"
+                  className="duration-300 cursor-pointer  hover:text-white hover:bg-white/20 hover:scale-90 w-fit p-1 sm:text-sm font-semibold rounded-md shadow-2xl bg-white/10 border border-white/10 flex flex-col items-center"
                 >
                   320kbps<br />
                   <p className="text-xs text-center">High quality with poster embedded
-                    <br/></p>
+                    <br /></p>
                 </p>
               </div>
             </div>
@@ -1319,7 +1389,7 @@ const Home = () => {
 
               className="w-[25vw] sm:w-full  flex gap-3 items-center sm:justify-center rounded-md  h-[7vw] sm:h-[30vw]"
             >
-              <p className=" text-green-400">{index2 + 1}</p>
+              <p className=" font-bold text-transparent bg-clip-text bg-gradient-to-r from-p-violet to-p-magenta">{index2 + 1}</p>
               <motion.img
                 initial={{ x: -100, opacity: 0, scale: 0 }}
                 animate={{ x: 0, opacity: 1, scale: 1 }}
@@ -1331,7 +1401,7 @@ const Home = () => {
               />
 
               <h3 className=" sm:w-[30%] text-white text-xs font-semibold">
-                {e?.name}
+                {removeSourceAttribution(e?.name)}
               </h3>
               {/* <i
                 onClick={() => handleDownloadSong(e.downloadUrl[4].url, e.name)}
@@ -1339,9 +1409,8 @@ const Home = () => {
               ></i> */}
               <i
                 onClick={() => likehandle(e)}
-                className={`text-xl hover:scale-150 sm:hover:scale-100 duration-300 cursor-pointer ${
-                  like ? "text-red-500" : "text-zinc-300"
-                }  ri-heart-3-fill`}
+                className={`text-xl hover:scale-150 sm:hover:scale-100 duration-300 cursor-pointer ${like ? "text-p-magenta drop-shadow-[0_0_10px_rgba(191,64,255,0.8)]" : "text-white"
+                  }  ri-heart-3-fill`}
               ></i>
               {/* <i onClick={()=>navigate(`songs/details/${e.id}`)} className="text-zinc-300 text-xl hover:scale-150 sm:hover:scale-100 duration-300 cursor-pointer ri-information-fill"></i> */}
 
@@ -1380,7 +1449,7 @@ const Home = () => {
             >
               <button
                 onClick={pre2}
-                className="text-3xl text-white bg-zinc-800 cursor-pointer rounded-full"
+                className="text-3xl text-white bg-white/10 hover:bg-white/20 border border-white/5 cursor-pointer rounded-full"
               >
                 <i className="ri-skip-back-mini-fill"></i>
               </button>
@@ -1396,14 +1465,14 @@ const Home = () => {
               ></audio>
               <button
                 onClick={next2}
-                className="text-3xl text-white bg-zinc-800 cursor-pointer rounded-full"
+                className="text-3xl text-white bg-white/10 hover:bg-white/20 border border-white/5 cursor-pointer rounded-full"
               >
                 <i className="ri-skip-right-fill"></i>
               </button>
             </motion.div>
             <div className="flex flex-col text-[1vw] items-center  gap-2">
               <div>
-                <h3 className="font-bold text-sm text-slate-400">
+                <h3 className="font-bold text-sm text-white/70">
                   Download Options
                 </h3>
               </div>
@@ -1472,16 +1541,16 @@ const Home = () => {
 
                   onClick={() =>
                     handleGenerateAudio2({
-                      audioUrl:  e?.downloadUrl[4].url,
+                      audioUrl: e?.downloadUrl[4].url,
                       imageUrl: e?.image[2]?.url,
-                      songName:  e?.name,
+                      songName: e?.name,
                       year: e?.year,
                       album: e?.album.name,
-                      artist:e?.artists.primary.map(artist => artist.name).join(",")
+                      artist: e?.artists.primary.map(artist => artist.name).join(",")
                     })
                   }
 
-                  className="duration-300 cursor-pointer  hover:text-slate-400 hover:bg-slate-600 hover:scale-90 w-fit p-1 sm:text-sm font-semibold rounded-md shadow-2xl bg-slate-400 flex flex-col items-center"
+                  className="duration-300 cursor-pointer  hover:text-white hover:bg-white/20 hover:scale-90 w-fit p-1 sm:text-sm font-semibold rounded-md shadow-2xl bg-white/10 border border-white/10 flex flex-col items-center"
                 >
                   Highest quality with <br />
                   <p className="text-xs text-center">
@@ -1509,15 +1578,15 @@ const Home = () => {
                   // }
                   onClick={() =>
                     handleGenerateAudio({
-                      audioUrl:  e?.downloadUrl[4].url,
+                      audioUrl: e?.downloadUrl[4].url,
                       imageUrl: e?.image[2]?.url,
-                      songName:  e?.name,
+                      songName: e?.name,
                       year: e?.year,
                       album: e?.album.name,
-                      artist:e?.artists.primary.map(artist => artist.name).join(",")
+                      artist: e?.artists.primary.map(artist => artist.name).join(",")
                     })
                   }
-                  className="duration-300 cursor-pointer  hover:text-slate-400 hover:bg-slate-600 hover:scale-90 w-fit p-1 sm:text-sm font-semibold rounded-md shadow-2xl bg-slate-400 flex flex-col items-center"
+                  className="duration-300 cursor-pointer  hover:text-white hover:bg-white/20 hover:scale-90 w-fit p-1 sm:text-sm font-semibold rounded-md shadow-2xl bg-white/10 border border-white/10 flex flex-col items-center"
                 >
                   320kbps <br />
                   <p className="text-xs text-center">
@@ -1531,7 +1600,8 @@ const Home = () => {
           </motion.div>
         ))}
       </motion.div>
-    </div>
+
+    </div >
   ) : (
     <Loading />
   );

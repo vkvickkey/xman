@@ -20,8 +20,8 @@ import { Circ } from "gsap/all";
 import toast, { Toaster } from "react-hot-toast";
 import JSZip from "jszip";
 import CryptoJS from "crypto-js";
-import  handleGenerateAudio  from "./../utils/audioUtils";
-import  handleGenerateAudio2  from "./../utils/audioUtils2";
+import handleGenerateAudio from "./../utils/audioUtils";
+import handleGenerateAudio2 from "./../utils/audioUtils2";
 
 function Likes() {
   const navigate = useNavigate();
@@ -665,7 +665,7 @@ function Likes() {
   // };
 
   var title = songlink[0]?.name;
-  document.title = `${title ? title : "THE ULTIMATE SONGS"}`;
+  document.title = `${title ? title : "MAX-VIBE"}`;
   // console.log(details[1]?.artists.primary.map(artist => artist.name).join(","));
   //   console.log(rerender);
   // console.log(index);
@@ -683,7 +683,7 @@ function Likes() {
             className="ml-2 cursor-pointer text-5xl bg-green-500 rounded-l-lg rounded-br-lg ri-arrow-left-line"
           ></i>
           <h1 className="text-xl text-zinc-300 sm:text-xs font-black">
-            THE ULTIMATE SONGS
+            MAX-VIBE
           </h1>
         </div>
         <div className="w-fit flex gap-3">
@@ -697,7 +697,7 @@ function Likes() {
           <button
             className=" hover:scale-90 sm:hover:scale-100 duration-300 inline-block w-fit h-fit sm:text-sm  rounded-md p-2 sm:p-0.5 font-semibold bg-slate-400 "
             onClick={() => navigate("/import")}
-            // disabled={download}
+          // disabled={download}
           >
             Import songs
             {/* {download ? "downloading..." : "Download All Songs"} */}
@@ -705,7 +705,7 @@ function Likes() {
           <button
             className=" hover:scale-90 sm:hover:scale-100 duration-300 inline-block w-fit h-fit sm:text-sm  rounded-md p-2 sm:p-0.5 font-semibold bg-slate-400 "
             onClick={downloadSongsfile}
-            // disabled={download}
+          // disabled={download}
           >
             Export songs
             {/* {download ? "downloading..." : "Download All Songs"} */}
@@ -736,29 +736,25 @@ function Likes() {
                 />
                 <p className="pl-1 text-green-400">{i + 1}</p>
                 <img
-                  className={`absolute top-0 w-[8%] sm:w-[10%] rounded-md ${
-                    d.id === songlink[0]?.id ? "block" : "hidden"
-                  } `}
+                  className={`absolute top-0 w-[8%] sm:w-[10%] rounded-md ${d.id === songlink[0]?.id ? "block" : "hidden"
+                    } `}
                   src={wavs}
                   alt=""
                 />
                 {songlink.length > 0 && (
                   <i
-                    className={`absolute top-0 sm:h-[15vh] w-[10vw] h-full flex items-center justify-center text-5xl sm:w-[15vh]  opacity-90  duration-300 rounded-md ${
-                      d.id === songlink[0]?.id ? "block" : "hidden"
-                    } ${
-                      audiocheck
+                    className={`absolute top-0 sm:h-[15vh] w-[10vw] h-full flex items-center justify-center text-5xl sm:w-[15vh]  opacity-90  duration-300 rounded-md ${d.id === songlink[0]?.id ? "block" : "hidden"
+                      } ${audiocheck
                         ? "ri-pause-circle-fill"
                         : "ri-play-circle-fill"
-                    }`}
+                      }`}
                   ></i>
                 )}
                 <div className="ml-3 sm:ml-3 flex justify-center items-center gap-5 mt-2">
                   <div className="flex flex-col">
                     <h3
-                      className={`text-sm sm:text-xs leading-none  font-bold ${
-                        d.id === songlink[0]?.id && "text-green-300"
-                      }`}
+                      className={`text-sm sm:text-xs leading-none  font-bold ${d.id === songlink[0]?.id && "text-green-300"
+                        }`}
                     >
                       {d.name}
                     </h3>
@@ -961,22 +957,22 @@ function Likes() {
 
                     onClick={() =>
                       handleGenerateAudio2({
-                        audioUrl:  e?.downloadUrl[4].url,
+                        audioUrl: e?.downloadUrl[4].url,
                         imageUrl: e?.image[2]?.url,
-                        songName:  e?.name,
+                        songName: e?.name,
                         year: e?.year,
                         album: e?.album.name,
-                        artist:e?.artists.primary.map(artist => artist.name).join(",")
+                        artist: e?.artists.primary.map(artist => artist.name).join(",")
                       })
                     }
 
                     className="duration-300 cursor-pointer  hover:text-slate-400 hover:bg-slate-600 hover:scale-90 w-fit p-1 sm:text-sm font-semibold rounded-md shadow-2xl bg-slate-400 flex flex-col items-center"
                   >
                     Highest quality with <br />
-                  <p className="text-xs text-center">
-                    {" "}
-                    FLAC Format
-                  </p>
+                    <p className="text-xs text-center">
+                      {" "}
+                      FLAC Format
+                    </p>
                   </p>
                   <p
                     // onClick={() =>
@@ -991,12 +987,12 @@ function Likes() {
 
                     onClick={() =>
                       handleGenerateAudio({
-                        audioUrl:e?.downloadUrl[4].url,
-                        imageUrl:e?.image[2]?.url,
-                        songName:e?.name,
-                        year:e?.year,
-                        album:e?.album.name,
-                        artist:e?.artists.primary
+                        audioUrl: e?.downloadUrl[4].url,
+                        imageUrl: e?.image[2]?.url,
+                        songName: e?.name,
+                        year: e?.year,
+                        album: e?.album.name,
+                        artist: e?.artists.primary
                           .map((artist) => artist.name)
                           .join(","),
                       })
