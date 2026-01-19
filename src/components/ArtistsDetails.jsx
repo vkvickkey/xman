@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import Loading from "./Loading";
 import InfiniteScroll from "react-infinite-scroll-component";
-import wavs from "../../public/wavs.gif";
+const wavs = "/wavs.gif";
 import {
   animate,
   circIn,
@@ -713,7 +713,7 @@ const ArtistsDetails = () => {
                 alt=""
               />
               <h3 className=" sm:w-[30%] text-white text-xs font-semibold">
-                {e?.name}
+                {removeSourceAttribution(e?.name)}
               </h3>
               {/* <i
                 onClick={() =>

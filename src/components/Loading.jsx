@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import loader from "./../../public/loading.gif";
+const loader = "/loading.gif";
 import toast, { Toaster } from "react-hot-toast";
 
 const Loading = ({ page }) => {

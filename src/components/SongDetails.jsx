@@ -8,8 +8,8 @@ import {
   useParams,
 } from "react-router-dom";
 import Loading from "./Loading";
-import wavs from "../../public/wavs.gif";
-import noimg from "../../public/noimg.png";
+const wavs = "/wavs.gif";
+const noimg = "/noimg.png";
 import {
   animate,
   circIn,
@@ -347,7 +347,7 @@ const SongDetails = () => {
                 onClick={() => Navigate(`/albums/details/${e.album.id}`)}
                 className="text-lg font-semibold cursor-pointer"
               >
-                {e.album.name}
+                {removeSourceAttribution(e.album.name)}
               </p>
               <p className="text-xl">
                 {e.type} - {Math.floor(e.duration / 60) + " min"} - {e.language}{" "}

@@ -1,4 +1,5 @@
 import axios from "axios";
+import { removeSourceAttribution } from "../utils/stringUtils";
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -12,6 +13,8 @@ import {
   easeOut,
   motion,
 } from "framer-motion";
+import JSZip from "jszip";
+import { saveAs } from "file-saver";
 import { useAnimate, stagger } from "framer-motion";
 import { Bounce, Expo, Power4, Sine } from "gsap/all";
 import { Circ } from "gsap/all";
@@ -38,12 +41,73 @@ const Album = () => {
       // setalbums((prevState) => [...prevState, ...data?.data?.results]);
       setpage(page + 1);
       // sethasMore(true);
-      const newData = data.data.results.filter(newItem => !albums.some(prevItem => prevItem.id === newItem.id));
-      setalbums(prevState => [...prevState, ...newData]);
-      sethasMore(newData.length > 0)
-      localStorage.setItem("albums", JSON.stringify(data?.data?.results));
+      setalbums((prevState) => {
+        const newData = data.data.results.filter(
+          (newItem) => !prevState.some((prevItem) => prevItem.id === newItem.id)
+        );
+        return [...prevState, ...newData];
+      });
+      sethasMore(data.data.results.length > 0);
+      // localStorage.setItem("albums", JSON.stringify(data?.data?.results));
     } catch (error) {
       console.log("error", error);
+    }
+  };
+
+  const handleDownloadAlbum = async (id, name, imageUrl) => {
+    try {
+      toast.loading(`Fetching songs for ${name}...`, { id: "download-album" });
+      const { data } = await axios.get(
+        `https://jiosavan-api-with-playlist.vercel.app/api/albums?id=${id}`
+      );
+      const songs = data.data.songs;
+
+      if (!songs || songs.length === 0) {
+        toast.error("No songs found to download.", { id: "download-album" });
+        return;
+      }
+
+      const zip = new JSZip();
+      const folder = zip.folder(name.replace(/[^a-z0-9]/gi, '_'));
+
+      let downloadedCount = 0;
+      toast.loading(`Initializing FFmpeg...`, { id: "download-album" });
+
+      // Load FFmpeg once
+      const { loadFFmpeg, processSong } = await import("../utils/audioProcessor");
+      const ffmpeg = await loadFFmpeg();
+
+      toast.loading(`Processing ${songs.length} songs (This may take a while)...`, { id: "download-album" });
+
+      for (let i = 0; i < songs.length; i++) {
+        const song = songs[i];
+        const safeName = song.name ? song.name.replace(/[^a-z0-9]/gi, '_').toLowerCase() : `track_${i + 1}`;
+
+        try {
+          toast.loading(`Processing ${i + 1}/${songs.length}: ${song.name}`, { id: "download-album" });
+
+          // Use the album cover if individual song cover logic fails or is preferred, though song usually has it
+          const coverUrl = song.image?.[2]?.url || imageUrl;
+
+          const audioBlob = await processSong(song, coverUrl, ffmpeg);
+          folder.file(`${safeName}.m4a`, audioBlob);
+          downloadedCount++;
+        } catch (err) {
+          console.error(`Failed to download/process ${song.name}`, err);
+        }
+      }
+
+      if (downloadedCount === 0) {
+        toast.error("Failed to download any songs.", { id: "download-album" });
+      } else {
+        toast.loading("Zipping files...", { id: "download-album" });
+        const content = await zip.generateAsync({ type: "blob" });
+        saveAs(content, `${name}.zip`);
+        toast.success(`Downloaded ${downloadedCount} songs from ${name}!`, { id: "download-album" });
+      }
+    } catch (error) {
+      console.error("Error downloading album:", error);
+      toast.error("Failed to download album.", { id: "download-album" });
     }
   };
 
@@ -180,7 +244,17 @@ const Album = () => {
                   src={e?.image[2]?.url}
                   alt=""
                 />
-                <h3 className="text-white">{e.name}</h3>
+                <div className="flex justify-between items-center px-1">
+                  <h3 className="text-white truncate w-4/5">{removeSourceAttribution(e.name)}</h3>
+                  <i
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      handleDownloadAlbum(e.id, e.name, e?.image[2]?.url);
+                    }}
+                    className="ri-download-cloud-2-line text-white/70 hover:text-white text-xl p-2 bg-white/10 rounded-full hover:bg-purple-600 transition-all duration-300 z-10"
+                    title="Download Album"
+                  ></i>
+                </div>
               </motion.div>
             ))}
           </motion.div>

@@ -2,7 +2,7 @@ import React, { useRef, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import CryptoJS from "crypto-js";
 import toast, { Toaster } from "react-hot-toast";
-import Loading from "../../public/loading2.gif";
+const Loading2 = "/loading2.gif";
 
 const Import = () => {
   const navigate = useNavigate();
@@ -125,7 +125,7 @@ const Import = () => {
       <div className="w-full  flex items-center gap-3  h-[10vh]">
         <i
           onClick={() => navigate(-1)}
-          className="text-3xl cursor-pointer ml-5 bg-green-500 rounded-full ri-arrow-left-line"
+          className="text-3xl cursor-pointer ml-5 bg-green-500 rounded-full  ri-arrow-left-line"
         ></i>
         <h1 className="text-xl text-zinc-300 font-black">MAX-VIBE</h1>
       </div>
@@ -153,7 +153,7 @@ const Import = () => {
               </button>
             </div>
           ) : (
-            <img className="w-full h-full scale-[300%]" src={Loading} alt="" />
+            <img className="w-full h-full scale-[300%]" src={Loading2} alt="" />
           )}
         </div>
       </div>

@@ -18,6 +18,7 @@ import Import from "./components/Import";
 
 
 
+
 const App = () => {
   return (
     <div className="w-full h-screen">
@@ -34,6 +35,7 @@ const App = () => {
         <Route path="/artists/details/:id" element={<ArtistsDetails />} />
         <Route path="/likes" element={<Likes />} />
         <Route path="/import" element={<Import />} />
+
       </Routes>
     </div>
   );

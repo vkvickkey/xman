@@ -2,7 +2,7 @@ import axios from "axios";
 import React, { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import Loading from "./Loading";
-import wavs from "../../public/wavs.gif";
+const wavs = "/wavs.gif";
 import {
   animate,
   circIn,
@@ -20,6 +20,7 @@ import toast, { Toaster } from "react-hot-toast";
 import handleGenerateAudio from "./../utils/audioUtils";
 import handleGenerateAudio2 from "./../utils/audioUtils2";
 import { removeSourceAttribution } from "../utils/stringUtils";
+import { processSong, loadFFmpeg } from "../utils/audioProcessor";
 
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
@@ -50,36 +51,56 @@ const PlaylistDetails = () => {
 
     setIsDownloadingAll(true);
     const zip = new JSZip();
-    const folder = zip.folder("Playlist"); // Playlist name might not be directly available in 'details' array items effortlessly, using generic name
+    const folder = zip.folder("Playlist");
     let downloadedCount = 0;
 
-    toast.loading(`Starting download for ${details.length} songs...`, { id: "download-all-playlist" });
+    // Concurrency limit
+    const CONCURRENCY_LIMIT = 3;
+    const totalSongs = details.length;
+
+    toast.loading(`Starting download for ${totalSongs} songs...`, { id: "download-all-playlist" });
 
     try {
-      for (let i = 0; i < details.length; i++) {
-        const song = details[i];
-        const safeName = song.name ? song.name.replace(/[^a-z0-9]/gi, '_').toLowerCase() : `track_${i + 1}`;
+      // Load FFmpeg once for the batch
+      const ffmpeg = await loadFFmpeg();
 
-        // Try highest quality first, then fallback
-        const downloadUrl = song.downloadUrl?.[4]?.url || song.downloadUrl?.[2]?.url || song.downloadUrl?.[0]?.url;
+      // Chunk the details array
+      for (let i = 0; i < totalSongs; i += CONCURRENCY_LIMIT) {
+        const chunk = details.slice(i, i + CONCURRENCY_LIMIT);
 
-        if (downloadUrl) {
+        await Promise.all(chunk.map(async (song, index) => {
+          const globalIndex = i + index;
+
           try {
-            toast.loading(`Downloading ${i + 1}/${details.length}: ${song.name || "Unknown"}`, { id: "download-all-playlist" });
-            const response = await fetch(downloadUrl);
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            // Clean name
+            let cleanName = removeSourceAttribution(song.name || "");
+            cleanName = cleanName.replace(/[<>:"/\\|?*]/g, "").trim();
+            if (!cleanName) cleanName = `track_${globalIndex + 1}`;
 
-            const blob = await response.blob();
-            folder.file(`${safeName}.mp3`, blob);
-            downloadedCount++;
+            // Add track number prefix
+            const trackNumber = (globalIndex + 1).toString().padStart(2, '0');
+            const fileName = `${trackNumber} ${cleanName}.m4a`;
+
+            // Get the highest quality image for cover art
+            const coverUrl = song.image?.[2]?.url || song.image?.[1]?.url || song.image?.[0]?.url;
+
+            // Process song using FFmpeg
+            // Fetching is parallel, processing is serialized via Mutex
+            const blob = await processSong(song, coverUrl, ffmpeg);
+
+            if (blob) {
+              folder.file(fileName, blob);
+              downloadedCount++;
+              toast.loading(`Processed ${downloadedCount}/${totalSongs} songs...`, { id: "download-all-playlist" });
+            }
           } catch (err) {
             console.error(`Failed to download ${song.name}`, err);
           }
-        }
+        }));
       }
 
       if (downloadedCount === 0) {
-        toast.error("Failed to download any songs. Check your connection.", { id: "download-all-playlist" });
+        toast.error("Failed to download any songs. Check your connection or try again.", { id: "download-all-playlist" });
       } else {
         toast.loading("Zipping files...", { id: "download-all-playlist" });
         const content = await zip.generateAsync({ type: "blob" });
@@ -692,7 +713,7 @@ const PlaylistDetails = () => {
                     {removeSourceAttribution(d.name)}
                   </h3>
                   <h4 className="text-xs sm:text-[2.5vw] text-white opacity-60 ">
-                    {d.album.name}
+                    {removeSourceAttribution(d.album.name)}
                   </h4>
                 </div>
               </div>

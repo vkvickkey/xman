@@ -2,7 +2,10 @@ import React, { useState, useEffect } from "react";
 import { useMusic } from "../context/MusicContext";
 import { IconPlay, IconPause, IconNext, IconPrev, IconVolume, IconShuffle, IconRepeat, IconHeart, IconList } from "./Icons";
 import { motion, AnimatePresence } from "framer-motion";
+import { processSong } from "../utils/audioProcessor";
+import { saveAs } from "file-saver";
 import { removeSourceAttribution } from "../utils/stringUtils";
+import toast from "react-hot-toast";
 
 const PlayerBar = () => {
     const { currentSong, isPlaying, togglePlay, volume, setVolume, progress, duration, seek } = useMusic();
@@ -16,6 +19,27 @@ const PlayerBar = () => {
         const minutes = Math.floor(time / 60);
         const seconds = Math.floor(time % 60);
         return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
+    };
+
+    const handleDownload = async () => {
+        if (!currentSong) return;
+
+        const toastId = toast.loading("Downloading...");
+        try {
+            const coverUrl = currentSong?.image?.[2]?.url || currentSong?.image?.[0]?.url;
+            const blob = await processSong(currentSong, coverUrl);
+
+            if (blob) {
+                const cleanName = removeSourceAttribution(currentSong?.name || "song").trim();
+                saveAs(blob, `${cleanName}.m4a`);
+                toast.success("Downloaded!", { id: toastId });
+            } else {
+                toast.error("Failed to process song.", { id: toastId });
+            }
+        } catch (error) {
+            console.error("Download failed:", error);
+            toast.error("Download failed.", { id: toastId });
+        }
     };
 
     return (
@@ -60,6 +84,19 @@ const PlayerBar = () => {
 
                         {/* Controls (Mini) */}
                         <div className="flex items-center gap-3 mr-2" onClick={(e) => e.stopPropagation()}>
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDownload();
+                                }}
+                                className="text-white/60 hover:text-white transition-colors"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="7 10 12 15 17 10"></polyline>
+                                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                                </svg>
+                            </button>
                             <button
                                 onClick={() => setIsLiked(!isLiked)}
                                 className={`transition-transform active:scale-90 ${isLiked ? 'text-purple-500' : 'text-white/60'}`}
@@ -139,12 +176,25 @@ const PlayerBar = () => {
                                     {currentSong?.primaryArtists || currentSong?.artist}
                                 </motion.p>
                             </div>
-                            <button
-                                onClick={() => setIsLiked(!isLiked)}
-                                className={`p-2 transition-transform active:scale-90 ${isLiked ? 'text-purple-500 drop-shadow-[0_0_8px_rgba(168,85,247,0.5)]' : 'text-white/40'}`}
-                            >
-                                <IconHeart className="w-8 h-8" filled={isLiked} />
-                            </button>
+                            <div className="flex items-center gap-4">
+                                <button
+                                    onClick={handleDownload}
+                                    className="p-2 text-white/40 hover:text-white transition-colors"
+                                    title="Download Song"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                        <polyline points="7 10 12 15 17 10"></polyline>
+                                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                                    </svg>
+                                </button>
+                                <button
+                                    onClick={() => setIsLiked(!isLiked)}
+                                    className={`p-2 transition-transform active:scale-90 ${isLiked ? 'text-purple-500 drop-shadow-[0_0_8px_rgba(168,85,247,0.5)]' : 'text-white/40'}`}
+                                >
+                                    <IconHeart className="w-8 h-8" filled={isLiked} />
+                                </button>
+                            </div>
                         </div>
 
                         {/* Scrub Bar */}

@@ -2,8 +2,8 @@ import axios from "axios";
 import React, { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import Loading from "./Loading";
-import wavs from "../../public/wavs.gif";
-import empty from "../../public/empty3.gif";
+const wavs = "/wavs.gif";
+const empty = "/empty3.gif";
 import {
   animate,
   circIn,
@@ -680,7 +680,7 @@ function Likes() {
         <div className="flex items-center gap-3">
           <i
             onClick={() => navigate("/")}
-            className="ml-2 cursor-pointer text-5xl bg-green-500 rounded-l-lg rounded-br-lg ri-arrow-left-line"
+            className="ml-2 cursor-pointer text-5xl bg-green-500 rounded-l-lg rounded-br-lg  ri-arrow-left-line"
           ></i>
           <h1 className="text-xl text-zinc-300 sm:text-xs font-black">
             MAX-VIBE
@@ -824,7 +824,7 @@ function Likes() {
                 />
 
                 <h3 className=" sm:w-[30%] text-white text-xs font-semibold">
-                  {e?.name}
+                  {removeSourceAttribution(e?.name)}
                 </h3>
                 {/* <i
                   onClick={() =>

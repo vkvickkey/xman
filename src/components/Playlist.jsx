@@ -1,4 +1,5 @@
 import axios from "axios";
+import { removeSourceAttribution } from "../utils/stringUtils";
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -11,6 +12,8 @@ import {
   easeOut,
   motion,
 } from "framer-motion";
+import JSZip from "jszip";
+import { saveAs } from "file-saver";
 import { useAnimate, stagger } from "framer-motion";
 import { Bounce, Expo, Power4, Sine } from "gsap/all";
 import { Circ } from "gsap/all";
@@ -34,12 +37,74 @@ const Playlist = () => {
       );
 
       // setplaylist(data?.data?.results);
-      setplaylist((prevState) => [...prevState, ...data?.data?.results]);
-      // localStorage.setItem("playlist", JSON.stringify(data?.data?.results));
-      localStorage.setItem("playlist", JSON.stringify(playlist));
-      // setplaylist(data);
+      setplaylist((prevState) => {
+        const newData = data?.data?.results || [];
+        const uniqueNewData = newData.filter(
+          (newItem) => !prevState.some((prevItem) => prevItem.id === newItem.id)
+        );
+        return [...prevState, ...uniqueNewData];
+      });
+      // localStorage.setItem("playlist", JSON.stringify(playlist)); // Removed to avoid saving stale state
     } catch (error) {
       console.log("error", error);
+    }
+  };
+
+  const handleDownloadPlaylist = async (id, name, imageUrl) => {
+    try {
+      toast.loading(`Fetching songs for ${name}...`, { id: "download-playlist" });
+      const { data } = await axios.get(
+        `https://jiosavan-api-with-playlist.vercel.app/api/playlists?id=${id}&limit=100`
+      );
+      const songs = data.data.songs;
+
+      if (!songs || songs.length === 0) {
+        toast.error("No songs found to download.", { id: "download-playlist" });
+        return;
+      }
+
+      const zip = new JSZip();
+      const folder = zip.folder(name.replace(/[^a-z0-9]/gi, '_'));
+
+      let downloadedCount = 0;
+      toast.loading(`Initializing FFmpeg...`, { id: "download-playlist" });
+
+      // Load FFmpeg once
+      const { loadFFmpeg, processSong } = await import("../utils/audioProcessor");
+      const ffmpeg = await loadFFmpeg();
+
+      toast.loading(`Processing ${songs.length} songs (This may take a while)...`, { id: "download-playlist" });
+
+      for (let i = 0; i < songs.length; i++) {
+        const song = songs[i];
+        const safeName = song.name ? song.name.replace(/[^a-z0-9]/gi, '_').toLowerCase() : `track_${i + 1}`;
+
+        try {
+          toast.loading(`Processing ${i + 1}/${songs.length}: ${song.name}`, { id: "download-playlist" });
+
+          // Use the playlist image if song image is missing/low quality, or specific logic
+          const coverUrl = song.image?.[2]?.url || imageUrl;
+
+          const audioBlob = await processSong(song, coverUrl, ffmpeg);
+          folder.file(`${safeName}.m4a`, audioBlob);
+          downloadedCount++;
+        } catch (err) {
+          console.error(`Failed to download/process ${song.name}`, err);
+          // Optional: Add a dummy file or log
+        }
+      }
+
+      if (downloadedCount === 0) {
+        toast.error("Failed to download any songs.", { id: "download-playlist" });
+      } else {
+        toast.loading("Zipping files...", { id: "download-playlist" });
+        const content = await zip.generateAsync({ type: "blob" });
+        saveAs(content, `${name}.zip`);
+        toast.success(`Downloaded ${downloadedCount} songs from ${name}!`, { id: "download-playlist" });
+      }
+    } catch (error) {
+      console.error("Error downloading playlist:", error);
+      toast.error("Failed to download playlist.", { id: "download-playlist" });
     }
   };
 
@@ -112,12 +177,12 @@ const Playlist = () => {
       className="w-full h-[100vh] bg-black"
     >
       <Toaster position="top-center" reverseOrder={false} />
-      <motion.div className="w-full h-[10vh] ">
+      <motion.div className="w-full h-full relative">
         <motion.div
           initial={{ y: -50, scale: 0 }}
           animate={{ y: 0, scale: 1 }}
           transition={{ ease: Circ.easeIn, duration: 0.7, delay: 1 }}
-          className="search fixed z-[99] bg-black/80 backdrop-blur-xl gap-3 w-full sm:w-full h-[15vh] flex items-center justify-center px-3 border-b border-white/5"
+          className="search absolute top-0 z-[99] bg-black/80 backdrop-blur-xl gap-3 w-full sm:w-full h-[15vh] flex items-center justify-center px-3 border-b border-white/5"
         >
           <i
             onClick={() => navigate(-1)}
@@ -143,7 +208,7 @@ const Playlist = () => {
             Search<i className="ri-search-2-line"></i>
           </h5>
         </motion.div>
-        <motion.div className="w-full overflow-hidden overflow-y-auto h-[85vh]  sm:min-h-[85vh] flex flex-wrap p-5  gap-5  justify-center   bg-black">
+        <motion.div className="w-full overflow-hidden overflow-y-auto h-screen pt-[15vh] flex flex-wrap p-5 gap-5 justify-center bg-black">
           {playlist?.map((e, i) => (
             <motion.div
               initial={{ scale: 0 }}
@@ -158,7 +223,17 @@ const Playlist = () => {
                 src={e?.image[2]?.url}
                 alt=""
               />
-              <h3 className="text-white">{e.name}</h3>
+              <div className="flex justify-between items-center px-1">
+                <h3 className="text-white truncate w-4/5">{removeSourceAttribution(e.name)}</h3>
+                <i
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    handleDownloadPlaylist(e.id, e.name, e?.image[2]?.url);
+                  }}
+                  className="ri-download-cloud-2-line text-white/70 hover:text-white text-xl p-2 bg-white/10 rounded-full hover:bg-purple-600 transition-all duration-300 z-10"
+                  title="Download Playlist"
+                ></i>
+              </div>
             </motion.div>
           ))}
         </motion.div>

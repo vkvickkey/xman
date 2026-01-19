@@ -95,7 +95,7 @@ const Artists = () => {
           initial={{ y: -50, scale: 0 }}
           animate={{ y: 0, scale: 1 }}
           transition={{ ease: Circ.easeIn, duration: 0.7, delay: 1 }}
-          className="search fixed z-[99] bg-black/80 backdrop-blur-xl gap-3 w-full sm:w-full h-[15vh] flex items-center justify-center px-3 border-b border-white/5">
+          className="search absolute top-0 z-[99] bg-black/80 backdrop-blur-xl gap-3 w-full sm:w-full h-[15vh] flex items-center justify-center px-3 border-b border-white/5">
           <i
             onClick={() => navigate(-1)}
             className="ml-2 cursor-pointer text-4xl p-2 bg-white/5 backdrop-blur-2xl border border-white/10 rounded-full shadow-purple-glow hover:bg-purple-gradient text-white transition-all duration-300 ease-out ri-arrow-left-line"
@@ -119,7 +119,7 @@ const Artists = () => {
             className="ri-search-2-line"></i></h3>
         </motion.div>
         <motion.div
-          className="w-full overflow-hidden overflow-y-auto h-[85vh] sm:min-h-[85vh] flex flex-wrap px-5 gap-5 sm:gap-5 justify-center bg-black text-white">
+          className="w-full overflow-hidden overflow-y-auto h-screen pt-[15vh] sm:min-h-[85vh] flex flex-wrap px-5 gap-5 sm:gap-5 justify-center bg-black text-white">
           {artists?.map((e, i) => (
             <motion.div
               initial={{ scale: 0 }}

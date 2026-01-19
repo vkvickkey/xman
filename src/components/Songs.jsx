@@ -1,7 +1,7 @@
 import axios from "axios";
 import React, { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import wavs from "../../public/wavs.gif";
+const wavs = "/wavs.gif";
 import {
   animate,
   circIn,
@@ -69,21 +69,28 @@ const Songs = () => {
       );
       // setsearch((prevState) => [...prevState, ...data.data.results]);
       if (hasMore) {
-        const newData = data.data.results.filter(
-          (newItem) => !search.some((prevItem) => prevItem.id === newItem.id)
-        );
-        setsearch((prevState) => [...prevState, ...newData]);
-        sethasMore(newData.length > 0);
-        setpage(page + 1);
+        setsearch((prevSearch) => {
+          const newData = data.data.results.filter(
+            (newItem) => !prevSearch.some((prevItem) => prevItem.id === newItem.id)
+          );
+          return [...prevSearch, ...newData];
+        });
+        sethasMore(data.data.results.length > 0);
+        setpage((prev) => prev + 1);
       } else {
-        const newData = data.data.results.filter(
-          (newItem) => !search.some((prevItem) => prevItem.id === newItem.id)
-        );
-        if (newData.length > 0) {
-          setsearch((prevState) => [...prevState, ...newData]);
-          // setpage(page + 1);
-          // sethasMore(true);
-        } else {
+        const uniqueNewDataCount = data.data.results.length; // Approximate check for toast logic
+
+        setsearch((prevSearch) => {
+          const newData = data.data.results.filter(
+            (newItem) => !prevSearch.some((prevItem) => prevItem.id === newItem.id)
+          );
+          return [...prevSearch, ...newData];
+        });
+
+        // Optimistic toast logic - if we got 0 results from API, or if we filter and find 0 (heuristically)
+        // Since we can't see the result of the setsearch filter here, we rely on the API returning something.
+        // If API returns 0, we definitely didn't add anything.
+        if (data.data.results.length === 0) {
           toast(
             `NO MORE NEW SONGS FOUND IN PAGE ${page} , CLICK ON (LOAD MORE) AGAIN TO CHECK NEXT PAGE `,
             {
@@ -798,7 +805,7 @@ const Songs = () => {
         initial={{ y: -50, scale: 0 }}
         animate={{ y: 0, scale: 1 }}
         transition={{ ease: Circ.easeIn, duration: 0.7, delay: 0.7 }}
-        className="search fixed z-[99] bg-black/80 backdrop-blur-xl gap-3 w-full sm:w-full h-[15vh] flex items-center justify-center px-3 border-b border-white/5"
+        className="search absolute top-0 z-[99] bg-black/80 backdrop-blur-xl gap-3 w-full sm:w-full h-[15vh] flex items-center justify-center px-3 border-b border-white/5"
       >
         <i
           onClick={() => navigate(-1)}
@@ -887,7 +894,7 @@ const Songs = () => {
         endMessage={<p className="bg-black text-white">No more items</p>}
       // endMessage={()=>nomoredata()}
       >
-        <div className="flex w-full pt-[20vh] sm:pt-[10vh] pb-[25vh] sm:pb-[35vh] text-white p-10 sm:p-3 sm:gap-3 bg-black min-h-[65vh] overflow-y-auto  sm:block flex-wrap gap-5 justify-center ">
+        <div className="flex w-full h-screen overflow-y-auto pt-[15vh] pb-[25vh] sm:pb-[35vh] text-white p-10 sm:p-3 sm:gap-3 bg-black sm:block flex-wrap gap-5 justify-center ">
           {search?.map((d, i) => (
             <div
               title="click on song image or name to play the song"
@@ -1031,7 +1038,7 @@ const Songs = () => {
                 alt=""
               />
               <h3 className=" sm:w-[30%] text-white text-xs font-semibold">
-                {e?.name}
+                {removeSourceAttribution(e?.name)}
               </h3>
               {/* <i
                 // onClick={() =>
