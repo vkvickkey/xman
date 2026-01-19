@@ -51,6 +51,9 @@ const Home = () => {
   const [moodDetails, setMoodDetails] = useState([]);
   const [songlink3, setsonglink3] = useState([]);
   var [index3, setindex3] = useState("");
+  const [freshHits, setFreshHits] = useState([]);
+  const [topGenres, setTopGenres] = useState([]);
+  const [bestOf90s, setBestOf90s] = useState([]);
 
   // Refs for horizontal scrolling
   const detailsRef = useRef(null);
@@ -58,6 +61,9 @@ const Home = () => {
   const chartsRef = useRef(null);
   const playlistsRef = useRef(null);
   const albumsRef = useRef(null);
+  const freshHitsRef = useRef(null);
+  const topGenresRef = useRef(null);
+  const bestOf90sRef = useRef(null);
 
   // Initialize scroll hooks
   useHorizontalScroll(detailsRef);
@@ -65,6 +71,9 @@ const Home = () => {
   useHorizontalScroll(chartsRef);
   useHorizontalScroll(playlistsRef);
   useHorizontalScroll(albumsRef);
+  useHorizontalScroll(freshHitsRef);
+  useHorizontalScroll(topGenresRef);
+  useHorizontalScroll(bestOf90sRef);
   const moodRef = useRef(null);
   useHorizontalScroll(moodRef);
 
@@ -126,6 +135,42 @@ const Home = () => {
       sethome(data.data);
     } catch (error) {
       console.log("error", error);
+    }
+  };
+
+  const GetTopGenres = async () => {
+    try {
+      const query = `Top Genres & Moods ${language}`; // Or just "Moods {language}" depending on results
+      const { data } = await axios.get(
+        `https://jiosavan-api-with-playlist.vercel.app/api/search/playlists?query=${encodeURIComponent(query)}&limit=20`
+      );
+      setTopGenres(data.data.results);
+    } catch (error) {
+      console.error("Error fetching Top Genres:", error);
+    }
+  };
+
+  const GetBestOf90s = async () => {
+    try {
+      const query = `Best of 90s ${language}`;
+      const { data } = await axios.get(
+        `https://jiosavan-api-with-playlist.vercel.app/api/search/playlists?query=${encodeURIComponent(query)}&limit=20`
+      );
+      setBestOf90s(data.data.results);
+    } catch (error) {
+      console.error("Error fetching Best of 90s:", error);
+    }
+  };
+
+  const GetFreshHits = async () => {
+    try {
+      const query = `Fresh Hits ${language}`;
+      const { data } = await axios.get(
+        `https://jiosavan-api-with-playlist.vercel.app/api/search/playlists?query=${encodeURIComponent(query)}&limit=20`
+      );
+      setFreshHits(data.data.results);
+    } catch (error) {
+      console.error("Error fetching fresh hits:", error);
     }
   };
   const Getdetails = async (overridePage) => {
@@ -836,6 +881,9 @@ const Home = () => {
 
   useEffect(() => {
     Gethome();
+    GetFreshHits();
+    GetTopGenres();
+    GetBestOf90s();
   }, [language]);
 
   useEffect(() => {
@@ -1084,74 +1132,6 @@ const Home = () => {
             />
           </motion.div>
         </div>
-
-
-        {/* <div className="trending songs flex flex-col gap-3 w-full ">
-          <div className="relative w-full py-3 px-6 mb-2 flex items-center justify-between rounded-3xl bg-white/5 backdrop-blur-2xl border-t border-l border-r border-white/10 border-b-0 shadow-xl overflow-hidden shrink-0 group">
-            <div className="absolute bottom-0 left-0 w-full h-[2px] bg-gradient-to-r from-[#8A2BE2] via-[#BF40FF] to-[#8A2BE2] blur-[1px] shadow-[0_0_20px_rgba(191,64,255,0.6)]"></div>
-            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-black/20 border border-white/5 backdrop-blur-md shadow-[inset_0_1px_4px_rgba(255,255,255,0.1)] cursor-pointer hover:bg-white/10 hover:scale-105 transition-all duration-300">
-              <i className="ri-emotion-fill text-white text-xl"></i>
-            </div>
-            <div className="flex flex-col items-center">
-              <h3 className="text-2xl font-bold text-white/90 tracking-wide capitalize drop-shadow-lg font-sans">
-                {mood} Songs
-              </h3>
-              <Dropdown
-                className=" text-sm mt-1 border-none rounded-xl"
-                controlClassName="bg-transparent border-none text-white/50 text-xs"
-                menuClassName="bg-black/90 text-white border border-white/10"
-                options={moodOptions}
-                onChange={(e) => {
-                  setmood(e.value);
-                }}
-                placeholder="Select Mood"
-              />
-            </div>
-            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-black/20 border border-white/5 backdrop-blur-md shadow-[inset_0_1px_4px_rgba(255,255,255,0.1)] cursor-pointer hover:bg-white/10 hover:scale-105 transition-all duration-300">
-              <i className="ri-music-fill text-white text-xl"></i>
-            </div>
-          </div>
-          <motion.div ref={moodRef} className="songs custom-scrollbar px-5 sm:px-3 flex flex-shrink gap-5 overflow-x-auto w-full pb-4">
-            {moodDetails?.map((t, i) => (
-              <motion.div
-                initial={{ y: -100, scale: 0.5 }}
-                whileInView={{ y: 0, scale: 1 }}
-                transition={{ ease: Circ.easeIn, duration: 0.05 }}
-                onClick={() => audioseter3(i)}
-                key={i}
-                className="relative hover:scale-90 sm:hover:scale-100 duration-150 flex-shrink-0 w-[15%] sm:w-[40%] rounded-md flex flex-col gap-1 py-4 cursor-pointer"
-              >
-                <motion.img
-                  className="relative w-full rounded-md"
-                  src={t.image[2].url}
-                  alt=""
-                />
-                <div className="flex items-center">
-                  <p className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-p-violet to-p-magenta">{i + 1}</p>
-                </div>
-
-                <img
-                  className={`absolute top-4 w-[20%] sm:w-[25%] rounded-md ${i === index3 ? "block" : "hidden"} `}
-                  src={wavs}
-                  alt=""
-                />
-                {songlink3.length > 0 && (
-                  <i className={`absolute top-20 sm:top-16 w-full flex items-center justify-center text-5xl text-p-magenta drop-shadow-[0_0_15px_rgba(191,64,255,0.8)] opacity-90 duration-300 rounded-md ${t.id === songlink3[0]?.id ? "block" : "hidden"} ${audiocheck ? "ri-pause-circle-fill" : "ri-play-circle-fill"}`}></i>
-                )}
-
-                <motion.div className="flex flex-col">
-                  <h3 className={`text-sm sm:text-xs leading-none font-bold ${i === index3 ? "text-p-magenta shadow-purple-glow" : "text-white"}`}>
-                    {removeSourceAttribution(t.name)}
-                  </h3>
-                  <h4 className="text-xs sm:text-[2.5vw] text-white/60 ">
-                    {t.album.name}
-                  </h4>
-                </motion.div>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div> */}
-
         {suggSong.length > 0 && (
           <div className="trending songs flex flex-col gap-3 w-full ">
             <div className="relative w-full py-3 px-6 mb-2 flex items-center justify-between rounded-3xl bg-white/5 backdrop-blur-2xl border-t border-l border-r border-white/10 border-b-0 shadow-xl overflow-hidden shrink-0 group">
@@ -1400,6 +1380,80 @@ const Home = () => {
             ))}
           </div>
         </div>
+        {freshHits.length > 0 && (
+          <div className="fresh-hits w-full flex flex-col gap-3 ">
+            <div className="relative w-full py-3 px-6 mb-2 flex items-center justify-between rounded-3xl bg-white/5 backdrop-blur-2xl border-t border-l border-r border-white/10 border-b-0 shadow-xl overflow-hidden shrink-0 group">
+              <div className="absolute bottom-0 left-0 w-full h-[2px] bg-gradient-to-r from-[#8A2BE2] via-[#BF40FF] to-[#8A2BE2] blur-[1px] shadow-[0_0_20px_rgba(191,64,255,0.6)]"></div>
+              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-black/20 border border-white/5 backdrop-blur-md shadow-[inset_0_1px_4px_rgba(255,255,255,0.1)] cursor-pointer hover:bg-white/10 hover:scale-105 transition-all duration-300">
+                <i className="ri-music-fill text-white text-xl"></i>
+              </div>
+              <h3 className="text-2xl font-bold text-white/90 tracking-wide capitalize drop-shadow-lg font-sans">
+                Fresh Hits
+              </h3>
+              <div onClick={GetFreshHits} className="flex items-center justify-center w-10 h-10 rounded-full bg-black/20 border border-white/5 backdrop-blur-md shadow-[inset_0_1px_4px_rgba(255,255,255,0.1)] cursor-pointer hover:bg-white/10 hover:scale-105 transition-all duration-300">
+                <i className="ri-refresh-line text-white text-xl"></i>
+              </div>
+            </div>
+            <div ref={freshHitsRef} className="freshhitsdata custom-scrollbar px-5 sm:px-3 flex flex-shrink gap-5 overflow-x-auto w-full pb-4">
+              {freshHits?.map((f, i) => (
+                <motion.div
+                  initial={{ y: -100, scale: 0.5 }}
+                  whileInView={{ y: 0, scale: 1 }}
+                  transition={{ ease: Circ.easeIn, duration: 0.05 }}
+                  onClick={() => navigate(`/playlist/details/${f.id}`)}
+                  key={i}
+                  className="hover:scale-110 sm:hover:scale-100 duration-150 flex-shrink-0 w-[15%] sm:w-[40%] rounded-md flex flex-col gap-2 py-4 cursor-pointer"
+                >
+                  <img
+                    className="w-full rounded-md"
+                    src={f.image?.[2]?.link || f.image?.[2]?.url || f.image?.[0]?.link || f.image?.[0]?.url}
+                    alt=""
+                  />
+                  <motion.h3 className="leading-none">
+                    {removeSourceAttribution(f.name)}
+                  </motion.h3>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        )}
+        {bestOf90s.length > 0 && (
+          <div className="best-of-90s w-full flex flex-col gap-3 ">
+            <div className="relative w-full py-3 px-6 mb-2 flex items-center justify-between rounded-3xl bg-white/5 backdrop-blur-2xl border-t border-l border-r border-white/10 border-b-0 shadow-xl overflow-hidden shrink-0 group">
+              <div className="absolute bottom-0 left-0 w-full h-[2px] bg-gradient-to-r from-[#8A2BE2] via-[#BF40FF] to-[#8A2BE2] blur-[1px] shadow-[0_0_20px_rgba(191,64,255,0.6)]"></div>
+              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-black/20 border border-white/5 backdrop-blur-md shadow-[inset_0_1px_4px_rgba(255,255,255,0.1)] cursor-pointer hover:bg-white/10 hover:scale-105 transition-all duration-300">
+                <i className="ri-music-fill text-white text-xl"></i>
+              </div>
+              <h3 className="text-2xl font-bold text-white/90 tracking-wide capitalize drop-shadow-lg font-sans">
+                Best Of 90s
+              </h3>
+              <div onClick={GetBestOf90s} className="flex items-center justify-center w-10 h-10 rounded-full bg-black/20 border border-white/5 backdrop-blur-md shadow-[inset_0_1px_4px_rgba(255,255,255,0.1)] cursor-pointer hover:bg-white/10 hover:scale-105 transition-all duration-300">
+                <i className="ri-refresh-line text-white text-xl"></i>
+              </div>
+            </div>
+            <div ref={bestOf90sRef} className="bestof90sdata custom-scrollbar px-5 sm:px-3 flex flex-shrink gap-5 overflow-x-auto w-full pb-4">
+              {bestOf90s?.map((f, i) => (
+                <motion.div
+                  initial={{ y: -100, scale: 0.5 }}
+                  whileInView={{ y: 0, scale: 1 }}
+                  transition={{ ease: Circ.easeIn, duration: 0.05 }}
+                  onClick={() => navigate(`/playlist/details/${f.id}`)}
+                  key={i}
+                  className="hover:scale-110 sm:hover:scale-100 duration-150 flex-shrink-0 w-[15%] sm:w-[40%] rounded-md flex flex-col gap-2 py-4 cursor-pointer"
+                >
+                  <img
+                    className="w-full rounded-md"
+                    src={f.image?.[2]?.link || f.image?.[2]?.url || f.image?.[0]?.link || f.image?.[0]?.url}
+                    alt=""
+                  />
+                  <motion.h3 className="leading-none">
+                    {removeSourceAttribution(f.name)}
+                  </motion.h3>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        )}
         <div>
           <p className="font-semibold text-white/50 sm:text-sm">
             <b></b>
