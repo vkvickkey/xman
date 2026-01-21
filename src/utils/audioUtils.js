@@ -3,8 +3,14 @@ import { FFmpeg } from "@ffmpeg/ffmpeg";
 import { fetchFile } from "@ffmpeg/util";
 import { toBlobURL } from "@ffmpeg/util";
 
-// Function to create and initialize a new FFmpeg instance
-const createFFmpegInstance = async () => {
+// Singleton FFmpeg instance and lock
+let ffmpegInstance = null;
+let isProcessing = false;
+
+// Function to get or create the FFmpeg instance
+const getFFmpegInstance = async () => {
+  if (ffmpegInstance) return ffmpegInstance;
+
   const ffmpeg = new FFmpeg({ log: true });
   const coreURL = "/ffmpeg/ffmpeg-core.js";
   const wasmURL = "/ffmpeg/ffmpeg-core.wasm";
@@ -14,6 +20,7 @@ const createFFmpegInstance = async () => {
     wasmURL: await toBlobURL(wasmURL, "application/wasm"),
   });
 
+  ffmpegInstance = ffmpeg;
   return ffmpeg;
 };
 
@@ -26,12 +33,18 @@ const handleGenerateAudio = async ({
   album,
   artist,
 }) => {
+  if (isProcessing) {
+    toast.error("Please wait for the current download to finish.");
+    return;
+  }
+
+  isProcessing = true;
+
   await toast.promise(
     (async () => {
-      let ffmpeg = null;
       try {
-        // Create a new isolated FFmpeg instance
-        ffmpeg = await createFFmpegInstance();
+        // Get the singleton FFmpeg instance
+        const ffmpeg = await getFFmpegInstance();
 
         // Fetch the audio and image files
         const [audioBuffer, imageBuffer] = await Promise.all([
@@ -39,7 +52,7 @@ const handleGenerateAudio = async ({
           fetchFile(imageUrl),
         ]);
 
-        // Write files to the isolated FFmpeg's virtual file system
+        // Write files to the FFmpeg's virtual file system
         await ffmpeg.writeFile("input.mp3", audioBuffer);
         await ffmpeg.writeFile("cover.jpg", imageBuffer);
 
@@ -55,10 +68,10 @@ const handleGenerateAudio = async ({
           "-metadata", `date=${year}`,
           "-c:a", "aac", // Use AAC codec for M4A
           "-b:a", "320k", // Set bitrate to 320kbps
+          "-ar", "48000", // Set sample rate to 48kHz
           "-movflags", "+faststart", // Optimize for streaming
           "output.m4a", // Change output file extension to .m4a
         ]);
-        
 
         // Read and download the output file
         const output = await ffmpeg.readFile("output.m4a");
@@ -66,7 +79,7 @@ const handleGenerateAudio = async ({
           throw new Error("FFmpeg failed to generate a valid output file.");
         }
 
-        const blob = new Blob([output.buffer], { type: "audio/mpeg" });
+        const blob = new Blob([output.buffer], { type: "audio/mp4" });
         const url = URL.createObjectURL(blob);
 
         // Trigger file download
@@ -76,14 +89,23 @@ const handleGenerateAudio = async ({
         document.body.appendChild(link);
         link.click();
         link.remove();
+
+        // Cleanup files to prevent memory leaks in the persistent instance
+        await ffmpeg.deleteFile("input.mp3");
+        await ffmpeg.deleteFile("cover.jpg");
+        await ffmpeg.deleteFile("output.m4a");
+
+      } catch (error) {
+        console.error("FFmpeg error:", error);
+        throw error;
       } finally {
-        // Clean up FFmpeg instance to free resources
-        if (ffmpeg) ffmpeg.terminate();
+        isProcessing = false;
+        // Do NOT terminate the instance
       }
     })(),
     {
-      loading: `Generating audio file...(${songName})`,
-      success: `(${songName}) has been generated successfully!`,
+      loading: `Generating high-quality audio...(${songName})`,
+      success: `(${songName}) downloaded successfully!`,
       error: "Error generating audio file.",
     }
   );

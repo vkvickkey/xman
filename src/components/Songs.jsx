@@ -956,19 +956,38 @@ const Songs = () => {
                 </div>
               </div>
 
-              {existingData?.find((element) => element?.id == d?.id) ? (
+              <div className="flex flex-col items-center gap-3">
+                {existingData?.find((element) => element?.id == d?.id) ? (
+                  <i
+                    title="Unlike"
+                    onClick={() => likehandle2(d)}
+                    className={` text-xl m-auto flex w-[3vw] sm:w-[9vw] rounded-full justify-center items-center h-[3vw] sm:h-[9vw]   duration-300 cursor-pointer text-red-500  ri-heart-3-fill`}
+                  ></i>
+                ) : (
+                  <i
+                    title="Like"
+                    onClick={() => likehandle2(d)}
+                    className={` text-xl m-auto flex w-[3vw] sm:w-[9vw] rounded-full justify-center items-center h-[3vw] sm:h-[9vw]   duration-300 cursor-pointer text-white/40  ri-heart-3-fill`}
+                  ></i>
+                )}
+
                 <i
-                  title="Unlike"
-                  onClick={() => likehandle2(d)}
-                  className={` text-xl m-auto flex w-[3vw] sm:w-[9vw] rounded-full justify-center items-center h-[3vw] sm:h-[9vw]   duration-300 cursor-pointer text-red-500  ri-heart-3-fill`}
+                  title="Download"
+                  onClick={() =>
+                    handleGenerateAudio({
+                      audioUrl: d?.downloadUrl[4].url,
+                      imageUrl: d?.image[2]?.url,
+                      songName: d?.name,
+                      year: d?.year,
+                      album: d?.album.name,
+                      artist: d?.artists.primary
+                        .map((artist) => artist.name)
+                        .join(","),
+                    })
+                  }
+                  className={` text-xl m-auto flex w-[3vw] sm:w-[9vw] rounded-full justify-center items-center h-[3vw] sm:h-[9vw]   duration-300 cursor-pointer text-white/40 hover:text-white ri-download-2-fill`}
                 ></i>
-              ) : (
-                <i
-                  title="Like"
-                  onClick={() => likehandle2(d)}
-                  className={` text-xl m-auto flex w-[3vw] sm:w-[9vw] rounded-full justify-center items-center h-[3vw] sm:h-[9vw]   duration-300 cursor-pointer text-white/40  ri-heart-3-fill`}
-                ></i>
-              )}
+              </div>
 
               {/* <i
                 onClick={() => likehandle(d)}

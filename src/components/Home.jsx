@@ -30,6 +30,61 @@ import useHorizontalScroll from "../utils/useHorizontalScroll";
 
 
 
+
+// Component for individual Fresh Hits Row to handle its own scroll ref
+const FreshHitRow = ({ language, data, navigate, onRefresh }) => {
+  const scrollRef = useRef(null);
+  useHorizontalScroll(scrollRef);
+
+  if (!data || data.length === 0) return null;
+
+  const languageDisplayMap = {
+    Tamil: "தமிழ்",
+    Hindi: "हिंदी",
+    English: "English",
+    Telugu: "తెలుగు",
+    Malayalam: "മലയാളം",
+  };
+
+  return (
+    <div className="fresh-hits w-full flex flex-col gap-3 ">
+      <div className="relative w-full py-3 px-6 mb-2 flex items-center justify-between rounded-3xl bg-white/5 backdrop-blur-2xl border-t border-l border-r border-white/10 border-b-0 shadow-xl overflow-hidden shrink-0 group">
+        <div className="absolute bottom-0 left-0 w-full h-[2px] bg-gradient-to-r from-[#8A2BE2] via-[#BF40FF] to-[#8A2BE2] blur-[1px] shadow-[0_0_20px_rgba(191,64,255,0.6)]"></div>
+        <div className="flex items-center justify-center w-10 h-10 rounded-full bg-black/20 border border-white/5 backdrop-blur-md shadow-[inset_0_1px_4px_rgba(255,255,255,0.1)] cursor-pointer hover:bg-white/10 hover:scale-105 transition-all duration-300">
+          <i className="ri-music-fill text-white text-xl"></i>
+        </div>
+        <h3 className="text-2xl font-bold text-white/90 tracking-wide capitalize drop-shadow-lg font-sans">
+          Fresh Hits - {languageDisplayMap[language] || language}
+        </h3>
+        <div onClick={() => onRefresh(language)} className="flex items-center justify-center w-10 h-10 rounded-full bg-black/20 border border-white/5 backdrop-blur-md shadow-[inset_0_1px_4px_rgba(255,255,255,0.1)] cursor-pointer hover:bg-white/10 hover:scale-105 transition-all duration-300">
+          <i className="ri-refresh-line text-white text-xl"></i>
+        </div>
+      </div>
+      <div ref={scrollRef} className="freshhitsdata custom-scrollbar px-5 sm:px-3 flex flex-shrink gap-5 overflow-x-auto w-full pb-4">
+        {data.map((f, i) => (
+          <motion.div
+            initial={{ y: -100, scale: 0.5 }}
+            whileInView={{ y: 0, scale: 1 }}
+            transition={{ ease: Circ.easeIn, duration: 0.05 }}
+            onClick={() => navigate(`/playlist/details/${f.id}`)}
+            key={i}
+            className="hover:scale-110 sm:hover:scale-100 duration-150 flex-shrink-0 w-[15%] sm:w-[40%] rounded-md flex flex-col gap-2 py-4 cursor-pointer"
+          >
+            <img
+              className="w-full rounded-md"
+              src={f.image?.[2]?.link || f.image?.[2]?.url || f.image?.[0]?.link || f.image?.[0]?.url}
+              alt=""
+            />
+            <motion.h3 className="leading-none">
+              {removeSourceAttribution(f.name)}
+            </motion.h3>
+          </motion.div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 const Home = () => {
   let navigate = useNavigate();
   const [home, sethome] = useState(null);
@@ -51,9 +106,12 @@ const Home = () => {
   const [moodDetails, setMoodDetails] = useState([]);
   const [songlink3, setsonglink3] = useState([]);
   var [index3, setindex3] = useState("");
-  const [freshHits, setFreshHits] = useState([]);
+  // const [freshHits, setFreshHits] = useState([]); // Removed simple state
+  const [freshHitsData, setFreshHitsData] = useState({}); // New object state
   const [topGenres, setTopGenres] = useState([]);
   const [bestOf90s, setBestOf90s] = useState([]);
+
+  const freshHitsLanguages = ["Tamil", "Hindi", "English", "Telugu", "Malayalam"];
 
   // Refs for horizontal scrolling
   const detailsRef = useRef(null);
@@ -61,7 +119,7 @@ const Home = () => {
   const chartsRef = useRef(null);
   const playlistsRef = useRef(null);
   const albumsRef = useRef(null);
-  const freshHitsRef = useRef(null);
+  // const freshHitsRef = useRef(null); // Removed single ref
   const topGenresRef = useRef(null);
   const bestOf90sRef = useRef(null);
 
@@ -71,7 +129,7 @@ const Home = () => {
   useHorizontalScroll(chartsRef);
   useHorizontalScroll(playlistsRef);
   useHorizontalScroll(albumsRef);
-  useHorizontalScroll(freshHitsRef);
+  // useHorizontalScroll(freshHitsRef); // Removed single hook call
   useHorizontalScroll(topGenresRef);
   useHorizontalScroll(bestOf90sRef);
   const moodRef = useRef(null);
@@ -124,6 +182,7 @@ const Home = () => {
     "Karnatic",
     "Kuthu",
     "Folk",
+    "Kuthu",
   ];
 
   const Gethome = async () => {
@@ -162,13 +221,33 @@ const Home = () => {
     }
   };
 
-  const GetFreshHits = async () => {
+  const GetFreshHits = async (targetLang = null) => {
     try {
-      const query = `Fresh Hits ${language}`;
-      const { data } = await axios.get(
-        `https://jiosavan-api-with-playlist.vercel.app/api/search/playlists?query=${encodeURIComponent(query)}&limit=20`
-      );
-      setFreshHits(data.data.results);
+      const langsToFetch = targetLang ? [targetLang] : [language];
+
+      const promises = langsToFetch.map(async (lang) => {
+        const query = `Fresh Hits ${lang}`;
+        try {
+          const { data } = await axios.get(
+            `https://jiosavan-api-with-playlist.vercel.app/api/search/playlists?query=${encodeURIComponent(query)}&limit=20`
+          );
+          return { lang, results: data.data.results };
+        } catch (err) {
+          console.error(`Error fetching fresh hits for ${lang}:`, err);
+          return { lang, results: [] };
+        }
+      });
+
+      const results = await Promise.all(promises);
+
+      setFreshHitsData(prev => {
+        const newData = { ...prev };
+        results.forEach(({ lang, results }) => {
+          newData[lang] = results;
+        });
+        return newData;
+      });
+
     } catch (error) {
       console.error("Error fetching fresh hits:", error);
     }
@@ -798,6 +877,8 @@ const Home = () => {
 
           document.body.removeChild(link);
 
+
+
           resolve(); // Resolve the promise once the download is complete
         } catch (error) {
           console.log("Error fetching or downloading files", error);
@@ -1380,43 +1461,17 @@ const Home = () => {
             ))}
           </div>
         </div>
-        {freshHits.length > 0 && (
-          <div className="fresh-hits w-full flex flex-col gap-3 ">
-            <div className="relative w-full py-3 px-6 mb-2 flex items-center justify-between rounded-3xl bg-white/5 backdrop-blur-2xl border-t border-l border-r border-white/10 border-b-0 shadow-xl overflow-hidden shrink-0 group">
-              <div className="absolute bottom-0 left-0 w-full h-[2px] bg-gradient-to-r from-[#8A2BE2] via-[#BF40FF] to-[#8A2BE2] blur-[1px] shadow-[0_0_20px_rgba(191,64,255,0.6)]"></div>
-              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-black/20 border border-white/5 backdrop-blur-md shadow-[inset_0_1px_4px_rgba(255,255,255,0.1)] cursor-pointer hover:bg-white/10 hover:scale-105 transition-all duration-300">
-                <i className="ri-music-fill text-white text-xl"></i>
-              </div>
-              <h3 className="text-2xl font-bold text-white/90 tracking-wide capitalize drop-shadow-lg font-sans">
-                Fresh Hits
-              </h3>
-              <div onClick={GetFreshHits} className="flex items-center justify-center w-10 h-10 rounded-full bg-black/20 border border-white/5 backdrop-blur-md shadow-[inset_0_1px_4px_rgba(255,255,255,0.1)] cursor-pointer hover:bg-white/10 hover:scale-105 transition-all duration-300">
-                <i className="ri-refresh-line text-white text-xl"></i>
-              </div>
-            </div>
-            <div ref={freshHitsRef} className="freshhitsdata custom-scrollbar px-5 sm:px-3 flex flex-shrink gap-5 overflow-x-auto w-full pb-4">
-              {freshHits?.map((f, i) => (
-                <motion.div
-                  initial={{ y: -100, scale: 0.5 }}
-                  whileInView={{ y: 0, scale: 1 }}
-                  transition={{ ease: Circ.easeIn, duration: 0.05 }}
-                  onClick={() => navigate(`/playlist/details/${f.id}`)}
-                  key={i}
-                  className="hover:scale-110 sm:hover:scale-100 duration-150 flex-shrink-0 w-[15%] sm:w-[40%] rounded-md flex flex-col gap-2 py-4 cursor-pointer"
-                >
-                  <img
-                    className="w-full rounded-md"
-                    src={f.image?.[2]?.link || f.image?.[2]?.url || f.image?.[0]?.link || f.image?.[0]?.url}
-                    alt=""
-                  />
-                  <motion.h3 className="leading-none">
-                    {removeSourceAttribution(f.name)}
-                  </motion.h3>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        )}
+        {freshHitsLanguages
+          .filter((lang) => lang === language)
+          .map((lang, i) => (
+            <FreshHitRow
+              key={i}
+              language={lang}
+              data={freshHitsData[lang]}
+              navigate={navigate}
+              onRefresh={(l) => GetFreshHits(l)}
+            />
+          ))}
         {bestOf90s.length > 0 && (
           <div className="best-of-90s w-full flex flex-col gap-3 ">
             <div className="relative w-full py-3 px-6 mb-2 flex items-center justify-between rounded-3xl bg-white/5 backdrop-blur-2xl border-t border-l border-r border-white/10 border-b-0 shadow-xl overflow-hidden shrink-0 group">

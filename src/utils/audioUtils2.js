@@ -3,8 +3,14 @@ import { FFmpeg } from "@ffmpeg/ffmpeg";
 import { fetchFile } from "@ffmpeg/util";
 import { toBlobURL } from "@ffmpeg/util";
 
-// Function to create and initialize a new FFmpeg instance
-const createFFmpegInstance = async () => {
+// Singleton FFmpeg instance and lock
+let ffmpegInstance = null;
+let isProcessing = false;
+
+// Function to get or create the FFmpeg instance
+const getFFmpegInstance = async () => {
+  if (ffmpegInstance) return ffmpegInstance;
+
   const ffmpeg = new FFmpeg({ log: true });
   const coreURL = "/ffmpeg/ffmpeg-core.js";
   const wasmURL = "/ffmpeg/ffmpeg-core.wasm";
@@ -14,6 +20,7 @@ const createFFmpegInstance = async () => {
     wasmURL: await toBlobURL(wasmURL, "application/wasm"),
   });
 
+  ffmpegInstance = ffmpeg;
   return ffmpeg;
 };
 
@@ -26,12 +33,18 @@ const handleGenerateAudio2 = async ({
   album,
   artist,
 }) => {
+  if (isProcessing) {
+    toast.error("Please wait for the current download to finish.");
+    return;
+  }
+
+  isProcessing = true;
+
   await toast.promise(
     (async () => {
-      let ffmpeg = null;
       try {
-        // Create a new isolated FFmpeg instance
-        ffmpeg = await createFFmpegInstance();
+        // Get the singleton FFmpeg instance
+        const ffmpeg = await getFFmpegInstance();
 
         // Fetch the audio and image files
         const [audioBuffer, imageBuffer] = await Promise.all([
@@ -39,7 +52,7 @@ const handleGenerateAudio2 = async ({
           fetchFile(imageUrl),
         ]);
 
-        // Write files to the isolated FFmpeg's virtual file system
+        // Write files to the FFmpeg's virtual file system
         await ffmpeg.writeFile("input.mp3", audioBuffer);
         await ffmpeg.writeFile("cover.jpg", imageBuffer);
 
@@ -75,9 +88,18 @@ const handleGenerateAudio2 = async ({
         document.body.appendChild(link);
         link.click();
         link.remove();
+
+        // Cleanup files
+        await ffmpeg.deleteFile("input.mp3");
+        await ffmpeg.deleteFile("cover.jpg");
+        await ffmpeg.deleteFile("output.flac");
+
+      } catch (error) {
+        console.error("FFmpeg error:", error);
+        throw error;
       } finally {
-        // Clean up FFmpeg instance to free resources
-        if (ffmpeg) ffmpeg.terminate();
+        isProcessing = false;
+        // Do NOT terminate
       }
     })(),
     {
