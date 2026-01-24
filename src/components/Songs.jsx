@@ -64,46 +64,58 @@ const Songs = () => {
           },
         });
       }
-      const { data } = await axios.get(
-        `https://jiosavan-api-with-playlist.vercel.app/api/search/songs?query=${requery}&page=${page}&limit=40`
-      );
-      // setsearch((prevState) => [...prevState, ...data.data.results]);
-      if (hasMore) {
-        setsearch((prevSearch) => {
-          const newData = data.data.results.filter(
-            (newItem) => !prevSearch.some((prevItem) => prevItem.id === newItem.id)
-          );
-          return [...prevSearch, ...newData];
-        });
-        sethasMore(data.data.results.length > 0);
-        setpage((prev) => prev + 1);
-      } else {
-        const uniqueNewDataCount = data.data.results.length; // Approximate check for toast logic
 
-        setsearch((prevSearch) => {
-          const newData = data.data.results.filter(
-            (newItem) => !prevSearch.some((prevItem) => prevItem.id === newItem.id)
-          );
-          return [...prevSearch, ...newData];
-        });
+      const pagesToFetch = 40; // Fetch 40 pages at once
+      const itemsPerPage = 50; // 50 items per page
+      const requests = [];
 
-        // Optimistic toast logic - if we got 0 results from API, or if we filter and find 0 (heuristically)
-        // Since we can't see the result of the setsearch filter here, we rely on the API returning something.
-        // If API returns 0, we definitely didn't add anything.
-        if (data.data.results.length === 0) {
-          toast(
-            `NO MORE NEW SONGS FOUND IN PAGE ${page} , CLICK ON (LOAD MORE) AGAIN TO CHECK NEXT PAGE `,
-            {
-              icon: "⚠️",
-              duration: 2000,
-              style: {
-                borderRadius: "10px",
-                background: "rgb(115 115 115)",
-                color: "#fff",
-              },
-            }
-          );
+      for (let i = 0; i < pagesToFetch; i++) {
+        requests.push(
+          axios.get(
+            `https://jiosavan-api-with-playlist.vercel.app/api/search/songs?query=${requery}&page=${page + i}&limit=${itemsPerPage}`
+          )
+        );
+      }
+
+      const responses = await Promise.all(requests);
+
+      const allNewResults = [];
+      let foundData = false;
+
+      responses.forEach((response) => {
+        const results = response?.data?.data?.results;
+        if (results && results.length > 0) {
+          allNewResults.push(...results);
+          foundData = true;
         }
+      });
+
+      if (foundData) {
+        setsearch((prevSearch) => {
+          const newData = allNewResults.filter(
+            (newItem) => !prevSearch.some((prevItem) => prevItem.id === newItem.id)
+          );
+          return [...prevSearch, ...newData];
+        });
+        sethasMore(true);
+        setpage((prev) => prev + pagesToFetch);
+      } else {
+        sethasMore(false);
+        if (search.length === 0) { // Only show if we truly have nothing, valid for initial search
+          // logic handled below
+        }
+        toast(
+          `NO MORE NEW SONGS FOUND, CLICK ON (LOAD MORE) AGAIN TO CHECK NEXT BATCH`,
+          {
+            icon: "⚠️",
+            duration: 2000,
+            style: {
+              borderRadius: "10px",
+              background: "rgb(115 115 115)",
+              color: "#fff",
+            },
+          }
+        );
       }
     } catch (error) {
       console.log("error", error);
@@ -954,19 +966,11 @@ const Songs = () => {
                     handleGenerateAudio({
                       audioUrl: d?.downloadUrl[4].url,
                       imageUrl: d?.image[2]?.url,
-<<<<<<< HEAD
                       songName: removeSourceAttribution(d?.name),
                       year: d?.year,
                       album: removeSourceAttribution(d?.album.name),
                       artist: d?.artists?.primary
                         ?.map((artist) => artist.name)
-=======
-                      songName: d?.name,
-                      year: d?.year,
-                      album: d?.album.name,
-                      artist: d?.artists.primary
-                        .map((artist) => artist.name)
->>>>>>> de0b74dc3dd02e409d686af84ada7d19aa0ad6db
                         .join(","),
                     })
                   }

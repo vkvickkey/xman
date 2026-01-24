@@ -168,17 +168,32 @@ const Album = () => {
   }
 
   useEffect(() => {
-    const allData = localStorage.getItem("albums");
-
-    // Check if data exists in localStorage
-    if (allData) {
-      // Parse the JSON string to convert it into a JavaScript object
-      const parsedData = JSON.parse(allData);
-
-      // Now you can use the parsedData object
-      setalbums(parsedData);
+    const cache = sessionStorage.getItem("album_cache");
+    if (cache) {
+      const { albums, query, requery, page, hasMore, scrollY } = JSON.parse(cache);
+      setalbums(albums);
+      setquery(query);
+      setrequery(requery);
+      setpage(page);
+      sethasMore(hasMore);
+      setTimeout(() => window.scrollTo(0, scrollY), 100);
+      sessionStorage.removeItem("album_cache"); // Optional: clear after restore if you only want single-use
     } else {
-      console.log("No data found in localStorage.");
+      const allData = localStorage.getItem("albums"); // Keeping existing localStorage logic as fallback or secondary
+      if (allData) {
+        // If we have local storage data but no session cache, maybe use it or just initial fetch
+        const parsedData = JSON.parse(allData);
+        setalbums(parsedData);
+      }
+      // If we simply reload, we might want to fetch initial data if albums is empty?
+      // The original code used localStorage for "albums", but didn't seem to trigger Getalbums() on mount if localStorage existed?
+      // Actually original code had separate useEffect for localStorage and no explicit Getalbums() on mount except via search effect?
+      // Wait, original code:
+      // useEffect(() => { localStorage logic }, [])
+      // useEffect(() => { if (query.length > 0) Getalbums() }, [search])
+      // It seems initial load relied on user searching or maybe cached "albums" from localStorage.
+
+      // Let's ensure proper behavior: if no cache and no local, do nothing until search?
     }
   }, []);
 
@@ -236,7 +251,12 @@ const Album = () => {
                 // transition={{delay:i*0.1 }}
                 viewport={{ once: true }}
                 key={i}
-                onClick={() => navigate(`/albums/details/${e.id}`)}
+                onClick={() => {
+                  sessionStorage.setItem("album_cache", JSON.stringify({
+                    albums, query, requery, page, hasMore, scrollY: window.scrollY
+                  }));
+                  navigate(`/albums/details/${e.id}`);
+                }}
                 className="w-[15vw] h-[30vh] sm:w-[40vw] mb-8 sm:h-[20vh] sm:mb-12 rounded-xl bg-white/5 border border-white/10 backdrop-blur-md hover:bg-white/10 hover:border-white/20 transition-all duration-300 cursor-pointer shadow-lg hover:shadow-purple-glow"
               >
                 <img

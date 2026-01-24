@@ -665,19 +665,11 @@ const ArtistsDetails = () => {
                     handleGenerateAudio({
                       audioUrl: d?.downloadUrl[4].url,
                       imageUrl: d?.image[2]?.url,
-<<<<<<< HEAD
                       songName: removeSourceAttribution(d?.name),
                       year: d?.year,
                       album: removeSourceAttribution(d?.album.name),
                       artist: d?.artists?.primary
                         ?.map((artist) => artist.name)
-=======
-                      songName: d?.name,
-                      year: d?.year,
-                      album: d?.album.name,
-                      artist: d?.artists.primary
-                        .map((artist) => artist.name)
->>>>>>> de0b74dc3dd02e409d686af84ada7d19aa0ad6db
                         .join(","),
                     })
                   }

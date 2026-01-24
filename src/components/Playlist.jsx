@@ -153,17 +153,28 @@ const Playlist = () => {
   }, [search, playlist]);
 
   useEffect(() => {
-    const allData = localStorage.getItem("playlist");
-
-    // Check if data exists in localStorage
-    if (allData) {
-      // Parse the JSON string to convert it into a JavaScript object
-      const parsedData = JSON.parse(allData);
-
-      // Now you can use the parsedData object
-      setplaylist(parsedData);
+    const cache = sessionStorage.getItem("playlist_cache");
+    if (cache) {
+      const { playlist, query, requery, page, scrollY } = JSON.parse(cache);
+      setplaylist(playlist);
+      setquery(query);
+      setrequery(requery);
+      setpage(page);
+      setTimeout(() => window.scrollTo(0, scrollY), 100);
+      sessionStorage.removeItem("playlist_cache");
     } else {
-      console.log("No data found in localStorage.");
+      const allData = localStorage.getItem("playlist");
+
+      // Check if data exists in localStorage
+      if (allData) {
+        // Parse the JSON string to convert it into a JavaScript object
+        const parsedData = JSON.parse(allData);
+
+        // Now you can use the parsedData object
+        setplaylist(parsedData);
+      } else {
+        console.log("No data found in localStorage.");
+      }
     }
   }, []);
 
@@ -215,7 +226,12 @@ const Playlist = () => {
               animate={{ scale: 1 }}
               viewport={{ once: true }}
               key={i}
-              onClick={() => navigate(`/playlist/details/${e.id}`)}
+              onClick={() => {
+                sessionStorage.setItem("playlist_cache", JSON.stringify({
+                  playlist, query, requery, page, scrollY: window.scrollY
+                }));
+                navigate(`/playlist/details/${e.id}`);
+              }}
               className="w-[15vw] h-[30vh] sm:w-[40vw] mb-8 sm:h-[20vh] sm:mb-12 rounded-xl bg-white/5 border border-white/10 backdrop-blur-md hover:bg-white/10 hover:border-white/20 transition-all duration-300 cursor-pointer shadow-lg hover:shadow-purple-glow"
             >
               <img
