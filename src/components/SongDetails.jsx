@@ -411,10 +411,14 @@ const SongDetails = () => {
                   </p>
                   <p
                     onClick={() =>
-                      handleDownloadSong(
-                        e.downloadUrl[4].url,
-                        e.name + " 320kbps"
-                      )
+                      handleGenerateAudio({
+                        audioUrl: e.downloadUrl[4].url,
+                        imageUrl: e.image[2].url,
+                        songName: removeSourceAttribution(e.name),
+                        year: e.year,
+                        album: removeSourceAttribution(e.album.name),
+                        artist: e?.artists?.primary?.map((a) => a.name).join(", "),
+                      })
                     }
                     className="duration-300 cursor-pointer hover:text-white hover:bg-purple-gradient hover:scale-90 w-fit p-1 font-semibold rounded-md shadow-purple-glow bg-white/10 border border-white/10 flex flex-col items-center"
                   >
@@ -513,7 +517,7 @@ const SongDetails = () => {
                     {removeSourceAttribution(t.name)}
                   </h3>
                   <h4 className="text-xs sm:text-[2.5vw] text-white/60 ">
-                    {t.album.name}
+                    {removeSourceAttribution(t.album.name)}
                   </h4>
                 </motion.div>
               </motion.div>
@@ -671,10 +675,14 @@ const SongDetails = () => {
                 </p>
                 <p
                   onClick={() =>
-                    handleDownloadSong(
-                      e.downloadUrl[4].url,
-                      e.name + " 320kbps"
-                    )
+                    handleGenerateAudio({
+                      audioUrl: e.downloadUrl[4].url,
+                      imageUrl: e.image[2].url,
+                      songName: removeSourceAttribution(e.name),
+                      year: e.year,
+                      album: removeSourceAttribution(e.album.name),
+                      artist: e?.artists?.primary?.map((a) => a.name).join(", "),
+                    })
                   }
                   className="duration-300 cursor-pointer  hover:text-white hover:bg-purple-gradient hover:scale-90 w-fit p-1 font-semibold rounded-md shadow-purple-glow bg-white/10 border border-white/10 flex flex-col items-center"
                 >

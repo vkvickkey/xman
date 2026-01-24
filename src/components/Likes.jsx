@@ -22,6 +22,7 @@ import JSZip from "jszip";
 import CryptoJS from "crypto-js";
 import handleGenerateAudio from "./../utils/audioUtils";
 import handleGenerateAudio2 from "./../utils/audioUtils2";
+import { removeSourceAttribution } from "../utils/stringUtils";
 
 function Likes() {
   const navigate = useNavigate();
@@ -503,11 +504,11 @@ function Likes() {
       setdetails(parsedData.reverse());
       // setSongs(parsedData.reverse());
       const extractedSongs = parsedData.map((song) => ({
-        title: song.name,
+        title: removeSourceAttribution(song.name),
         url: song.downloadUrl[4].url,
         image: song.image[2].url,
-        artist: song.artists.primary.map((artist) => artist.name).join(" , "),
-        album: song.album.name,
+        artist: song?.artists?.primary?.map((artist) => artist.name).join(" , "),
+        album: removeSourceAttribution(song.album.name),
         year: song.year,
       }));
       setSongs(extractedSongs);
@@ -756,10 +757,10 @@ function Likes() {
                       className={`text-sm sm:text-xs leading-none  font-bold ${d.id === songlink[0]?.id && "text-green-300"
                         }`}
                     >
-                      {d.name}
+                      {removeSourceAttribution(d.name)}
                     </h3>
                     <h4 className="text-xs sm:text-[2.5vw] text-zinc-300 ">
-                      {d.album.name}
+                      {removeSourceAttribution(d.album.name)}
                     </h4>
                   </div>
                 </div>

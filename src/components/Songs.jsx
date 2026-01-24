@@ -579,39 +579,16 @@ const Songs = () => {
   //   }
   // };
 
-  const handleDownloadSong = (url, name, poster) => {
-    return toast.promise(
-      new Promise(async (resolve, reject) => {
-        try {
-          // Display loading message
-          // toast.loading(`Song ${name} Downloading...`, {
-          //   id: 'loading-toast' // Set a unique ID for the loading toast
-          // });
-
-          // Perform the download
-          const res = await fetch(url);
-          const blob = await res.blob();
-          const link = document.createElement("a");
-          link.href = URL.createObjectURL(blob);
-          link.download = `${name}.mp3`;
-
-          document.body.appendChild(link);
-          link.click();
-
-          document.body.removeChild(link);
-
-          resolve(); // Resolve the promise once the download is complete
-        } catch (error) {
-          console.log("Error fetching or downloading files", error);
-          reject("Error downloading song");
-        }
-      }),
-      {
-        loading: `Song ${name} Downloading...`, // Loading message
-        success: `Song Downloaded ✅`, // Success message
-        error: <b>Error downloading song.</b>, // Error message
-      }
-    );
+  const handleDownloadSong = async (url, name, album, artist, image, year, id) => {
+    const data = {
+      audioUrl: url,
+      imageUrl: image,
+      songName: removeSourceAttribution(name),
+      album: removeSourceAttribution(album),
+      artist: artist,
+      year: year,
+    };
+    await handleGenerateAudio(data);
   };
 
   // const handleGenerateAudio = async (data) => {
@@ -950,25 +927,44 @@ const Songs = () => {
                       {removeSourceAttribution(d.name)}
                     </h3>
                     <h4 className="text-xs sm:text-[2.5vw] text-white opacity-60 ">
-                      {d.album.name}
+                      {removeSourceAttribution(d.album.name)}
                     </h4>
                   </div>
                 </div>
               </div>
 
-              {existingData?.find((element) => element?.id == d?.id) ? (
+              <div className="flex flex-col items-center gap-3">
+                {existingData?.find((element) => element?.id == d?.id) ? (
+                  <i
+                    title="Unlike"
+                    onClick={() => likehandle2(d)}
+                    className={` text-xl m-auto flex w-[3vw] sm:w-[9vw] rounded-full justify-center items-center h-[3vw] sm:h-[9vw]   duration-300 cursor-pointer text-red-500  ri-heart-3-fill`}
+                  ></i>
+                ) : (
+                  <i
+                    title="Like"
+                    onClick={() => likehandle2(d)}
+                    className={` text-xl m-auto flex w-[3vw] sm:w-[9vw] rounded-full justify-center items-center h-[3vw] sm:h-[9vw]   duration-300 cursor-pointer text-white/40  ri-heart-3-fill`}
+                  ></i>
+                )}
+
                 <i
-                  title="Unlike"
-                  onClick={() => likehandle2(d)}
-                  className={` text-xl m-auto flex w-[3vw] sm:w-[9vw] rounded-full justify-center items-center h-[3vw] sm:h-[9vw]   duration-300 cursor-pointer text-red-500  ri-heart-3-fill`}
+                  title="Download"
+                  onClick={() =>
+                    handleGenerateAudio({
+                      audioUrl: d?.downloadUrl[4].url,
+                      imageUrl: d?.image[2]?.url,
+                      songName: removeSourceAttribution(d?.name),
+                      year: d?.year,
+                      album: removeSourceAttribution(d?.album.name),
+                      artist: d?.artists?.primary
+                        ?.map((artist) => artist.name)
+                        .join(","),
+                    })
+                  }
+                  className={` text-xl m-auto flex w-[3vw] sm:w-[9vw] rounded-full justify-center items-center h-[3vw] sm:h-[9vw]   duration-300 cursor-pointer text-white/40 hover:text-white ri-download-2-fill`}
                 ></i>
-              ) : (
-                <i
-                  title="Like"
-                  onClick={() => likehandle2(d)}
-                  className={` text-xl m-auto flex w-[3vw] sm:w-[9vw] rounded-full justify-center items-center h-[3vw] sm:h-[9vw]   duration-300 cursor-pointer text-white/40  ri-heart-3-fill`}
-                ></i>
-              )}
+              </div>
 
               {/* <i
                 onClick={() => likehandle(d)}
@@ -1224,9 +1220,9 @@ const Songs = () => {
                     handleGenerateAudio({
                       audioUrl: e?.downloadUrl[4].url,
                       imageUrl: e?.image[2]?.url,
-                      songName: e?.name,
+                      songName: removeSourceAttribution(e?.name),
                       year: e?.year,
-                      album: e?.album.name,
+                      album: removeSourceAttribution(e?.album.name),
                       artist: e?.artists.primary.map(artist => artist.name).join(",")
                     })
                   }

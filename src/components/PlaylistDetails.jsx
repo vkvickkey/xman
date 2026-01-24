@@ -598,7 +598,7 @@ const PlaylistDetails = () => {
           disabled={isDownloadingAll}
           className={`ml-auto mr-5 px-4 py-2 rounded-full border border-white/10 backdrop-blur-md shadow-purple-glow transition-all duration-300 ${isDownloadingAll
             ? "bg-white/10 cursor-not-allowed text-white/50"
-            : "bg-white/5 hover:bg-purple-gradient text-white"
+            : "bg-purple-gradient text-white shadow-lg hover:scale-105 hover:shadow-purple-glow"
             }`}
         >
           {isDownloadingAll ? (
@@ -719,17 +719,35 @@ const PlaylistDetails = () => {
               </div>
             </div>
 
-            {existingData?.find((element) => element?.id == d?.id) ? (
+            <div className="flex flex-col items-center gap-3">
+              {existingData?.find((element) => element?.id == d?.id) ? (
+                <i
+                  onClick={() => likehandle2(d)}
+                  className={`text-xl m-auto flex w-[3vw] sm:w-[9vw] rounded-full justify-center items-center h-[3vw] sm:h-[9vw]    duration-300 cursor-pointer text-red-500  ri-heart-3-fill`}
+                ></i>
+              ) : (
+                <i
+                  onClick={() => likehandle2(d)}
+                  className={`text-xl m-auto flex w-[3vw] sm:w-[9vw] rounded-full justify-center items-center h-[3vw] sm:h-[9vw]   duration-300 cursor-pointer text-zinc-300  ri-heart-3-fill`}
+                ></i>
+              )}
               <i
-                onClick={() => likehandle2(d)}
-                className={`text-xl m-auto flex w-[3vw] sm:w-[9vw] rounded-full justify-center items-center h-[3vw] sm:h-[9vw]    duration-300 cursor-pointer text-red-500  ri-heart-3-fill`}
+                title="Download"
+                onClick={() =>
+                  handleGenerateAudio({
+                    audioUrl: d?.downloadUrl[4].url,
+                    imageUrl: d?.image[2]?.url,
+                    songName: removeSourceAttribution(d?.name),
+                    year: d?.year,
+                    album: removeSourceAttribution(d?.album.name),
+                    artist: d?.artists?.primary
+                      ?.map((artist) => artist.name)
+                      .join(","),
+                  })
+                }
+                className={` text-xl m-auto flex w-[3vw] sm:w-[9vw] rounded-full justify-center items-center h-[3vw] sm:h-[9vw]   duration-300 cursor-pointer text-white/40 hover:text-white ri-download-2-fill`}
               ></i>
-            ) : (
-              <i
-                onClick={() => likehandle2(d)}
-                className={`text-xl m-auto flex w-[3vw] sm:w-[9vw] rounded-full justify-center items-center h-[3vw] sm:h-[9vw]   duration-300 cursor-pointer text-zinc-300  ri-heart-3-fill`}
-              ></i>
-            )}
+            </div>
 
             {/* <i
                 onClick={() => likehandle(d)}

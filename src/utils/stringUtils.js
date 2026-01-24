@@ -1,7 +1,16 @@
 export const removeSourceAttribution = (text) => {
     if (!text) return "";
-    // Replace (From "Source") with (Source)
-    // Example: Raavana Mavandaa (From "Jana Nayagan") -> Raavana Mavandaa (Jana Nayagan)
-    let formatted = text.replace(/\(From\s+(?:&quot;|"|')?(.*?)(?:&quot;|"|')?\)/gi, "($1)");
-    return formatted.trim();
+    // 1. Decode HTML entities
+    let decoded = text
+        .replace(/&quot;/g, '"')
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&#039;/g, "'");
+
+    // 2. Remove (From "...") entirely
+    // Matches (From "Movie") or (From Movie)
+    let cleaned = decoded.replace(/\s*\(From\s+.*?\)/gi, "");
+
+    return cleaned.trim();
 };

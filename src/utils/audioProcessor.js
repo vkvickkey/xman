@@ -82,14 +82,16 @@ export const processSong = async (song, coverUrl, ffmpegInstance) => {
                 "-i", coverName,
                 "-map", "0:0",
                 "-map", "1:0",
-                "-c:a", "copy",
-                "-c:v", "mjpeg",
-                "-disposition:v", "attached_pic",
                 "-metadata", `title=${song.name || "Unknown"}`,
                 "-metadata", `artist=${song.artist_name || (Array.isArray(song.artists) ? song.artists.primary?.[0]?.name : "Unknown")}`,
                 "-metadata", `album=${song.album?.name || "Unknown"}`,
                 "-metadata", `date=${song.year || new Date().getFullYear()}`,
-                "-movflags", "+faststart",
+                "-c:a", "aac", // Use AAC codec for M4A
+                "-b:a", "320k", // Set bitrate to 320kbps
+                "-ar", "48000", // Set sample rate to 48kHz
+                "-movflags", "+faststart", // Optimize for streaming
+                "-c:v", "copy", // Copy the image stream directly (don't re-encode)
+                "-disposition:v:0", "attached_pic", // Set image as cover art
                 outputName
             ]);
 
