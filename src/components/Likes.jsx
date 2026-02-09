@@ -22,7 +22,8 @@ import JSZip from "jszip";
 import CryptoJS from "crypto-js";
 import handleGenerateAudio from "./../utils/audioUtils";
 import handleGenerateAudio2 from "./../utils/audioUtils2";
-import { removeSourceAttribution } from "../utils/stringUtils";
+import { removeSourceAttribution, getAlbumFromTitle } from "../utils/stringUtils";
+import { getArtistMetadata } from "../utils/artistUtils";
 
 function Likes() {
   const navigate = useNavigate();
@@ -508,7 +509,7 @@ function Likes() {
         url: song.downloadUrl[4].url,
         image: song.image[2].url,
         artist: song?.artists?.primary?.map((artist) => artist.name).join(" , "),
-        album: removeSourceAttribution(song.album.name),
+        album: getAlbumFromTitle(song.name) || removeSourceAttribution(song.album.name),
         year: song.year,
       }));
       setSongs(extractedSongs);
@@ -754,14 +755,27 @@ function Likes() {
                 <div className="ml-3 sm:ml-3 flex justify-center items-center gap-5 mt-2">
                   <div className="flex flex-col">
                     <h3
-                      className={`text-sm sm:text-xs leading-none  font-bold ${d.id === songlink[0]?.id && "text-green-300"
+                      className={`text-lg sm:text-base leading-none font-bold ${d.id === songlink[0]?.id && "text-green-300"
                         }`}
                     >
                       {removeSourceAttribution(d.name)}
                     </h3>
-                    <h4 className="text-xs sm:text-[2.5vw] text-zinc-300 ">
-                      {removeSourceAttribution(d.album.name)}
-                    </h4>
+                    {(() => {
+                      const extractedAlbum = getAlbumFromTitle(d.name);
+                      const displayAlbum = extractedAlbum || removeSourceAttribution(d.album.name);
+                      return (
+                        removeSourceAttribution(d.name) !== displayAlbum && (
+                          <h4 className="text-sm sm:text-xs text-zinc-300">
+                            {displayAlbum}
+                          </h4>
+                        )
+                      );
+                    })()}
+                    <div className="flex flex-col mt-1">
+                      <span className="text-xs sm:text-[10px] text-zinc-400">
+                        {getArtistMetadata(d.artists).singleLine}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -962,7 +976,7 @@ function Likes() {
                         imageUrl: e?.image[2]?.url,
                         songName: e?.name,
                         year: e?.year,
-                        album: e?.album.name,
+                        album: getAlbumFromTitle(e?.name) || removeSourceAttribution(e?.album?.name),
                         artist: e?.artists.primary.map(artist => artist.name).join(",")
                       })
                     }
@@ -992,7 +1006,7 @@ function Likes() {
                         imageUrl: e?.image[2]?.url,
                         songName: e?.name,
                         year: e?.year,
-                        album: e?.album.name,
+                        album: getAlbumFromTitle(e?.name) || removeSourceAttribution(e?.album?.name),
                         artist: e?.artists.primary
                           .map((artist) => artist.name)
                           .join(","),

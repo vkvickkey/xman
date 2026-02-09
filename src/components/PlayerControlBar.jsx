@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { removeSourceAttribution } from "../utils/stringUtils";
+import { removeSourceAttribution, getAlbumFromTitle } from "../utils/stringUtils";
+import { getArtistMetadata } from "../utils/artistUtils";
 import handleGenerateAudio from "../utils/audioUtils";
 import handleGenerateAudio2 from "../utils/audioUtils2";
 import toast from "react-hot-toast";
@@ -137,7 +138,10 @@ const PlayerControlBar = ({
                             {removeSourceAttribution(currentSong?.name)}
                         </h4>
                         <p className="text-white/50 text-xs md:text-sm truncate">
-                            {removeSourceAttribution(currentSong?.album?.name)}
+                            {getAlbumFromTitle(currentSong?.album?.name) || removeSourceAttribution(currentSong?.album?.name)}
+                        </p>
+                        <p className="text-white/40 text-[10px] md:text-xs truncate">
+                            {getArtistMetadata(currentSong?.artists).singleLine}
                         </p>
                     </div>
 
@@ -238,7 +242,7 @@ const PlayerControlBar = ({
                                                         imageUrl: currentSong?.image[2]?.url,
                                                         songName: removeSourceAttribution(currentSong?.name),
                                                         year: currentSong?.year,
-                                                        album: removeSourceAttribution(currentSong?.album?.name),
+                                                        album: getAlbumFromTitle(songlink[0]?.name) || removeSourceAttribution(songlink[0]?.album.name),
                                                         artist: currentSong?.artists?.primary?.map(a => a.name).join(", "),
                                                     });
                                                 } else {

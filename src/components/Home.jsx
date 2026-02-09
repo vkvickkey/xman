@@ -25,16 +25,39 @@ import { Circ } from "gsap/all";
 import toast, { Toaster } from "react-hot-toast";
 import handleGenerateAudio from "./../utils/audioUtils";
 import handleGenerateAudio2 from "./../utils/audioUtils2";
-import { removeSourceAttribution } from "../utils/stringUtils";
-import useHorizontalScroll from "../utils/useHorizontalScroll";
+import { getArtistMetadata } from "../utils/artistUtils";
+import { removeSourceAttribution, getAlbumFromTitle } from "../utils/stringUtils";
+import useDragScroll from "../utils/useDragScroll";
 
+// Static playlist configuration removed
 
 
 
 // Component for individual Fresh Hits Row to handle its own scroll ref
+
+
+const ScrollButtons = ({ scrollRef }) => {
+  const scroll = (offset) => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollBy({ left: offset, behavior: "smooth" });
+    }
+  };
+  return (
+    <>
+      <div onClick={() => scroll(-400)} className="z-10 absolute left-2 top-1/2 transform -translate-y-1/2 flex items-center justify-center w-10 h-10 rounded-full bg-black/50 hover:bg-black/80 backdrop-blur-sm cursor-pointer transition-all duration-300 opacity-0 group-hover:opacity-100">
+        <i className="ri-arrow-left-s-line text-white text-2xl"></i>
+      </div>
+      <div onClick={() => scroll(400)} className="z-10 absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center justify-center w-10 h-10 rounded-full bg-black/50 hover:bg-black/80 backdrop-blur-sm cursor-pointer transition-all duration-300 opacity-0 group-hover:opacity-100">
+        <i className="ri-arrow-right-s-line text-white text-2xl"></i>
+      </div>
+    </>
+  );
+};
+
 const FreshHitRow = ({ language, data, navigate, onRefresh }) => {
   const scrollRef = useRef(null);
-  useHorizontalScroll(scrollRef);
+  useDragScroll(scrollRef, data);
+
 
   if (!data || data.length === 0) return null;
 
@@ -54,32 +77,35 @@ const FreshHitRow = ({ language, data, navigate, onRefresh }) => {
           <i className="ri-music-fill text-white text-xl"></i>
         </div>
         <h3 className="text-2xl font-bold text-white/90 tracking-wide capitalize drop-shadow-lg font-sans">
-          Fresh Hits - {languageDisplayMap[language] || language}
+          Fresh Hits
         </h3>
         <div onClick={() => onRefresh(language)} className="flex items-center justify-center w-10 h-10 rounded-full bg-black/20 border border-white/5 backdrop-blur-md shadow-[inset_0_1px_4px_rgba(255,255,255,0.1)] cursor-pointer hover:bg-white/10 hover:scale-105 transition-all duration-300">
           <i className="ri-refresh-line text-white text-xl"></i>
         </div>
       </div>
-      <div ref={scrollRef} className="freshhitsdata custom-scrollbar px-5 sm:px-3 flex flex-shrink gap-5 overflow-x-auto w-full pb-4">
-        {data.map((f, i) => (
-          <motion.div
-            initial={{ y: -100, scale: 0.5 }}
-            whileInView={{ y: 0, scale: 1 }}
-            transition={{ ease: Circ.easeIn, duration: 0.05 }}
-            onClick={() => navigate(`/playlist/details/${f.id}`)}
-            key={i}
-            className="hover:scale-110 sm:hover:scale-100 duration-150 flex-shrink-0 w-[15%] sm:w-[40%] rounded-md flex flex-col gap-2 py-4 cursor-pointer"
-          >
-            <img
-              className="w-full rounded-md"
-              src={f.image?.[2]?.link || f.image?.[2]?.url || f.image?.[0]?.link || f.image?.[0]?.url}
-              alt=""
-            />
-            <motion.h3 className="leading-none">
-              {removeSourceAttribution(f.name)}
-            </motion.h3>
-          </motion.div>
-        ))}
+      <div className="relative group w-full">
+        <ScrollButtons scrollRef={scrollRef} />
+        <div ref={scrollRef} className="freshhitsdata custom-scrollbar px-5 sm:px-3 flex flex-shrink gap-5 overflow-x-auto w-full pb-4">
+          {data.map((f, i) => (
+            <motion.div
+              initial={{ y: -100, scale: 0.5 }}
+              whileInView={{ y: 0, scale: 1 }}
+              transition={{ ease: Circ.easeIn, duration: 0.05 }}
+              onClick={() => navigate(`/playlist/details/${f.id}`)}
+              key={i}
+              className="hover:scale-110 sm:hover:scale-105 duration-300 flex-shrink-0 w-[15%] sm:w-[40%] rounded-md flex flex-col gap-2 py-4 cursor-pointer"
+            >
+              <img
+                className="w-full rounded-md"
+                src={f.image?.[2]?.link || f.image?.[2]?.url || f.image?.[0]?.link || f.image?.[0]?.url}
+                alt=""
+              />
+              <motion.h3 className="leading-none">
+                {removeSourceAttribution(f.name)}
+              </motion.h3>
+            </motion.div>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -102,14 +128,10 @@ const Home = () => {
   const [audiocheck, setaudiocheck] = useState(true);
   // const [selectedSongIds, setSelectedSongIds] = useState([]);
   const [suggSong, setsuggSong] = useState([]);
-  const [mood, setmood] = useState("Happy");
-  const [moodDetails, setMoodDetails] = useState([]);
-  const [songlink3, setsonglink3] = useState([]);
-  var [index3, setindex3] = useState("");
-  // const [freshHits, setFreshHits] = useState([]); // Removed simple state
-  const [freshHitsData, setFreshHitsData] = useState({}); // New object state
-  const [topGenres, setTopGenres] = useState([]);
+  const [freshHitsData, setFreshHitsData] = useState([]);
   const [bestOf90s, setBestOf90s] = useState([]);
+
+  const [indiaSuperhitsTop50, setIndiaSuperhitsTop50] = useState([]);
 
   const freshHitsLanguages = ["Tamil", "Hindi", "English", "Telugu", "Malayalam"];
 
@@ -120,20 +142,18 @@ const Home = () => {
   const playlistsRef = useRef(null);
   const albumsRef = useRef(null);
   // const freshHitsRef = useRef(null); // Removed single ref
-  const topGenresRef = useRef(null);
   const bestOf90sRef = useRef(null);
+  const indiaSuperhitsTop50Ref = useRef(null);
 
-  // Initialize scroll hooks
-  useHorizontalScroll(detailsRef);
-  useHorizontalScroll(suggRef);
-  useHorizontalScroll(chartsRef);
-  useHorizontalScroll(playlistsRef);
-  useHorizontalScroll(albumsRef);
-  // useHorizontalScroll(freshHitsRef); // Removed single hook call
-  useHorizontalScroll(topGenresRef);
-  useHorizontalScroll(bestOf90sRef);
-  const moodRef = useRef(null);
-  useHorizontalScroll(moodRef);
+  // Initialize scroll hooks with dependencies
+  useDragScroll(detailsRef, details);
+  useDragScroll(suggRef, suggSong);
+  useDragScroll(chartsRef, home);
+  useDragScroll(playlistsRef, home);
+  useDragScroll(albumsRef, home);
+  useDragScroll(bestOf90sRef, bestOf90s);
+  useDragScroll(indiaSuperhitsTop50Ref, indiaSuperhitsTop50);
+
 
   const options = [
     // "hindi",
@@ -171,19 +191,6 @@ const Home = () => {
     // "assamese",
   ];
 
-  const moodOptions = [
-    "Happy",
-    "Sad",
-    "Joy",
-    "Emotional",
-    "Soulful",
-    "Classical",
-    "Pop",
-    "Karnatic",
-    "Kuthu",
-    "Folk",
-    "Kuthu",
-  ];
 
   const Gethome = async () => {
     detailsseter();
@@ -197,17 +204,6 @@ const Home = () => {
     }
   };
 
-  const GetTopGenres = async () => {
-    try {
-      const query = `Top Genres & Moods ${language}`; // Or just "Moods {language}" depending on results
-      const { data } = await axios.get(
-        `https://jiosavan-api-with-playlist.vercel.app/api/search/playlists?query=${encodeURIComponent(query)}&limit=20`
-      );
-      setTopGenres(data.data.results);
-    } catch (error) {
-      console.error("Error fetching Top Genres:", error);
-    }
-  };
 
   const GetBestOf90s = async () => {
     try {
@@ -215,38 +211,74 @@ const Home = () => {
       const { data } = await axios.get(
         `https://jiosavan-api-with-playlist.vercel.app/api/search/playlists?query=${encodeURIComponent(query)}&limit=20`
       );
-      setBestOf90s(data.data.results);
+      setBestOf90s(data?.data?.results || []);
     } catch (error) {
       console.error("Error fetching Best of 90s:", error);
     }
   };
 
-  const GetFreshHits = async (targetLang = null) => {
-    try {
-      const langsToFetch = targetLang ? [targetLang] : [language];
 
-      const promises = langsToFetch.map(async (lang) => {
-        const query = `Fresh Hits ${lang}`;
+
+
+  const GetIndiaSuperhitsTop50 = async () => {
+    if (language !== "Tamil") {
+      setIndiaSuperhitsTop50([]);
+      return;
+    }
+    try {
+      let query = "";
+      // specific queries based on language as requested
+      if (language === "Tamil") {
+        query = "India Superhits Top 50";
+      } else if (language === "Telugu") {
+        query = "India Superhits Top 50 -";
+      } else if (language === "Malayalam") {
+        query = "India Superhits Top 50";
+      } else if (language === "Hindi") {
+        query = "India Superhits Top 50";
+      } else if (language === "Haryanvi") {
+        query = "India Superhits Top 50";
+      } else if (language === "English" || language === "International") {
+        query = "India Superhits Top 50";
+      } else {
+        // Default fallback
+        query = `India Superhits Top 50 ${language}`;
+      }
+
+      const { data } = await axios.get(
+        `https://jiosavan-api-with-playlist.vercel.app/api/search/playlists?query=${encodeURIComponent(query)}&limit=20`
+      );
+      setIndiaSuperhitsTop50(data?.data?.results || []);
+    } catch (error) {
+      console.error("Error fetching India Superhits Top 50:", error);
+    }
+  };
+
+  const GetFreshHits = async () => {
+    if (language !== "Tamil") {
+      setFreshHitsData([]);
+      return;
+    }
+    try {
+      // IDs provided by user
+      const ids = ["10763385", "146675675", "85481065", "6689255", "2912846", "976143557", "218822376",];
+      const promises = ids.map(async (id) => {
         try {
           const { data } = await axios.get(
-            `https://jiosavan-api-with-playlist.vercel.app/api/search/playlists?query=${encodeURIComponent(query)}&limit=20`
+            `https://jiosavan-api-with-playlist.vercel.app/api/playlists?id=${id}`
           );
-          return { lang, results: data.data.results };
+          return data.data; // The API returns the playlist object directly in data.data
         } catch (err) {
-          console.error(`Error fetching fresh hits for ${lang}:`, err);
-          return { lang, results: [] };
+          console.error(`Error fetching fresh hit playlist ${id}:`, err);
+          return null;
         }
       });
 
       const results = await Promise.all(promises);
+      // Filter out any nulls from failed requests
+      const validResults = results.filter(item => item !== null);
 
-      setFreshHitsData(prev => {
-        const newData = { ...prev };
-        results.forEach(({ lang, results }) => {
-          newData[lang] = results;
-        });
-        return newData;
-      });
+      setFreshHitsData(validResults);
 
     } catch (error) {
       console.error("Error fetching fresh hits:", error);
@@ -313,16 +345,6 @@ const Home = () => {
     toast.success("Refreshing suggestions...");
   };
 
-  const GetMoodDetails = async () => {
-    try {
-      const { data } = await axios.get(
-        `https://jiosavan-api-with-playlist.vercel.app/api/search/songs?query=${mood.toLowerCase()}&limit=20`
-      );
-      setMoodDetails(data.data.results);
-    } catch (error) {
-      console.log("error", error);
-    }
-  };
 
   const Getartists = async () => {
     // If home is already being fetched, this might be redundant, 
@@ -351,8 +373,6 @@ const Home = () => {
     } else {
       setindex2(null);
       setsonglink2([]);
-      setindex3(null);
-      setsonglink3([]);
       setindex(i);
       setsonglink([details[i]]);
     }
@@ -373,34 +393,11 @@ const Home = () => {
     } else {
       setindex(null);
       setsonglink([]);
-      setindex3(null);
-      setsonglink3([]);
       setindex2(i);
       setsonglink2([suggSong[i]]);
     }
   }
 
-  function audioseter3(i) {
-    if (songlink3[0]?.id === moodDetails[i].id) {
-      const audio = audioRef.current;
-      if (!audio.paused) {
-        audio.pause();
-        setaudiocheck(false);
-      } else {
-        setaudiocheck(true);
-        audio.play().catch((error) => {
-          console.error("Playback failed:", error);
-        });
-      }
-    } else {
-      setindex(null);
-      setsonglink([]);
-      setindex2(null);
-      setsonglink2([]);
-      setindex3(i);
-      setsonglink3([moodDetails[i]]);
-    }
-  }
 
   // Function to get a random subset of IDs without duplicates
   function getRandomIds(ids, num) {
@@ -734,49 +731,6 @@ const Home = () => {
     }
   };
 
-  const initializeMediaSession3 = () => {
-    const isIOS = /(iPhone|iPod|iPad)/i.test(navigator.userAgent);
-
-    if (!isIOS && "mediaSession" in navigator) {
-      navigator.mediaSession.metadata = new MediaMetadata({
-        title: songlink3[0]?.name || "",
-        artist: songlink3[0]?.album?.name || "",
-        artwork: [
-          {
-            src: songlink3[0]?.image[2]?.url || "",
-            sizes: "512x512",
-            type: "image/jpeg",
-          },
-        ],
-      });
-
-      navigator.mediaSession.setActionHandler("play", function () {
-        if (audioRef.current) {
-          audioRef.current.play().catch((error) => {
-            console.error("Play error:", error);
-          });
-        }
-      });
-
-      navigator.mediaSession.setActionHandler("pause", function () {
-        if (audioRef.current) {
-          audioRef.current.pause().catch((error) => {
-            console.error("Pause error:", error);
-          });
-        }
-      });
-
-      navigator.mediaSession.setActionHandler("previoustrack", function () {
-        pre3();
-      });
-
-      navigator.mediaSession.setActionHandler("nexttrack", function () {
-        next3();
-      });
-    } else {
-      console.warn("MediaSession API is not supported or the device is iOS.");
-    }
-  };
 
 
   function next() {
@@ -836,25 +790,6 @@ const Home = () => {
   //   }
   // };
 
-  function next3() {
-    if (index3 < moodDetails.length - 1) {
-      setindex3(prev => prev + 1);
-      audioseter3(index3 + 1);
-    } else {
-      setindex3(0);
-      setsonglink3([moodDetails[0]]);
-    }
-  }
-
-  function pre3() {
-    if (index3 > 0) {
-      setindex3(prev => prev - 1);
-      audioseter3(index3 - 1);
-    } else {
-      setindex3(moodDetails.length - 1);
-      setsonglink3([moodDetails[moodDetails.length - 1]]);
-    }
-  }
 
   const handleDownloadSong = (url, name, poster) => {
     return toast.promise(
@@ -932,8 +867,6 @@ const Home = () => {
     setindex2("");
     setsonglink([]);
     setsonglink2([]);
-    setsonglink3([]);
-    setindex3("");
     setdetails([]);
     setsuggSong([]);
   }
@@ -963,8 +896,9 @@ const Home = () => {
   useEffect(() => {
     Gethome();
     GetFreshHits();
-    GetTopGenres();
     GetBestOf90s();
+    GetIndiaSuperhitsTop50();
+
   }, [language]);
 
   useEffect(() => {
@@ -980,9 +914,6 @@ const Home = () => {
     likeset(songlink2[0]);
   }, [songlink2]);
 
-  useEffect(() => {
-    likeset(songlink3[0]);
-  }, [songlink3]);
 
   useEffect(() => {
     const isIOS = /(iPhone|iPod|iPad)/i.test(navigator.userAgent);
@@ -991,7 +922,7 @@ const Home = () => {
       audioRef.current.play();
       initializeMediaSession();
     }
-  }, [songlink]);
+  }, [songlink, initializeMediaSession]);
 
   useEffect(() => {
     const isIOS = /(iPhone|iPod|iPad)/i.test(navigator.userAgent);
@@ -1000,26 +931,13 @@ const Home = () => {
       audioRef.current.play();
       initializeMediaSession2();
     }
-  }, [songlink2]);
+  }, [songlink2, initializeMediaSession2]);
+
 
   useEffect(() => {
-    const isIOS = /(iPhone|iPod|iPad)/i.test(navigator.userAgent);
-
-    if (!isIOS && songlink3.length > 0) {
-      audioRef.current.play();
-      initializeMediaSession3();
-    }
-  }, [songlink3]);
-
-  useEffect(() => {
-    GetMoodDetails();
-  }, [mood]);
-
-  useEffect(() => {
-    // Call the function to process liked song IDs
     processLikedSongIds();
     // console.log('Selected Song IDs:', selectedIds);
-  }, [language]);
+  }, [language, processLikedSongIds]);
 
   // useEffect(() => {
   //   initializeMediaSession();
@@ -1151,67 +1069,72 @@ const Home = () => {
               <i className="ri-music-fill text-white text-xl"></i>
             </div>
           </div>
-          <motion.div ref={detailsRef} className="songs custom-scrollbar px-5 sm:px-3 flex flex-shrink gap-5 overflow-x-auto w-full pb-4">
-            {details?.map((t, i) => (
-              <motion.div
-                //  whileHover={{  y: 0,scale: 0.9 }}
-                //  viewport={{ once: true }}
-                initial={{ y: -100, scale: 0.5 }}
-                whileInView={{ y: 0, scale: 1 }}
-                transition={{ ease: Circ.easeIn, duration: 0.05 }}
-                onClick={() => audioseter(i)}
-                key={i}
-                className="relative hover:scale-90 sm:hover:scale-100  duration-150 flex-shrink-0 w-[15%] sm:w-[40%] rounded-md flex flex-col gap-1 py-4 cursor-pointer"
-              >
-                <motion.img
-                  className="relative w-full  rounded-md"
-                  // src={t.image[2].link}
-                  src={t.image[2].url}
-                  alt=""
-                />
-                <div className="flex  items-center ">
-                  <p className=" font-bold text-transparent bg-clip-text bg-gradient-to-r from-p-violet to-p-magenta">{i + 1}</p>
-                </div>
-
-                <img
-                  className={`absolute top-4 w-[20%] sm:w-[25%] rounded-md ${i === index ? "block" : "hidden"
-                    } `}
-                  src={wavs}
-                  alt=""
-                />
-                {songlink.length > 0 && (
-                  <i className={`absolute top-20 sm:top-16 w-full  flex items-center justify-center text-5xl text-p-magenta drop-shadow-[0_0_15px_rgba(191,64,255,0.8)] opacity-90  duration-300 rounded-md  ${t.id === songlink[0]?.id ? "block" : "hidden"
-                    } ${audiocheck
-                      ? "ri-pause-circle-fill"
-                      : "ri-play-circle-fill"
-                    }`}
-                  ></i>
-                )}
-
+          <div className="relative group w-full">
+            <ScrollButtons scrollRef={detailsRef} />
+            <motion.div ref={detailsRef} className="songs custom-scrollbar px-5 sm:px-3 flex flex-shrink gap-5 overflow-x-auto w-full pb-4">
+              {details?.map((t, i) => (
                 <motion.div
-                  //  initial={{ y: 50, scale:0}}
-                  //  whileInView={{ y: 0,scale: 1 }}
-                  //  transition={{ease:Circ.easeIn,duration:0.05}}
-                  className="flex flex-col"
+                  //  whileHover={{  y: 0,scale: 0.9 }}
+                  //  viewport={{ once: true }}
+                  initial={{ y: -100, scale: 0.5 }}
+                  whileInView={{ y: 0, scale: 1 }}
+                  transition={{ ease: Circ.easeIn, duration: 0.05 }}
+                  onClick={() => audioseter(i)}
+                  key={i}
+                  className="relative hover:scale-95 sm:hover:scale-105 duration-300 flex-shrink-0 w-[15%] sm:w-[40%] rounded-md flex flex-col gap-1 py-4 cursor-pointer"
                 >
-                  <h3
-                    className={`text-sm sm:text-xs leading-none  font-bold ${i === index ? "text-p-magenta shadow-purple-glow" : "text-white"
-                      }`}
-                  >
-                    {removeSourceAttribution(t.name)}
-                  </h3>
-                  <h4 className="text-xs sm:text-[2.5vw] text-white/60 ">
-                    {removeSourceAttribution(t.album.name)}
-                  </h4>
-                </motion.div>
-              </motion.div>
-            ))}
+                  <motion.img
+                    className="relative w-full  rounded-md"
+                    // src={t.image[2].link}
+                    src={t.image[2].url}
+                    alt=""
+                  />
+                  <div className="flex  items-center ">
+                    <p className=" font-bold text-transparent bg-clip-text bg-gradient-to-r from-p-violet to-p-magenta">{i + 1}</p>
+                  </div>
 
-            <img
-              className={page >= 18 ? "hidden" : "w-[20%] h-[20%]"}
-              src={wait}
-            />
-          </motion.div>
+                  <img
+                    className={`absolute top-4 w-[20%] sm:w-[25%] rounded-md ${i === index ? "block" : "hidden"
+                      } `}
+                    src={wavs}
+                    alt=""
+                  />
+                  {songlink.length > 0 && (
+                    <i className={`absolute top-20 sm:top-16 w-full  flex items-center justify-center text-5xl text-p-magenta drop-shadow-[0_0_15px_rgba(191,64,255,0.8)] opacity-90  duration-300 rounded-md  ${t.id === songlink[0]?.id ? "block" : "hidden"
+                      } ${audiocheck
+                        ? "ri-pause-circle-fill"
+                        : "ri-play-circle-fill"
+                      }`}
+                    ></i>
+                  )}
+
+                  <motion.div
+                    className="flex flex-col"
+                  >
+                    <h3
+                      className={`text-sm sm:text-xs leading-none font-bold ${i === index ? "text-p-magenta shadow-purple-glow" : "text-white"
+                        }`}
+                    >
+                      {removeSourceAttribution(t.name)}
+                    </h3>
+                    <h4 className="text-xs sm:text-[2.5vw] text-white/60">
+                      {removeSourceAttribution(t.album.name)}
+                    </h4>
+                    <div className="flex flex-col mt-1">
+                      <span className="text-[10px] sm:text-[8px] text-zinc-400">
+                        {getArtistMetadata(t.artists).singleLine}
+                      </span>
+                    </div>
+                  </motion.div>
+                </motion.div>
+              ))}
+
+              <img
+                className={page >= 18 ? "hidden" : "w-[20%] h-[20%]"}
+                src={wait}
+              />
+            </motion.div>
+          </div>
         </div>
         {suggSong.length > 0 && (
           <div className="trending songs flex flex-col gap-3 w-full ">
@@ -1237,64 +1160,70 @@ const Home = () => {
                 <i className="ri-music-fill text-white text-xl"></i>
               </div>
             </div>
-            <motion.div ref={suggRef} className="songs custom-scrollbar px-5 sm:px-3 flex flex-shrink gap-5 overflow-x-auto w-full pb-4">
-              {suggSong?.map((t, i) => (
-                <motion.div
-                  //  whileHover={{  y: 0,scale: 0.9 }}
-                  //  viewport={{ once: true }}
-                  initial={{ y: -100, scale: 0.5 }}
-                  whileInView={{ y: 0, scale: 1 }}
-                  transition={{ ease: Circ.easeIn, duration: 0.05 }}
-                  onClick={() => audioseter2(i)}
-                  key={i}
-                  className="relative hover:scale-90 sm:hover:scale-100  duration-150 flex-shrink-0 w-[15%] sm:w-[40%] rounded-md flex flex-col gap-1 py-4 cursor-pointer"
-                >
-                  <motion.img
-                    className="relative w-full  rounded-md"
-                    // src={t.image[2].link}
-                    src={t.image[2].url}
-                    alt=""
-                  />
-                  <div className="flex  items-center ">
-                    <p className=" font-bold text-transparent bg-clip-text bg-gradient-to-r from-p-violet to-p-magenta">{i + 1}</p>
-                  </div>
-
-                  <img
-                    className={`absolute top-4 w-[20%] sm:w-[25%] rounded-md ${i === index2 ? "block" : "hidden"
-                      } `}
-                    src={wavs}
-                    alt=""
-                  />
-                  {songlink2.length > 0 && (
-                    <i className={`absolute top-20 sm:top-16 w-full  flex items-center justify-center text-5xl text-p-magenta drop-shadow-[0_0_15px_rgba(191,64,255,0.8)] opacity-90  duration-300 rounded-md  ${t.id === songlink2[0]?.id ? "block" : "hidden"
-                      } ${audiocheck
-                        ? "ri-pause-circle-fill"
-                        : "ri-play-circle-fill"
-                      }`}
-                    ></i>
-                  )}
-
+            <div className="relative group w-full">
+              <ScrollButtons scrollRef={suggRef} />
+              <motion.div ref={suggRef} className="songs custom-scrollbar px-5 sm:px-3 flex flex-shrink gap-5 overflow-x-auto w-full pb-4">
+                {suggSong?.map((t, i) => (
                   <motion.div
-                    //  initial={{ y: 50, scale:0}}
-                    //  whileInView={{ y: 0,scale: 1 }}
-                    //  transition={{ease:Circ.easeIn,duration:0.05}}
-                    className="flex flex-col"
+                    //  whileHover={{  y: 0,scale: 0.9 }}
+                    //  viewport={{ once: true }}
+                    initial={{ y: -100, scale: 0.5 }}
+                    whileInView={{ y: 0, scale: 1 }}
+                    transition={{ ease: Circ.easeIn, duration: 0.05 }}
+                    onClick={() => audioseter2(i)}
+                    key={i}
+                    className="relative hover:scale-95 sm:hover:scale-105 duration-300 flex-shrink-0 w-[15%] sm:w-[40%] rounded-md flex flex-col gap-1 py-4 cursor-pointer"
                   >
-                    <h3
-                      className={`text-sm sm:text-xs leading-none  font-bold ${t.id === songlink2[0]?.id ? "text-p-magenta shadow-purple-glow" : "text-white"
+                    <motion.img
+                      className="relative w-full  rounded-md"
+                      // src={t.image[2].link}
+                      src={t.image[2].url}
+                      alt=""
+                    />
+                    <div className="flex  items-center ">
+                      <p className=" font-bold text-transparent bg-clip-text bg-gradient-to-r from-p-violet to-p-magenta">{i + 1}</p>
+                    </div>
+
+                    <img
+                      className={`absolute top-4 w-[20%] sm:w-[25%] rounded-md ${i === index2 ? "block" : "hidden"
+                        } `}
+                      src={wavs}
+                      alt=""
+                    />
+                    {songlink2.length > 0 && (
+                      <i className={`absolute top-20 sm:top-16 w-full  flex items-center justify-center text-5xl text-p-magenta drop-shadow-[0_0_15px_rgba(191,64,255,0.8)] opacity-90  duration-300 rounded-md  ${t.id === songlink2[0]?.id ? "block" : "hidden"
+                        } ${audiocheck
+                          ? "ri-pause-circle-fill"
+                          : "ri-play-circle-fill"
                         }`}
+                      ></i>
+                    )}
+
+                    <motion.div
+                      className="flex flex-col"
                     >
-                      {removeSourceAttribution(t.name)}
-                    </h3>
-                    <h4 className="text-xs sm:text-[2.5vw] text-white/70 ">
-                      {t.album.name}
-                    </h4>
+                      <h3
+                        className={`text-sm sm:text-xs leading-none font-bold ${t.id === songlink2[0]?.id ? "text-p-magenta shadow-purple-glow" : "text-white"
+                          }`}
+                      >
+                        {removeSourceAttribution(t.name)}
+                      </h3>
+                      <h4 className="text-xs sm:text-[2.5vw] text-white/70">
+                        {t.album.name}
+                      </h4>
+                      <div className="flex flex-col mt-1">
+                        <span className="text-[10px] sm:text-[8px] text-zinc-400">
+                          {getArtistMetadata(t.artists).singleLine}
+                        </span>
+                      </div>
+                    </motion.div>
                   </motion.div>
-                </motion.div>
-              ))}
-            </motion.div>
+                ))}
+              </motion.div>
+            </div>
           </div>
         )}
+
 
         {/* <div className="trending flex flex-col gap-3 w-full ">
           <h3 className="text-xl h-[5vh] font-semibold">Trending Albums</h3>
@@ -1337,32 +1266,35 @@ const Home = () => {
               <i className="ri-music-fill text-white text-xl"></i>
             </div>
           </div>
-          <div ref={chartsRef} className="chartsdata custom-scrollbar px-5 sm:px-3 flex flex-shrink gap-5 overflow-x-auto w-full pb-4">
-            {home?.charts?.map((c, i) => (
-              <motion.div
-                initial={{ y: -100, scale: 0.5 }}
-                whileInView={{ y: 0, scale: 1 }}
-                transition={{ ease: Circ.easeIn, duration: 0.05 }}
-                // onClick={`/playlist/details/${c.id}`}
-                onClick={() => navigate(`/playlist/details/${c.id}`)}
-                key={i}
-                className="hover:scale-110 sm:hover:scale-100  duration-150 flex-shrink-0 w-[15%] sm:w-[40%] rounded-md flex flex-col gap-2 py-4 cursor-pointer"
-              >
-                <img
-                  className="w-full  rounded-md"
-                  src={c.image[2].link}
-                  alt=""
-                />
-                <motion.h3
-                  // initial={{ y: 50, opacity: 0 }}
-                  // whileInView={{ y: 0, opacity: 1 }}
-                  // transition={{ease:Circ.easeIn,duration:0.05}}
-                  className="leading-none"
+          <div className="relative group w-full">
+            <ScrollButtons scrollRef={chartsRef} />
+            <div ref={chartsRef} className="chartsdata custom-scrollbar px-5 sm:px-3 flex flex-shrink gap-5 overflow-x-auto w-full pb-4">
+              {home?.charts?.map((c, i) => (
+                <motion.div
+                  initial={{ y: -100, scale: 0.5 }}
+                  whileInView={{ y: 0, scale: 1 }}
+                  transition={{ ease: Circ.easeIn, duration: 0.05 }}
+                  // onClick={`/playlist/details/${c.id}`}
+                  onClick={() => navigate(`/playlist/details/${c.id}`)}
+                  key={i}
+                  className="hover:scale-110 sm:hover:scale-105  duration-300 flex-shrink-0 w-[15%] sm:w-[40%] rounded-md flex flex-col gap-2 py-4 cursor-pointer"
                 >
-                  {c.title}
-                </motion.h3>
-              </motion.div>
-            ))}
+                  <img
+                    className="w-full  rounded-md"
+                    src={c.image[2].link}
+                    alt=""
+                  />
+                  <motion.h3
+                    // initial={{ y: 50, opacity: 0 }}
+                    // whileInView={{ y: 0, opacity: 1 }}
+                    // transition={{ease:Circ.easeIn,duration:0.05}}
+                    className="leading-none"
+                  >
+                    {c.title}
+                  </motion.h3>
+                </motion.div>
+              ))}
+            </div>
           </div>
         </div>
         <div className="playlists w-full  flex flex-col gap-3 ">
@@ -1385,32 +1317,35 @@ const Home = () => {
               <i className="ri-music-fill text-white text-xl"></i>
             </div>
           </div>
-          <div ref={playlistsRef} className="playlistsdata custom-scrollbar px-5 sm:px-3 flex flex-shrink gap-5 overflow-x-auto w-full pb-4">
-            {home?.playlists?.map((p, i) => (
-              <motion.div
-                initial={{ y: -100, scale: 0.5 }}
-                whileInView={{ y: 0, scale: 1 }}
-                transition={{ ease: Circ.easeIn, duration: 0.05 }}
-                // to={`/playlist/details/${p.id}`}
-                onClick={() => navigate(`/playlist/details/${p.id}`)}
-                key={i}
-                className="hover:scale-110  sm:hover:scale-100  duration-150 flex-shrink-0 w-[15%] sm:w-[40%] rounded-md  flex flex-col gap-2 py-4 cursor-pointer"
-              >
-                <img
-                  className="w-full  rounded-md"
-                  src={p.image[2].link}
-                  alt=""
-                />
-                <motion.h3
-                  // initial={{ y: 50, opacity: 0 }}
-                  // whileInView={{ y: 0, opacity: 1 }}
-                  // transition={{ease:Circ.easeIn,duration:0.05}}
-                  className="leading-none"
+          <div className="relative group w-full">
+            <ScrollButtons scrollRef={playlistsRef} />
+            <div ref={playlistsRef} className="playlistsdata custom-scrollbar px-5 sm:px-3 flex flex-shrink gap-5 overflow-x-auto w-full pb-4">
+              {home?.playlists?.map((p, i) => (
+                <motion.div
+                  initial={{ y: -100, scale: 0.5 }}
+                  whileInView={{ y: 0, scale: 1 }}
+                  transition={{ ease: Circ.easeIn, duration: 0.05 }}
+                  // to={`/playlist/details/${p.id}`}
+                  onClick={() => navigate(`/playlist/details/${p.id}`)}
+                  key={i}
+                  className="hover:scale-110  sm:hover:scale-105 duration-300 flex-shrink-0 w-[15%] sm:w-[40%] rounded-md  flex flex-col gap-2 py-4 cursor-pointer"
                 >
-                  {p.title}
-                </motion.h3>
-              </motion.div>
-            ))}
+                  <img
+                    className="w-full  rounded-md"
+                    src={p.image[2].link}
+                    alt=""
+                  />
+                  <motion.h3
+                    // initial={{ y: 50, opacity: 0 }}
+                    // whileInView={{ y: 0, opacity: 1 }}
+                    // transition={{ease:Circ.easeIn,duration:0.05}}
+                    className="leading-none"
+                  >
+                    {p.title}
+                  </motion.h3>
+                </motion.div>
+              ))}
+            </div>
           </div>
         </div>
         <div className="albums w-full flex flex-col gap-3 ">
@@ -1433,45 +1368,87 @@ const Home = () => {
               <i className="ri-music-fill text-white text-xl"></i>
             </div>
           </div>
-          <div ref={albumsRef} className="albumsdata custom-scrollbar px-5 sm:px-3 flex flex-shrink gap-5 overflow-x-auto w-full pb-4">
-            {home?.albums?.map((a, i) => (
-              <motion.div
-                initial={{ y: -100, scale: 0.5 }}
-                whileInView={{ y: 0, scale: 1 }}
-                transition={{ ease: Circ.easeIn, duration: 0.05 }}
-                // to={`/albums/details/${a.id}`}
-                onClick={() => navigate(`/albums/details/${a.id}`)}
-                key={i}
-                className="hover:scale-110 sm:hover:scale-100  duration-150 flex-shrink-0 w-[15%] sm:w-[40%] rounded-md  flex flex-col gap-2 py-4 cursor-pointer"
-              >
-                <img
-                  className="w-full  rounded-md"
-                  src={a.image[2].link}
-                  alt=""
-                />
-                <motion.h3
-                  // initial={{ y: 50, opacity: 0 }}
-                  // whileInView={{ y: 0, opacity: 1 }}
-                  // transition={{ease:Circ.easeIn,duration:0.05}}
-                  className="leading-none"
+          <div className="relative group w-full">
+            <ScrollButtons scrollRef={albumsRef} />
+            <div ref={albumsRef} className="albumsdata custom-scrollbar px-5 sm:px-3 flex flex-shrink gap-5 overflow-x-auto w-full pb-4">
+              {home?.albums?.map((a, i) => (
+                <motion.div
+                  initial={{ y: -100, scale: 0.5 }}
+                  whileInView={{ y: 0, scale: 1 }}
+                  transition={{ ease: Circ.easeIn, duration: 0.05 }}
+                  // to={`/albums/details/${a.id}`}
+                  onClick={() => navigate(`/albums/details/${a.id}`)}
+                  key={i}
+                  className="hover:scale-110 sm:hover:scale-105  duration-300 flex-shrink-0 w-[15%] sm:w-[40%] rounded-md  flex flex-col gap-2 py-4 cursor-pointer"
                 >
-                  {removeSourceAttribution(a.name)}
-                </motion.h3>
-              </motion.div>
-            ))}
+                  <img
+                    className="w-full  rounded-md"
+                    src={a.image[2].link}
+                    alt=""
+                  />
+                  <motion.h3
+                    // initial={{ y: 50, opacity: 0 }}
+                    // whileInView={{ y: 0, opacity: 1 }}
+                    // transition={{ease:Circ.easeIn,duration:0.05}}
+                    className="leading-none"
+                  >
+                    {removeSourceAttribution(a.name)}
+                  </motion.h3>
+                </motion.div>
+              ))}
+            </div>
           </div>
         </div>
-        {freshHitsLanguages
-          .filter((lang) => lang === language)
-          .map((lang, i) => (
-            <FreshHitRow
-              key={i}
-              language={lang}
-              data={freshHitsData[lang]}
-              navigate={navigate}
-              onRefresh={(l) => GetFreshHits(l)}
-            />
-          ))}
+
+        {indiaSuperhitsTop50.length > 0 && (
+          <div className="india-superhits-top-50 w-full flex flex-col gap-3 ">
+            <div className="relative w-full py-3 px-6 mb-2 flex items-center justify-between rounded-3xl bg-white/5 backdrop-blur-2xl border-t border-l border-r border-white/10 border-b-0 shadow-xl overflow-hidden shrink-0 group">
+              <div className="absolute bottom-0 left-0 w-full h-[2px] bg-gradient-to-r from-[#8A2BE2] via-[#BF40FF] to-[#8A2BE2] blur-[1px] shadow-[0_0_20px_rgba(191,64,255,0.6)]"></div>
+              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-black/20 border border-white/5 backdrop-blur-md shadow-[inset_0_1px_4px_rgba(255,255,255,0.1)] cursor-pointer hover:bg-white/10 hover:scale-105 transition-all duration-300">
+                <i className="ri-music-fill text-white text-xl"></i>
+              </div>
+              <h3 className="text-2xl font-bold text-white/90 tracking-wide capitalize drop-shadow-lg font-sans">
+                India Superhits Top 50
+              </h3>
+              <div onClick={GetIndiaSuperhitsTop50} className="flex items-center justify-center w-10 h-10 rounded-full bg-black/20 border border-white/5 backdrop-blur-md shadow-[inset_0_1px_4px_rgba(255,255,255,0.1)] cursor-pointer hover:bg-white/10 hover:scale-105 transition-all duration-300">
+                <i className="ri-refresh-line text-white text-xl"></i>
+              </div>
+            </div>
+            <div className="relative group w-full">
+              <ScrollButtons scrollRef={indiaSuperhitsTop50Ref} />
+              <div ref={indiaSuperhitsTop50Ref} className="indiasuperhitstop50data custom-scrollbar px-5 sm:px-3 flex flex-shrink gap-5 overflow-x-auto w-full pb-4">
+                {indiaSuperhitsTop50?.map((f, i) => (
+                  <motion.div
+                    initial={{ y: -100, scale: 0.5 }}
+                    whileInView={{ y: 0, scale: 1 }}
+                    transition={{ ease: Circ.easeIn, duration: 0.05 }}
+                    onClick={() => navigate(`/playlist/details/${f.id}`)}
+                    key={i}
+                    className="hover:scale-110 sm:hover:scale-105 duration-300 flex-shrink-0 w-[15%] sm:w-[40%] rounded-md flex flex-col gap-2 py-4 cursor-pointer"
+                  >
+                    <img
+                      className="w-full rounded-md"
+                      src={f.image?.[2]?.link || f.image?.[2]?.url || f.image?.[0]?.link || f.image?.[0]?.url}
+                      alt=""
+                    />
+                    <motion.h3 className="leading-none">
+                      {removeSourceAttribution(f.name)}
+                    </motion.h3>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+        {freshHitsData.length > 0 && (
+          <FreshHitRow
+            key="fresh-hits"
+            language="All" // Not used for title anymore but might be needed for prop types if strictly typed (not here)
+            data={freshHitsData}
+            navigate={navigate}
+            onRefresh={() => GetFreshHits()}
+          />
+        )}
         {bestOf90s.length > 0 && (
           <div className="best-of-90s w-full flex flex-col gap-3 ">
             <div className="relative w-full py-3 px-6 mb-2 flex items-center justify-between rounded-3xl bg-white/5 backdrop-blur-2xl border-t border-l border-r border-white/10 border-b-0 shadow-xl overflow-hidden shrink-0 group">
@@ -1486,29 +1463,36 @@ const Home = () => {
                 <i className="ri-refresh-line text-white text-xl"></i>
               </div>
             </div>
-            <div ref={bestOf90sRef} className="bestof90sdata custom-scrollbar px-5 sm:px-3 flex flex-shrink gap-5 overflow-x-auto w-full pb-4">
-              {bestOf90s?.map((f, i) => (
-                <motion.div
-                  initial={{ y: -100, scale: 0.5 }}
-                  whileInView={{ y: 0, scale: 1 }}
-                  transition={{ ease: Circ.easeIn, duration: 0.05 }}
-                  onClick={() => navigate(`/playlist/details/${f.id}`)}
-                  key={i}
-                  className="hover:scale-110 sm:hover:scale-100 duration-150 flex-shrink-0 w-[15%] sm:w-[40%] rounded-md flex flex-col gap-2 py-4 cursor-pointer"
-                >
-                  <img
-                    className="w-full rounded-md"
-                    src={f.image?.[2]?.link || f.image?.[2]?.url || f.image?.[0]?.link || f.image?.[0]?.url}
-                    alt=""
-                  />
-                  <motion.h3 className="leading-none">
-                    {removeSourceAttribution(f.name)}
-                  </motion.h3>
-                </motion.div>
-              ))}
+            <div className="relative group w-full">
+              <ScrollButtons scrollRef={bestOf90sRef} />
+              <div ref={bestOf90sRef} className="bestof90sdata custom-scrollbar px-5 sm:px-3 flex flex-shrink gap-5 overflow-x-auto w-full pb-4">
+                {bestOf90s?.map((f, i) => (
+                  <motion.div
+                    initial={{ y: -100, scale: 0.5 }}
+                    whileInView={{ y: 0, scale: 1 }}
+                    transition={{ ease: Circ.easeIn, duration: 0.05 }}
+                    onClick={() => navigate(`/playlist/details/${f.id}`)}
+                    key={i}
+                    className="hover:scale-110 sm:hover:scale-105 duration-300 flex-shrink-0 w-[15%] sm:w-[40%] rounded-md flex flex-col gap-2 py-4 cursor-pointer"
+                  >
+                    <img
+                      className="w-full rounded-md"
+                      src={f.image?.[2]?.link || f.image?.[2]?.url || f.image?.[0]?.link || f.image?.[0]?.url}
+                      alt=""
+                    />
+                    <motion.h3 className="leading-none">
+                      {removeSourceAttribution(f.name)}
+                    </motion.h3>
+                  </motion.div>
+                ))}
+              </div>
             </div>
           </div>
         )}
+
+
+
+
         <div>
           <p className="font-semibold text-white/50 sm:text-sm">
             <b></b>
@@ -1518,7 +1502,7 @@ const Home = () => {
 
       <motion.div
         className={
-          (songlink.length > 0 || songlink2.length > 0 || songlink3.length > 0)
+          (songlink.length > 0 || songlink2.length > 0)
             ? `duration-700 fixed z-[99] bottom-0 flex gap-3 items-center w-full py-3 backdrop-blur-xl`
             : "hidden"
         }
@@ -1539,11 +1523,6 @@ const Home = () => {
             activeIndex = index2;
             handleNext = next2;
             handlePre = pre2;
-          } else if (songlink3.length > 0) {
-            activeLink = songlink3;
-            activeIndex = index3;
-            handleNext = next3;
-            handlePre = pre3;
           }
 
           return activeLink?.map((e, i) => (
@@ -1568,9 +1547,16 @@ const Home = () => {
                   alt=""
                 />
 
-                <h3 className="sm:w-[30%] text-white text-xs font-semibold">
-                  {removeSourceAttribution(e?.name)}
-                </h3>
+                <div className="flex flex-col">
+                  <h3 className="sm:w-[30%] text-white text-xs font-semibold">
+                    {removeSourceAttribution(e?.name)}
+                  </h3>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] sm:text-[8px] text-zinc-400">
+                      {getArtistMetadata(e?.artists).singleLine}
+                    </span>
+                  </div>
+                </div>
                 <i
                   onClick={() => likehandle(e)}
                   className={`text-xl hover:scale-150 sm:hover:scale-100 duration-300 cursor-pointer ${like ? "text-p-magenta drop-shadow-[0_0_10px_rgba(191,64,255,0.8)]" : "text-white"} ri-heart-3-fill`}
@@ -1634,7 +1620,7 @@ const Home = () => {
                         imageUrl: e?.image[2]?.url,
                         songName: removeSourceAttribution(e?.name),
                         year: e?.year,
-                        album: removeSourceAttribution(e?.album.name),
+                        album: getAlbumFromTitle(e?.name) || removeSourceAttribution(e?.album?.name),
                         artist: e?.artists?.primary?.map(artist => artist.name).join(",")
                       })
                     }

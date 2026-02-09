@@ -19,7 +19,8 @@ import { Circ } from "gsap/all";
 import toast, { Toaster } from "react-hot-toast";
 import handleGenerateAudio from "./../utils/audioUtils";
 import handleGenerateAudio2 from "./../utils/audioUtils2";
-import { removeSourceAttribution } from "../utils/stringUtils";
+import { getArtistMetadata } from "../utils/artistUtils";
+import { removeSourceAttribution, getAlbumFromTitle } from "../utils/stringUtils";
 import { processSong, loadFFmpeg } from "../utils/audioProcessor";
 
 import JSZip from "jszip";
@@ -707,14 +708,27 @@ const PlaylistDetails = () => {
               <div className="ml-3 sm:ml-3 flex justify-center items-center gap-5 mt-2">
                 <div className="flex flex-col">
                   <h3
-                    className={`text-sm sm:text-xs leading-none  font-bold ${d.id === songlink[0]?.id && "text-white"
+                    className={`text-lg sm:text-base leading-none font-bold ${d.id === songlink[0]?.id && "text-green-300"
                       }`}
                   >
                     {removeSourceAttribution(d.name)}
                   </h3>
-                  <h4 className="text-xs sm:text-[2.5vw] text-white opacity-60 ">
-                    {removeSourceAttribution(d.album.name)}
-                  </h4>
+                  {(() => {
+                    const extractedAlbum = getAlbumFromTitle(d.name);
+                    const displayAlbum = extractedAlbum || removeSourceAttribution(d.album.name);
+                    return (
+                      removeSourceAttribution(d.name) !== displayAlbum && (
+                        <h4 className="text-sm sm:text-xs text-zinc-300">
+                          {displayAlbum}
+                        </h4>
+                      )
+                    );
+                  })()}
+                  <div className="flex flex-col mt-1">
+                    <span className="text-xs sm:text-[10px] text-zinc-400">
+                      {getArtistMetadata(d.artists).singleLine}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -739,7 +753,7 @@ const PlaylistDetails = () => {
                     imageUrl: d?.image[2]?.url,
                     songName: removeSourceAttribution(d?.name),
                     year: d?.year,
-                    album: removeSourceAttribution(d?.album.name),
+                    album: getAlbumFromTitle(d?.name) || removeSourceAttribution(d?.album.name),
                     artist: d?.artists?.primary
                       ?.map((artist) => artist.name)
                       .join(","),

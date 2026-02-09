@@ -9,6 +9,7 @@ import {
 } from "react-router-dom";
 import Loading from "./Loading";
 const wavs = "/wavs.gif";
+import { getArtistMetadata } from "../utils/artistUtils";
 const noimg = "/noimg.png";
 import {
   animate,
@@ -24,7 +25,7 @@ import { useAnimate, stagger } from "framer-motion";
 import { Bounce, Expo, Power4, Sine } from "gsap/all";
 import { Circ } from "gsap/all";
 import toast, { Toaster } from "react-hot-toast";
-import { removeSourceAttribution } from "../utils/stringUtils";
+import { removeSourceAttribution, getAlbumFromTitle } from "../utils/stringUtils";
 
 const SongDetails = () => {
   let { id } = useParams();
@@ -353,6 +354,11 @@ const SongDetails = () => {
                 {e.type} - {Math.floor(e.duration / 60) + " min"} - {e.language}{" "}
                 - {e.year}
               </p>
+              <div className="flex flex-col mt-1">
+                <span className="text-sm text-zinc-400">
+                  {getArtistMetadata(e.artists).singleLine}
+                </span>
+              </div>
               <p>{e.copyright}</p>
               <div className="sm:hidden mt-2 flex flex-col text-[1vw] items-start  gap-2">
                 <div>
@@ -416,7 +422,7 @@ const SongDetails = () => {
                         imageUrl: e.image[2].url,
                         songName: removeSourceAttribution(e.name),
                         year: e.year,
-                        album: removeSourceAttribution(e.album.name),
+                        album: getAlbumFromTitle(e?.name) || removeSourceAttribution(e?.album.name),
                         artist: e?.artists?.primary?.map((a) => a.name).join(", "),
                       })
                     }
@@ -510,15 +516,27 @@ const SongDetails = () => {
                   //  transition={{ease:Circ.easeIn,duration:0.05}}
                   className="flex flex-col"
                 >
-                  <h3
-                    className={`text-sm sm:text-xs leading-none  font-bold ${i === index && "text-white"
-                      }`}
-                  >
-                    {removeSourceAttribution(t.name)}
-                  </h3>
-                  <h4 className="text-xs sm:text-[2.5vw] text-white/60 ">
-                    {removeSourceAttribution(t.album.name)}
-                  </h4>
+                  <div className="flex flex-col">
+                    <h3 className="text-xl sm:text-base leading-none font-bold text-green-300">
+                      {removeSourceAttribution(t.name)}
+                    </h3>
+                    {(() => {
+                      const extractedAlbum = getAlbumFromTitle(t.name);
+                      const displayAlbum = extractedAlbum || removeSourceAttribution(t.album.name);
+                      return (
+                        removeSourceAttribution(t.name) !== displayAlbum && (
+                          <h4 className="text-sm sm:text-xs text-zinc-300">
+                            {displayAlbum}
+                          </h4>
+                        )
+                      );
+                    })()}
+                    <div className="flex flex-col mt-2">
+                      <span className="text-xs text-zinc-400">
+                        {getArtistMetadata(t.artists).singleLine}
+                      </span>
+                    </div>
+                  </div>
                 </motion.div>
               </motion.div>
             ))}
@@ -680,7 +698,7 @@ const SongDetails = () => {
                       imageUrl: e.image[2].url,
                       songName: removeSourceAttribution(e.name),
                       year: e.year,
-                      album: removeSourceAttribution(e.album.name),
+                      album: getAlbumFromTitle(e?.name) || removeSourceAttribution(e?.album.name),
                       artist: e?.artists?.primary?.map((a) => a.name).join(", "),
                     })
                   }

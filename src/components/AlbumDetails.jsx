@@ -19,7 +19,8 @@ import { Circ } from "gsap/all";
 import toast, { Toaster } from "react-hot-toast";
 import handleGenerateAudio from "./../utils/audioUtils";
 import handleGenerateAudio2 from "./../utils/audioUtils2";
-import { removeSourceAttribution } from "../utils/stringUtils";
+import { getArtistMetadata } from "../utils/artistUtils";
+import { removeSourceAttribution, getAlbumFromTitle } from "../utils/stringUtils";
 import { processSong, loadFFmpeg } from "../utils/audioProcessor";
 
 import JSZip from "jszip";
@@ -82,9 +83,19 @@ const AlbumDetails = () => {
             // Get the highest quality image for cover art
             const coverUrl = song.image?.[2]?.url || song.image?.[1]?.url || song.image?.[0]?.url;
 
+            // Determine Album Name
+            const albumName = getAlbumFromTitle(song.name) || removeSourceAttribution(song.album?.name);
+
             // Process song using FFmpeg
             // Note: fetchFile happens in parallel, FFmpeg calls are serialized by Mutex inside processSong
-            const blob = await processSong(song, coverUrl, ffmpeg);
+            // We need to pass the album name to processSong if it supports metadata override, 
+            // but processSong signature is (song, coverUrl, ffmpeg). 
+            // Assuming processSong handles metadata internally or I need to modify processSong.
+            // Wait, looking at utils/audioProcessor.js (not read yet), but `song` object is passed.
+            // I should construct a modified song object with correct album?
+            const modifiedSong = { ...song, album: { ...song.album, name: albumName } };
+
+            const blob = await processSong(modifiedSong, coverUrl, ffmpeg);
 
             if (blob) {
               folder.file(fileName, blob);
@@ -808,14 +819,27 @@ const AlbumDetails = () => {
               <div className="ml-3 sm:ml-3 flex justify-center items-center gap-5 mt-2">
                 <div className="flex flex-col">
                   <h3
-                    className={`text-sm sm:text-xs leading-none  font-bold ${d.id === songlink[0]?.id && "text-white"
+                    className={`text-lg sm:text-base leading-none font-bold ${d.id === songlink[0]?.id && "text-green-300"
                       }`}
                   >
                     {removeSourceAttribution(d.name)}
                   </h3>
-                  <h4 className="text-xs sm:text-[2.5vw] text-white opacity-60 ">
-                    {removeSourceAttribution(d.album.name)}
-                  </h4>
+                  {(() => {
+                    const extractedAlbum = getAlbumFromTitle(d.name);
+                    const displayAlbum = extractedAlbum || removeSourceAttribution(d.album.name);
+                    return (
+                      removeSourceAttribution(d.name) !== displayAlbum && (
+                        <h4 className="text-sm sm:text-xs text-zinc-300">
+                          {displayAlbum}
+                        </h4>
+                      )
+                    );
+                  })()}
+                  <div className="flex flex-col mt-1">
+                    <span className="text-xs sm:text-[10px] text-zinc-400">
+                      {getArtistMetadata(d.artists).singleLine}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -840,7 +864,7 @@ const AlbumDetails = () => {
                     imageUrl: d?.image[2]?.url,
                     songName: removeSourceAttribution(d?.name),
                     year: d?.year,
-                    album: removeSourceAttribution(d?.album.name),
+                    album: getAlbumFromTitle(d?.name) || removeSourceAttribution(d?.album?.name),
                     artist: d?.artists?.primary
                       ?.map((artist) => artist.name)
                       .join(","),

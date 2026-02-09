@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { processSong } from "../utils/audioProcessor";
 import { saveAs } from "file-saver";
 import { removeSourceAttribution } from "../utils/stringUtils";
+import { getArtistMetadata } from "../utils/artistUtils";
 import toast from "react-hot-toast";
 
 const PlayerBar = () => {
@@ -78,7 +79,7 @@ const PlayerBar = () => {
                                 {removeSourceAttribution(currentSong?.name)}
                             </h4>
                             <p className="text-xs text-white/60 truncate">
-                                {currentSong?.primaryArtists || currentSong?.artist}
+                                {getArtistMetadata(currentSong?.artists).singleLine}
                             </p>
                         </div>
 
@@ -173,7 +174,7 @@ const PlayerBar = () => {
                                     className="text-lg text-white/60 truncate"
                                     layoutId="artist"
                                 >
-                                    {currentSong?.primaryArtists || currentSong?.artist}
+                                    {getArtistMetadata(currentSong?.artists).singleLine}
                                 </motion.p>
                             </div>
                             <div className="flex items-center gap-4">
