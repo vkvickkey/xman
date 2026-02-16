@@ -1,4 +1,5 @@
 import axios from "axios";
+import { getApiUrl } from "../apiConfig";
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -29,7 +30,7 @@ const Artists = () => {
       const { data } = await axios.get(
         // `https://saavn.dev/api/search/artists?query=${query}&limit=10`
         // `https://jiosaavan-harsh-patel.vercel.app/search/artists?query=${query}&limit=10`
-        `https://jiosavan-api-with-playlist.vercel.app/api/search/artists?query=${query}&limit=100`
+        getApiUrl("search", `/search/artists?query=${query}&limit=100`)
       );
       setartists(data?.data?.results);
       localStorage.setItem("artists", JSON.stringify(data?.data?.results));

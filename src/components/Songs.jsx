@@ -1,4 +1,5 @@
 import axios from "axios";
+import { getApiUrl } from "../apiConfig";
 import React, { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 const wavs = "/wavs.gif";
@@ -73,7 +74,7 @@ const Songs = () => {
       for (let i = 0; i < pagesToFetch; i++) {
         requests.push(
           axios.get(
-            `https://jiosavan-api-with-playlist.vercel.app/api/search/songs?query=${requery}&page=${page + i}&limit=${itemsPerPage}`
+            getApiUrl("search", `/search/songs?query=${requery}&page=${page + i}&limit=${itemsPerPage}`)
           )
         );
       }

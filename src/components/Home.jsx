@@ -28,6 +28,7 @@ import handleGenerateAudio2 from "./../utils/audioUtils2";
 import { getArtistMetadata } from "../utils/artistUtils";
 import { removeSourceAttribution, getAlbumFromTitle } from "../utils/stringUtils";
 import useDragScroll from "../utils/useDragScroll";
+import { getApiUrl } from "../apiConfig";
 
 // Static playlist configuration removed
 
@@ -195,12 +196,38 @@ const Home = () => {
   const Gethome = async () => {
     detailsseter();
     try {
-      const { data } = await axios.get(
-        `https://jiosaavan-harsh-patel.vercel.app/modules?language=${language.toLowerCase()}`
-      );
-      sethome(data.data);
+      const [trendingSongsRes, trendingAlbumsRes, chartsRes, playlistsRes, albumsRes] = await Promise.all([
+        axios.get(getApiUrl("search", `/search/songs?query=Trending ${language}&limit=10`)),
+        axios.get(getApiUrl("search", `/search/albums?query=Trending ${language}&limit=10`)),
+        axios.get(getApiUrl("search", `/search/playlists?query=Top ${language}&limit=10`)),
+        axios.get(getApiUrl("search", `/search/playlists?query=${language} Hits&limit=10`)),
+        axios.get(getApiUrl("search", `/search/albums?query=Latest ${language}&limit=10`))
+      ]);
+
+      const mapItems = (items) => items ? items.map(item => ({
+        id: item.id,
+        name: item.name,
+        title: item.title || item.name,
+        subtitle: item.subtitle || item.description || "",
+        type: item.type,
+        image: item.image ? item.image.map(img => ({ ...img, link: img.url })) : [],
+        url: item.url,
+        songs: item.songs || []
+      })) : [];
+
+      const homeData = {
+        charts: mapItems(chartsRes.data.data.results),
+        albums: mapItems(albumsRes.data.data.results),
+        playlists: mapItems(playlistsRes.data.data.results),
+        trending: {
+          songs: mapItems(trendingSongsRes.data.data.results),
+          albums: mapItems(trendingAlbumsRes.data.data.results)
+        }
+      };
+
+      sethome(homeData);
     } catch (error) {
-      console.log("error", error);
+      console.log("Error fetching home data:", error);
     }
   };
 
@@ -209,7 +236,7 @@ const Home = () => {
     try {
       const query = `Best of 90s ${language}`;
       const { data } = await axios.get(
-        `https://jiosavan-api-with-playlist.vercel.app/api/search/playlists?query=${encodeURIComponent(query)}&limit=20`
+        getApiUrl("search", `/search/playlists?query=${encodeURIComponent(query)}&limit=20`)
       );
       setBestOf90s(data?.data?.results || []);
     } catch (error) {
@@ -246,7 +273,7 @@ const Home = () => {
       }
 
       const { data } = await axios.get(
-        `https://jiosavan-api-with-playlist.vercel.app/api/search/playlists?query=${encodeURIComponent(query)}&limit=20`
+        getApiUrl("search", `/search/playlists?query=${encodeURIComponent(query)}&limit=20`)
       );
       setIndiaSuperhitsTop50(data?.data?.results || []);
     } catch (error) {
@@ -265,7 +292,7 @@ const Home = () => {
       const promises = ids.map(async (id) => {
         try {
           const { data } = await axios.get(
-            `https://jiosavan-api-with-playlist.vercel.app/api/playlists?id=${id}`
+            getApiUrl("search", `/playlists?id=${id}`)
           );
           return data.data; // The API returns the playlist object directly in data.data
         } catch (err) {
@@ -284,17 +311,41 @@ const Home = () => {
       console.error("Error fetching fresh hits:", error);
     }
   };
+  const GetLanguageSongs = async (overridePage) => {
+    try {
+      // Use sequential page number
+      const queryPage = overridePage || page;
+
+      const { data } = await axios.get(
+        getApiUrl("search", `/search/songs?query=${language.toLowerCase()}&page=${queryPage}&limit=20`)
+      );
+
+      setdetails((prevDetails) => {
+        // Filter out duplicates
+        const results = data?.data?.results || [];
+        const newData = results.filter(
+          (newItem) => !prevDetails.some((prevItem) => prevItem.id === newItem.id)
+        );
+        return [...prevDetails, ...newData];
+      });
+    } catch (error) {
+      console.log("Error fetching language songs:", error);
+    }
+  };
+
   const Getdetails = async (overridePage) => {
     try {
       let queryPage;
       if (overridePage) {
         queryPage = overridePage;
       } else {
-        queryPage = language.toLowerCase() === "english" ? page : page2;
+        // For other languages, keep using random page (page2)
+        // English is now handled by GetLanguageSongs, so we can default to page2 here for others
+        queryPage = page2;
       }
 
       const { data } = await axios.get(
-        `https://jiosavan-api-with-playlist.vercel.app/api/search/songs?query=${language.toLowerCase()}&page=${queryPage}&limit=20`
+        getApiUrl("search", `/search/songs?query=${language.toLowerCase()}&page=${queryPage}&limit=20`)
       );
 
       setdetails((prevDetails) => {
@@ -329,10 +380,37 @@ const Home = () => {
   const refreshHomeData = async () => {
     try {
       toast.success("Refreshing Charts & Albums...");
-      const { data } = await axios.get(
-        `https://jiosaavan-harsh-patel.vercel.app/modules?language=${language.toLowerCase()}`
-      );
-      sethome(data.data);
+      const [trendingSongsRes, trendingAlbumsRes, chartsRes, playlistsRes, albumsRes] = await Promise.all([
+        axios.get(getApiUrl("search", `/search/songs?query=Trending ${language}&limit=10`)),
+        axios.get(getApiUrl("search", `/search/albums?query=Trending ${language}&limit=10`)),
+        axios.get(getApiUrl("search", `/search/playlists?query=Top ${language}&limit=10`)),
+        axios.get(getApiUrl("search", `/search/playlists?query=${language} Hits&limit=10`)),
+        axios.get(getApiUrl("search", `/search/albums?query=Latest ${language}&limit=10`))
+      ]);
+
+      const mapItems = (items) => items ? items.map(item => ({
+        id: item.id,
+        name: item.name,
+        title: item.title || item.name,
+        subtitle: item.subtitle || item.description || "",
+        type: item.type,
+        image: item.image ? item.image.map(img => ({ ...img, link: img.url })) : [],
+        url: item.url,
+        songs: item.songs || []
+      })) : [];
+
+      const homeData = {
+        charts: mapItems(chartsRes.data.data.results),
+        albums: mapItems(albumsRes.data.data.results),
+        playlists: mapItems(playlistsRes.data.data.results),
+        trending: {
+          songs: mapItems(trendingSongsRes.data.data.results),
+          albums: mapItems(trendingAlbumsRes.data.data.results)
+        }
+      };
+
+      sethome(homeData);
+      toast.success("Refreshed!");
     } catch (error) {
       console.log("error", error);
       toast.error("Failed to refresh.");
@@ -442,7 +520,7 @@ const Home = () => {
   //   for (const id of storedSelectedSongIds) {
   //     try {
   //       const response = await axios.get(
-  //         `https://jiosavan-api-with-playlist.vercel.app/api/songs/${id}/suggestions`
+  //         getApiUrl("search", `/songs/${id}/suggestions`)
   //       );
   //       setsuggSong((prevState) => [...prevState, ...response.data.data]);
   //     } catch (error) {
@@ -462,7 +540,7 @@ const Home = () => {
     for (const id of storedSelectedSongIds) {
       try {
         const response = await axios.get(
-          `https://jiosavan-api-with-playlist.vercel.app/api/songs/${id}/suggestions`
+          getApiUrl("search", `/songs/${id}/suggestions`)
         );
 
         const newSongs = response.data.data.filter((song) => {
@@ -832,7 +910,7 @@ const Home = () => {
   //   try {
   //     toast.loading(`Processing your audio (${data.songName}) Please wait...`);
 
-  //     const response = await axios.get("https://the-ultimate-songs-download-server-python.vercel.app/generate-audio", {
+  //     const response = await axios.get(getApiUrl("download", "/generate-audio"), {
   //       params: data,
   //       responseType: "blob", // Important to receive the file as a blob
   //     });
@@ -883,11 +961,20 @@ const Home = () => {
     return intervalId;
   }
   useEffect(() => {
-    if (details.length >= 0 && page < 20) {
+    // List of languages to handle with sequential paging
+    const sequentialLanguages = ["english", "tamil", "malayalam", "telugu"];
+
+    // Increased limit for continuous playback
+    if (details.length >= 0 && page < 500) {
       const timeoutId = setTimeout(() => {
         setpage2(Math.floor(Math.random() * 50));
         setpage(prev => prev + 1);
-        Getdetails();
+
+        if (sequentialLanguages.includes(language.toLowerCase())) {
+          GetLanguageSongs(page + 1);
+        } else {
+          Getdetails();
+        }
       }, page <= 2 ? 500 : 2000);
       return () => clearTimeout(timeoutId);
     }
@@ -898,6 +985,14 @@ const Home = () => {
     GetFreshHits();
     GetBestOf90s();
     GetIndiaSuperhitsTop50();
+
+    // Initial fetch for songs based on language
+    const sequentialLanguages = ["english", "tamil", "malayalam", "telugu"];
+    if (sequentialLanguages.includes(language.toLowerCase())) {
+      GetLanguageSongs(1); // Start from page 1
+    } else {
+      Getdetails();
+    }
 
   }, [language]);
 

@@ -1,4 +1,5 @@
 import axios from "axios";
+import { getApiUrl } from "../apiConfig";
 import React, { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import Loading from "./Loading";
@@ -44,9 +45,7 @@ const ArtistsDetails = () => {
   const Getdetails = async () => {
     try {
       const { data } = await axios.get(
-        // `https://saavn.dev/api/artists/${finalid}/songs?page=${page}`
-        // `https://jiosaavan-harsh-patel.vercel.app/artists/${finalid}/songs?page=${page}`
-        `https://jiosavan-api-with-playlist.vercel.app/api/artists/${finalid}/songs?page=${page}`
+        getApiUrl("search", `/artists/${finalid}/songs?page=${page}`)
       );
       // setdetails(data?.data?.songs);
       // setdetails((prevState) => [...prevState, ...data.data.songs]);

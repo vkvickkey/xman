@@ -1,4 +1,5 @@
 import axios from "axios";
+import { getApiUrl } from "../apiConfig";
 import { removeSourceAttribution } from "../utils/stringUtils";
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -33,7 +34,7 @@ const Playlist = () => {
       const { data } = await axios.get(
         // `https://saavn.dev/api/search?query=${query}&page=1&limit=10`
         // `https://jiosaavan-harsh-patel.vercel.app/search/playlists?query=${query}`
-        `https://jiosavan-api-with-playlist.vercel.app/api/search/playlists?query=${query}&page=${page}&limit=10`
+        getApiUrl("search", `/search/playlists?query=${query}&page=${page}&limit=10`)
       );
 
       // setplaylist(data?.data?.results);
@@ -54,7 +55,7 @@ const Playlist = () => {
     try {
       toast.loading(`Fetching songs for ${name}...`, { id: "download-playlist" });
       const { data } = await axios.get(
-        `https://jiosavan-api-with-playlist.vercel.app/api/playlists?id=${id}&limit=100`
+        getApiUrl("search", `/playlists?id=${id}&limit=100`)
       );
       const songs = data.data.songs;
 

@@ -1,4 +1,5 @@
 import axios from "axios";
+import { getApiUrl } from "../apiConfig";
 import React, { useEffect, useState } from "react";
 import {
   Link,
@@ -42,7 +43,7 @@ const SongDetails = () => {
   const Getdetails = async () => {
     try {
       const { data } = await axios.get(
-        `https://jiosavan-api-with-playlist.vercel.app/api/songs/${id}/suggestions?limit=70`
+        getApiUrl("search", `/songs/${id}/suggestions?limit=70`)
       );
       // setdetails(data.data.songs);
       setdetails(data?.data);
@@ -54,7 +55,7 @@ const SongDetails = () => {
   const Getsong = async () => {
     try {
       const { data } = await axios.get(
-        `https://jiosavan-api-with-playlist.vercel.app/api/songs/${id}?lyrics=true`
+        getApiUrl("search", `/songs/${id}?lyrics=true`)
       );
       // setdetails(data.data.songs);
       setsong(data?.data);

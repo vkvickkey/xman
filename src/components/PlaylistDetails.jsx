@@ -25,6 +25,7 @@ import { processSong, loadFFmpeg } from "../utils/audioProcessor";
 
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
+import { getApiUrl } from "../apiConfig";
 
 const PlaylistDetails = () => {
   const navigate = useNavigate();
@@ -120,7 +121,7 @@ const PlaylistDetails = () => {
   const Getdetails = async () => {
     try {
       const { data } = await axios.get(
-        `https://jiosavan-api-with-playlist.vercel.app/api/playlists?id=${finalid}&limit=100`
+        getApiUrl("search", `/playlists?id=${finalid}&limit=100`)
       );
       // setdetails(data.data.songs);
       setdetails(data?.data?.songs);

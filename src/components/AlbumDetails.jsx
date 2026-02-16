@@ -1,4 +1,5 @@
 import axios from "axios";
+import { getApiUrl } from "../apiConfig";
 import React, { useEffect, useRef, useState } from "react";
 import { Link, Navigate, useLocation, useNavigate, useParams } from "react-router-dom";
 import Loading from "./Loading";
@@ -131,7 +132,7 @@ const AlbumDetails = () => {
     try {
       setLoading(true);
       const { data } = await axios.get(
-        `https://jiosavan-api-with-playlist.vercel.app/api/albums?id=${id}`
+        getApiUrl("search", `/albums?id=${id}`)
       );
 
       // Check if the response matches the "sample" data indicating an invalid album ID (likely a song ID)
@@ -143,7 +144,7 @@ const AlbumDetails = () => {
         try {
           // Attempt to fetch song details to get the correct album ID
           const songRes = await axios.get(
-            `https://jiosavan-api-with-playlist.vercel.app/api/songs/${id}`
+            getApiUrl("search", `/songs/${id}`)
           );
           const songData = songRes.data.data;
           const song = Array.isArray(songData) ? songData[0] : songData;
