@@ -32,9 +32,63 @@ import { getApiUrl } from "../apiConfig";
 
 // Static playlist configuration removed
 
+const shuffleArray = (array) => {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+};
 
+const filterUndesiredSongs = (songs) => {
+  const undesiredKeywords = [
+    // English / General
+    "rhyme", "kids", "devotional", "god", "divine", "mantra", "chant", "baby",
+    "children", "prayer", "worship", "gospel", "spiritual", "meditation", "nursery",
+    "lullaby", "story", "stories",
 
-// Component for individual Fresh Hits Row to handle its own scroll ref
+    // Hindi / Sanskrit
+    "bhajan", "aarti", "chalisa", "shloka", "sloka", "stotra", "stotram", "vandana",
+    "namavali", "kirtan", "sankirtan", "dhun", "kath", "paath", "amritwani",
+
+    // Tamil
+    "bakthi", "bhakthi", "suprabhatam", "kavasam", "potri", "alar", "virutham",
+    "padhigam", "thirumurai", "thevaram", "thiruvasagam",
+
+    // Telugu
+    "dandakam", "astakam", "ashtakam",
+
+    // Malayalam
+    "hindu devotional", "christian devotional", "muslim devotional",
+
+    // Gods / Deities (Common across languages)
+    "ganesh", "ganpati", "vinayagar", "pillaiyar",
+    "hanuman", "anjaneya",
+    "sai baba", "shirdi",
+    "krishna", "govinda", "gopal",
+    "rama", "sri ram", "seetharam",
+    "shiva", "mahadev", "sivan", "nataraja",
+    "durga", "kali", "devi", "amman", "mariamman",
+    "lakshmi", "mahalakshmi",
+    "saraswati",
+    "vishnu", "perumal", "balaji", "venkateswara",
+    "ayyappan", "murugan", "subramanya", "karthikeya", "vel",
+    "jesus", "christ",
+    "allah"
+  ];
+  return songs.filter(song => {
+    const songName = (song.name || song.title || "").toLowerCase();
+    const albumName = (song.album?.name || "").toLowerCase();
+    const subtitle = (song.subtitle || "").toLowerCase();
+
+    return !undesiredKeywords.some(keyword =>
+      songName.includes(keyword) ||
+      albumName.includes(keyword) ||
+      subtitle.includes(keyword)
+    );
+  });
+};
 
 
 const ScrollButtons = ({ scrollRef }) => {
@@ -121,10 +175,10 @@ const Home = () => {
   const [songlink2, setsonglink2] = useState([]);
   // const [songlinkchecker, setsonglinkchecker] = useState(null);
   const [like, setlike] = useState(false);
-  var [index, setindex] = useState("");
-  var [index2, setindex2] = useState("");
-  var [page, setpage] = useState(1);
-  var [page2, setpage2] = useState(Math.floor(Math.random() * 50));
+  var [index, setindex] = useState(null);
+  var [index2, setindex2] = useState(null);
+  var [page, setpage] = useState(Math.floor(Math.random() * 50) + 1);
+  var [page2, setpage2] = useState(Math.floor(Math.random() * 50) + 1);
   const audioRef = useRef();
   const [audiocheck, setaudiocheck] = useState(true);
   // const [selectedSongIds, setSelectedSongIds] = useState([]);
@@ -133,6 +187,11 @@ const Home = () => {
   const [bestOf90s, setBestOf90s] = useState([]);
 
   const [indiaSuperhitsTop50, setIndiaSuperhitsTop50] = useState([]);
+  const [tamilPlaylists, setTamilPlaylists] = useState([]);
+  const [newTamilSongs, setNewTamilSongs] = useState([]);
+  const [devotionalPlaylists, setDevotionalPlaylists] = useState([]);
+  const [jioSaavanUpdatePlaylists, setJioSaavanUpdatePlaylists] = useState([]);
+  const [currentDevotionalKeyword, setCurrentDevotionalKeyword] = useState("");
 
   const freshHitsLanguages = ["Tamil", "Hindi", "English", "Telugu", "Malayalam"];
 
@@ -145,6 +204,10 @@ const Home = () => {
   // const freshHitsRef = useRef(null); // Removed single ref
   const bestOf90sRef = useRef(null);
   const indiaSuperhitsTop50Ref = useRef(null);
+  const tamilPlaylistsRef = useRef(null);
+  const newTamilSongsRef = useRef(null);
+  const devotionalPlaylistsRef = useRef(null);
+  const jioSaavanUpdatePlaylistsRef = useRef(null);
 
   // Initialize scroll hooks with dependencies
   useDragScroll(detailsRef, details);
@@ -154,6 +217,10 @@ const Home = () => {
   useDragScroll(albumsRef, home);
   useDragScroll(bestOf90sRef, bestOf90s);
   useDragScroll(indiaSuperhitsTop50Ref, indiaSuperhitsTop50);
+  useDragScroll(tamilPlaylistsRef, tamilPlaylists);
+  useDragScroll(newTamilSongsRef, newTamilSongs);
+  useDragScroll(devotionalPlaylistsRef, devotionalPlaylists);
+  useDragScroll(jioSaavanUpdatePlaylistsRef, jioSaavanUpdatePlaylists);
 
 
   const options = [
@@ -193,15 +260,16 @@ const Home = () => {
   ];
 
 
+  // Updated by Antigravity on ${new Date().toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })} - Content categories: Music Playlists & New Songs & Devotional
   const Gethome = async () => {
     detailsseter();
     try {
       const [trendingSongsRes, trendingAlbumsRes, chartsRes, playlistsRes, albumsRes] = await Promise.all([
-        axios.get(getApiUrl("search", `/search/songs?query=Trending ${language}&limit=10`)),
-        axios.get(getApiUrl("search", `/search/albums?query=Trending ${language}&limit=10`)),
-        axios.get(getApiUrl("search", `/search/playlists?query=Top ${language}&limit=10`)),
-        axios.get(getApiUrl("search", `/search/playlists?query=${language} Hits&limit=10`)),
-        axios.get(getApiUrl("search", `/search/albums?query=Latest ${language}&limit=10`))
+        axios.get(getApiUrl("search", `/search/songs?query=New ${language} Songs&limit=10`)),
+        axios.get(getApiUrl("search", `/search/albums?query=New ${language} Albums&limit=10`)),
+        axios.get(getApiUrl("search", `/search/playlists?query=${language} Music Playlists&limit=10`)),
+        axios.get(getApiUrl("search", `/search/playlists?query=${language} Hits today&limit=10`)),
+        axios.get(getApiUrl("search", `/search/albums?query=Latest ${language} today&limit=10`))
       ]);
 
       const mapItems = (items) => items ? items.map(item => ({
@@ -281,6 +349,36 @@ const Home = () => {
     }
   };
 
+  const GetTamilPlaylists = async () => {
+    if (language !== "Tamil") {
+      setTamilPlaylists([]);
+      return;
+    }
+    try {
+      const { data } = await axios.get(
+        getApiUrl("search", `/search/playlists?query=Tamil Featured Playlists&limit=20`)
+      );
+      setTamilPlaylists(data?.data?.results || []);
+    } catch (error) {
+      console.error("Error fetching Tamil Playlists:", error);
+    }
+  };
+
+  const GetNewTamilSongs = async () => {
+    if (language !== "Tamil") {
+      setNewTamilSongs([]);
+      return;
+    }
+    try {
+      const { data } = await axios.get(
+        getApiUrl("search", `/search/songs?query=New Tamil Songs&limit=20`)
+      );
+      setNewTamilSongs(data?.data?.results || []);
+    } catch (error) {
+      console.error("Error fetching New Tamil Songs:", error);
+    }
+  };
+
   const GetFreshHits = async () => {
     if (language !== "Tamil") {
       setFreshHitsData([]);
@@ -311,19 +409,126 @@ const Home = () => {
       console.error("Error fetching fresh hits:", error);
     }
   };
+
+  const GetJioSaavanUpdatePlaylists = async () => {
+    try {
+      const { data } = await axios.get(
+        getApiUrl("search", `/search/playlists?query=Jio Saavan Update Playlists ${language}&limit=20`)
+      );
+      setJioSaavanUpdatePlaylists(data?.data?.results || []);
+    } catch (error) {
+      console.error("Error fetching Jio Saavan Update Playlists:", error);
+    }
+  };
+
+  const GetDevotionalPlaylists = async (forceRefresh = false) => {
+    try {
+      const commonKeywords = [
+        "ganesh", "ganpati", "vinayagar", "pillaiyar",
+        "hanuman", "anjaneya",
+        "sai baba", "shirdi",
+        "krishna", "govinda", "gopal",
+        "rama", "sri ram", "seetharam",
+        "shiva", "mahadev", "sivan", "nataraja",
+        "durga", "kali", "devi", "amman", "mariamman",
+        "lakshmi", "mahalakshmi",
+        "saraswati",
+        "vishnu", "perumal", "balaji", "venkateswara",
+        "ayyappan", "murugan", "subramanya", "karthikeya", "vel",
+        "jesus", "christ",
+        "allah"
+      ];
+
+      const languageKeywords = {
+        Tamil: [
+          "bakthi", "bhakthi", "suprabhatam", "kavasam", "potri", "alar", "virutham",
+          "padhigam", "thirumurai", "thevaram", "thiruvasagam"
+        ],
+        Telugu: [
+          "dandakam", "astakam", "ashtakam"
+        ],
+        Malayalam: [
+          "hindu devotional", "christian devotional", "muslim devotional"
+        ],
+        Hindi: [
+          "bhajan", "aarti", "chalisa", "shloka", "sloka", "stotra", "stotram", "vandana",
+          "namavali", "kirtan", "sankirtan", "dhun", "kath", "paath", "amritwani"
+        ],
+        English: [
+          "devotional", "god", "divine", "mantra", "chant", "baby",
+          "children", "prayer", "worship", "gospel", "spiritual", "meditation", "nursery",
+          "lullaby", "story", "stories"
+        ]
+      };
+
+      // General fallback if language not found in map (though we cover most)
+      // or if we just want to include generic terms
+      const generalKeywords = [
+        "devotional", "spiritual", "mantra", "chant"
+      ];
+
+      let availableKeywords = [...commonKeywords];
+
+      if (languageKeywords[language]) {
+        availableKeywords = [...availableKeywords, ...languageKeywords[language]];
+      } else {
+        // Default to English/General if language not specific (e.g. Sanskrit might fall under Hindi mostly)
+        availableKeywords = [...availableKeywords, ...languageKeywords["English"], ...languageKeywords["Hindi"]];
+      }
+
+      // If we want to strictly follow the language selection for "English/General" set from user request:
+      if (language === "English") {
+        availableKeywords = [...commonKeywords, ...languageKeywords["English"]];
+      }
+
+
+      // Select a random keyword
+      const randomKeyword = availableKeywords[Math.floor(Math.random() * availableKeywords.length)];
+
+      // If we already have a keyword and it's not a forced refresh, maybe we want to keep it? 
+      // But typically when language changes we want new data. 
+      // Let's just set it.
+      setCurrentDevotionalKeyword(randomKeyword);
+
+      const query = `${randomKeyword} ${language !== "English" ? language : ""} devotional`;
+      // We append "devotional" or language to ensure we get playlists and not just random movie songs 
+      // However, the keywords are quite specific. Let's try searching just the keyword first or keyword + language.
+      // The user list has names like "ganesh". "ganesh tamil" is better than just "ganesh" if language is Tamil.
+
+      let searchQuery = randomKeyword;
+      if (language && language !== "English" && !["jesus", "christ", "allah"].includes(randomKeyword)) {
+        // For most hindu deities, appending language helps find regional content
+        searchQuery = `${randomKeyword} ${language}`;
+      }
+
+      const { data } = await axios.get(
+        getApiUrl("search", `/search/playlists?query=${encodeURIComponent(searchQuery)}&limit=20`)
+      );
+
+      setDevotionalPlaylists(data?.data?.results || []);
+
+    } catch (error) {
+      console.error("Error fetching devotional playlists:", error);
+    }
+  };
   const GetLanguageSongs = async (overridePage) => {
     try {
       // Use sequential page number
       const queryPage = overridePage || page;
 
       const { data } = await axios.get(
-        getApiUrl("search", `/search/songs?query=${language.toLowerCase()}&page=${queryPage}&limit=20`)
+        getApiUrl("search", `/search/songs?query=${language.toLowerCase()} hits&page=${queryPage}&limit=20`)
       );
 
       setdetails((prevDetails) => {
-        // Filter out duplicates
         const results = data?.data?.results || [];
-        const newData = results.filter(
+        // Shuffle the newly fetched results to break up album clusters
+        const shuffledResults = shuffleArray(results);
+        // Filter out undesired content (kids/divine)
+        const filteredResults = filterUndesiredSongs(shuffledResults);
+
+        // Filter out duplicates
+        const newData = filteredResults.filter(
           (newItem) => !prevDetails.some((prevItem) => prevItem.id === newItem.id)
         );
         return [...prevDetails, ...newData];
@@ -333,7 +538,7 @@ const Home = () => {
     }
   };
 
-  const Getdetails = async (overridePage) => {
+  const Getdetails = async (overridePage, customQuery) => {
     try {
       let queryPage;
       if (overridePage) {
@@ -344,12 +549,20 @@ const Home = () => {
         queryPage = page2;
       }
 
+      const searchQuery = customQuery || `${language.toLowerCase()} hits`;
+
       const { data } = await axios.get(
-        getApiUrl("search", `/search/songs?query=${language.toLowerCase()}&page=${queryPage}&limit=20`)
+        getApiUrl("search", `/search/songs?query=${encodeURIComponent(searchQuery)}&page=${queryPage}&limit=20`)
       );
 
       setdetails((prevDetails) => {
-        const newData = data.data.results.filter(
+        const results = data?.data?.results || [];
+        // Shuffle the newly fetched results
+        const shuffledResults = shuffleArray(results);
+        // Filter out undesired content
+        const filteredResults = filterUndesiredSongs(shuffledResults);
+
+        const newData = filteredResults.filter(
           (newItem) => !prevDetails.some((prevItem) => prevItem.id === newItem.id)
         );
         return [...prevDetails, ...newData];
@@ -361,7 +574,11 @@ const Home = () => {
 
   const handleAiShuffle = () => {
     const randomPage = Math.floor(Math.random() * 50) + 1;
-    toast(`AI Shuffling ${language} Songs! 🎲✨`, {
+    const modifiers = ["Hits", "Top Songs", "Latest", "Trending", "Party Mix", "Melody", "Classic"];
+    const randomModifier = modifiers[Math.floor(Math.random() * modifiers.length)];
+    const shuffleQuery = `${language} ${randomModifier}`;
+
+    toast(`AI Shuffling ${language} ${randomModifier}! 🎲✨`, {
       icon: "🤖",
       style: {
         borderRadius: "10px",
@@ -371,10 +588,33 @@ const Home = () => {
     });
 
     setdetails([]);
-    setpage(randomPage);
+    setpage(randomPage); // Use randomized page
     setpage2(randomPage);
 
-    Getdetails(randomPage);
+    GetLanguageSongs(randomPage); // Use GetLanguageSongs for relevant languages
+  };
+
+  const handleRefreshSongs = () => {
+    const randomPage = Math.floor(Math.random() * 50) + 1;
+    setdetails([]);
+    setpage(randomPage);
+
+    toast.success(`Refreshing ${language} Songs...`, {
+      icon: "🔄",
+      style: {
+        borderRadius: "10px",
+        background: "#1a1a1a",
+        color: "#fff",
+        border: "1px solid rgba(255,255,255,0.1)",
+      },
+    });
+
+    const sequentialLanguages = ["english", "tamil", "malayalam", "telugu", "hindi"];
+    if (sequentialLanguages.includes(language.toLowerCase())) {
+      GetLanguageSongs(randomPage);
+    } else {
+      Getdetails(randomPage);
+    }
   };
 
   const refreshHomeData = async () => {
@@ -437,16 +677,20 @@ const Home = () => {
   };
 
   function audioseter(i) {
+    if (i === null || !details[i]) return;
+
     if (songlink[0]?.id === details[i].id) {
       const audio = audioRef.current;
-      if (!audio.paused) {
-        audio.pause();
-        setaudiocheck(false);
-      } else {
-        setaudiocheck(true);
-        audio.play().catch((error) => {
-          console.error("Playback failed:", error);
-        });
+      if (audio) {
+        if (!audio.paused) {
+          audio.pause();
+          setaudiocheck(false);
+        } else {
+          setaudiocheck(true);
+          audio.play().catch((error) => {
+            console.error("Playback failed:", error);
+          });
+        }
       }
     } else {
       setindex2(null);
@@ -457,16 +701,20 @@ const Home = () => {
   }
 
   function audioseter2(i) {
+    if (i === null || !suggSong[i]) return;
+
     if (songlink2[0]?.id === suggSong[i].id) {
       const audio = audioRef.current;
-      if (!audio.paused) {
-        audio.pause();
-        setaudiocheck(false);
-      } else {
-        setaudiocheck(true);
-        audio.play().catch((error) => {
-          console.error("Playback failed:", error);
-        });
+      if (audio) {
+        if (!audio.paused) {
+          audio.pause();
+          setaudiocheck(false);
+        } else {
+          setaudiocheck(true);
+          audio.play().catch((error) => {
+            console.error("Playback failed:", error);
+          });
+        }
       }
     } else {
       setindex(null);
@@ -812,41 +1060,30 @@ const Home = () => {
 
 
   function next() {
-    if (index < details.length - 1) {
-      setindex(prev => prev + 1);
-      audioseter(index + 1);
-    } else {
-      setindex(0);
-      setsonglink([details[0]]);
-    }
+    if (!details || details.length === 0) return;
+    const nextIndex = (index === null || index >= details.length - 1) ? 0 : index + 1;
+    setindex(nextIndex);
+    // Explicitly pass the new index to audioseter to avoid using stale state
+    audioseter(nextIndex);
   }
   function next2() {
-    if (index2 < suggSong.length - 1) {
-      setindex2(prev => prev + 1);
-      audioseter2(index2 + 1);
-    } else {
-      setindex2(0);
-      setsonglink2([suggSong[0]]);
-    }
+    if (!suggSong || suggSong.length === 0) return;
+    const nextIndex = (index2 === null || index2 >= suggSong.length - 1) ? 0 : index2 + 1;
+    setindex2(nextIndex);
+    audioseter2(nextIndex);
   }
 
   function pre() {
-    if (index > 0) {
-      setindex(prev => prev - 1);
-      audioseter(index - 1);
-    } else {
-      setindex(details.length - 1);
-      setsonglink([details[details.length - 1]]);
-    }
+    if (!details || details.length === 0) return;
+    const prevIndex = (index === null || index <= 0) ? details.length - 1 : index - 1;
+    setindex(prevIndex);
+    audioseter(prevIndex);
   }
   function pre2() {
-    if (index2 > 0) {
-      setindex2(prev => prev - 1);
-      audioseter2(index2 - 1);
-    } else {
-      setindex2(suggSong.length - 1);
-      setsonglink2([suggSong[suggSong.length - 1]]);
-    }
+    if (!suggSong || suggSong.length === 0) return;
+    const prevIndex = (index2 === null || index2 <= 0) ? suggSong.length - 1 : index2 - 1;
+    setindex2(prevIndex);
+    audioseter2(prevIndex);
   }
 
   // const handleDownloadSong = async (url, name) => {
@@ -940,9 +1177,9 @@ const Home = () => {
   // };
 
   function detailsseter() {
-    setpage(1);
-    setindex("");
-    setindex2("");
+    setpage(Math.floor(Math.random() * 50) + 1);
+    setindex(null);
+    setindex2(null);
     setsonglink([]);
     setsonglink2([]);
     setdetails([]);
@@ -985,11 +1222,15 @@ const Home = () => {
     GetFreshHits();
     GetBestOf90s();
     GetIndiaSuperhitsTop50();
+    GetTamilPlaylists();
+    GetNewTamilSongs();
+    GetDevotionalPlaylists();
+    GetJioSaavanUpdatePlaylists();
 
     // Initial fetch for songs based on language
     const sequentialLanguages = ["english", "tamil", "malayalam", "telugu"];
     if (sequentialLanguages.includes(language.toLowerCase())) {
-      GetLanguageSongs(1); // Start from page 1
+      GetLanguageSongs(page); // Use randomized page
     } else {
       Getdetails();
     }
@@ -1156,12 +1397,12 @@ const Home = () => {
 
             {/* Center Title */}
             <h3 className="text-2xl font-bold text-white/90 tracking-wide capitalize drop-shadow-lg font-sans">
-              {language} Songs
+              Best {language} Hits
             </h3>
 
             {/* Right Icon */}
-            <div onClick={handleAiShuffle} className="flex items-center justify-center w-10 h-10 rounded-full bg-black/20 border border-white/5 backdrop-blur-md shadow-[inset_0_1px_4px_rgba(255,255,255,0.1)] cursor-pointer hover:bg-white/10 hover:scale-105 transition-all duration-300">
-              <i className="ri-music-fill text-white text-xl"></i>
+            <div onClick={handleRefreshSongs} className="flex items-center justify-center w-10 h-10 rounded-full bg-black/20 border border-white/5 backdrop-blur-md shadow-[inset_0_1px_4px_rgba(255,255,255,0.1)] cursor-pointer hover:bg-white/10 hover:scale-105 transition-all duration-300">
+              <i className="ri-refresh-line text-white text-xl"></i>
             </div>
           </div>
           <div className="relative group w-full">
@@ -1181,7 +1422,7 @@ const Home = () => {
                   <motion.img
                     className="relative w-full  rounded-md"
                     // src={t.image[2].link}
-                    src={t.image[2].url}
+                    src={t.image?.[2]?.url || t.image?.[0]?.url}
                     alt=""
                   />
                   <div className="flex  items-center ">
@@ -1213,7 +1454,7 @@ const Home = () => {
                       {removeSourceAttribution(t.name)}
                     </h3>
                     <h4 className="text-xs sm:text-[2.5vw] text-white/60">
-                      {removeSourceAttribution(t.album.name)}
+                      {removeSourceAttribution(t.album?.name || "")}
                     </h4>
                     <div className="flex flex-col mt-1">
                       <span className="text-[10px] sm:text-[8px] text-zinc-400">
@@ -1392,108 +1633,8 @@ const Home = () => {
             </div>
           </div>
         </div>
-        <div className="playlists w-full  flex flex-col gap-3 ">
-          <div className="relative w-full py-3 px-6 mb-2 flex items-center justify-between rounded-3xl bg-white/5 backdrop-blur-2xl border-t border-l border-r border-white/10 border-b-0 shadow-xl overflow-hidden shrink-0 group">
-            {/* Ambient Bottom Glow */}
-            <div className="absolute bottom-0 left-0 w-full h-[2px] bg-gradient-to-r from-[#8A2BE2] via-[#BF40FF] to-[#8A2BE2] blur-[1px] shadow-[0_0_20px_rgba(191,64,255,0.6)]"></div>
 
-            {/* Left Icon */}
-            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-black/20 border border-white/5 backdrop-blur-md shadow-[inset_0_1px_4px_rgba(255,255,255,0.1)] cursor-pointer hover:bg-white/10 hover:scale-105 transition-all duration-300">
-              <i className="ri-music-fill text-white text-xl"></i>
-            </div>
 
-            {/* Center Title */}
-            <h3 className="text-2xl font-bold text-white/90 tracking-wide capitalize drop-shadow-lg font-sans">
-              Playlists
-            </h3>
-
-            {/* Right Icon */}
-            <div onClick={refreshHomeData} className="flex items-center justify-center w-10 h-10 rounded-full bg-black/20 border border-white/5 backdrop-blur-md shadow-[inset_0_1px_4px_rgba(255,255,255,0.1)] cursor-pointer hover:bg-white/10 hover:scale-105 transition-all duration-300">
-              <i className="ri-music-fill text-white text-xl"></i>
-            </div>
-          </div>
-          <div className="relative group w-full">
-            <ScrollButtons scrollRef={playlistsRef} />
-            <div ref={playlistsRef} className="playlistsdata custom-scrollbar px-5 sm:px-3 flex flex-shrink gap-5 overflow-x-auto w-full pb-4">
-              {home?.playlists?.map((p, i) => (
-                <motion.div
-                  initial={{ y: -100, scale: 0.5 }}
-                  whileInView={{ y: 0, scale: 1 }}
-                  transition={{ ease: Circ.easeIn, duration: 0.05 }}
-                  // to={`/playlist/details/${p.id}`}
-                  onClick={() => navigate(`/playlist/details/${p.id}`)}
-                  key={i}
-                  className="hover:scale-110  sm:hover:scale-105 duration-300 flex-shrink-0 w-[15%] sm:w-[40%] rounded-md  flex flex-col gap-2 py-4 cursor-pointer"
-                >
-                  <img
-                    className="w-full  rounded-md"
-                    src={p.image[2].link}
-                    alt=""
-                  />
-                  <motion.h3
-                    // initial={{ y: 50, opacity: 0 }}
-                    // whileInView={{ y: 0, opacity: 1 }}
-                    // transition={{ease:Circ.easeIn,duration:0.05}}
-                    className="leading-none"
-                  >
-                    {p.title}
-                  </motion.h3>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </div>
-        <div className="albums w-full flex flex-col gap-3 ">
-          <div className="relative w-full py-3 px-6 mb-2 flex items-center justify-between rounded-3xl bg-white/5 backdrop-blur-2xl border-t border-l border-r border-white/10 border-b-0 shadow-xl overflow-hidden shrink-0 group">
-            {/* Ambient Bottom Glow */}
-            <div className="absolute bottom-0 left-0 w-full h-[2px] bg-gradient-to-r from-[#8A2BE2] via-[#BF40FF] to-[#8A2BE2] blur-[1px] shadow-[0_0_20px_rgba(191,64,255,0.6)]"></div>
-
-            {/* Left Icon */}
-            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-black/20 border border-white/5 backdrop-blur-md shadow-[inset_0_1px_4px_rgba(255,255,255,0.1)] cursor-pointer hover:bg-white/10 hover:scale-105 transition-all duration-300">
-              <i className="ri-music-fill text-white text-xl"></i>
-            </div>
-
-            {/* Center Title */}
-            <h3 className="text-2xl font-bold text-white/90 tracking-wide capitalize drop-shadow-lg font-sans">
-              Albums
-            </h3>
-
-            {/* Right Icon */}
-            <div onClick={refreshHomeData} className="flex items-center justify-center w-10 h-10 rounded-full bg-black/20 border border-white/5 backdrop-blur-md shadow-[inset_0_1px_4px_rgba(255,255,255,0.1)] cursor-pointer hover:bg-white/10 hover:scale-105 transition-all duration-300">
-              <i className="ri-music-fill text-white text-xl"></i>
-            </div>
-          </div>
-          <div className="relative group w-full">
-            <ScrollButtons scrollRef={albumsRef} />
-            <div ref={albumsRef} className="albumsdata custom-scrollbar px-5 sm:px-3 flex flex-shrink gap-5 overflow-x-auto w-full pb-4">
-              {home?.albums?.map((a, i) => (
-                <motion.div
-                  initial={{ y: -100, scale: 0.5 }}
-                  whileInView={{ y: 0, scale: 1 }}
-                  transition={{ ease: Circ.easeIn, duration: 0.05 }}
-                  // to={`/albums/details/${a.id}`}
-                  onClick={() => navigate(`/albums/details/${a.id}`)}
-                  key={i}
-                  className="hover:scale-110 sm:hover:scale-105  duration-300 flex-shrink-0 w-[15%] sm:w-[40%] rounded-md  flex flex-col gap-2 py-4 cursor-pointer"
-                >
-                  <img
-                    className="w-full  rounded-md"
-                    src={a.image[2].link}
-                    alt=""
-                  />
-                  <motion.h3
-                    // initial={{ y: 50, opacity: 0 }}
-                    // whileInView={{ y: 0, opacity: 1 }}
-                    // transition={{ease:Circ.easeIn,duration:0.05}}
-                    className="leading-none"
-                  >
-                    {removeSourceAttribution(a.name)}
-                  </motion.h3>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </div>
 
         {indiaSuperhitsTop50.length > 0 && (
           <div className="india-superhits-top-50 w-full flex flex-col gap-3 ">
@@ -1535,6 +1676,7 @@ const Home = () => {
             </div>
           </div>
         )}
+
         {freshHitsData.length > 0 && (
           <FreshHitRow
             key="fresh-hits"
@@ -1584,10 +1726,6 @@ const Home = () => {
             </div>
           </div>
         )}
-
-
-
-
         <div>
           <p className="font-semibold text-white/50 sm:text-sm">
             <b></b>
@@ -1648,7 +1786,7 @@ const Home = () => {
                   </h3>
                   <div className="flex flex-col">
                     <span className="text-[10px] sm:text-[8px] text-zinc-400">
-                      {getArtistMetadata(e?.artists).singleLine}
+                      {getArtistMetadata(e?.artists || { primary: [] }).singleLine}
                     </span>
                   </div>
                 </div>
@@ -1676,7 +1814,7 @@ const Home = () => {
                   controls
                   autoPlay
                   onEnded={handleNext}
-                  src={e?.downloadUrl[4]?.url}
+                  src={e?.downloadUrl?.[4]?.url || e?.downloadUrl?.[0]?.url}
                 ></audio>
                 <button
                   onClick={handleNext}
@@ -1695,12 +1833,12 @@ const Home = () => {
                   <p
                     onClick={() =>
                       handleGenerateAudio2({
-                        audioUrl: e?.downloadUrl[4].url,
-                        imageUrl: e?.image[2]?.url,
+                        audioUrl: e?.downloadUrl?.[4]?.url || e?.downloadUrl?.[0]?.url,
+                        imageUrl: e?.image?.[2]?.url || e?.image?.[2]?.link,
                         songName: e?.name,
                         year: e?.year,
-                        album: e?.album.name,
-                        artist: e?.artists.primary.map(artist => artist.name).join(",")
+                        album: e?.album?.name,
+                        artist: e?.artists?.primary?.map(artist => artist.name).join(",")
                       })
                     }
                     className="duration-300 cursor-pointer hover:text-white hover:bg-white/20 hover:scale-90 w-fit p-1 sm:text-sm font-semibold rounded-md shadow-2xl bg-white/10 border border-white/10 flex flex-col items-center"
@@ -1711,8 +1849,8 @@ const Home = () => {
                   <p
                     onClick={() =>
                       handleGenerateAudio({
-                        audioUrl: e?.downloadUrl[4].url,
-                        imageUrl: e?.image[2]?.url,
+                        audioUrl: e?.downloadUrl?.[4]?.url || e?.downloadUrl?.[0]?.url,
+                        imageUrl: e?.image?.[2]?.url || e?.image?.[2]?.link,
                         songName: removeSourceAttribution(e?.name),
                         year: e?.year,
                         album: getAlbumFromTitle(e?.name) || removeSourceAttribution(e?.album?.name),
