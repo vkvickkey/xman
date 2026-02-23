@@ -12,16 +12,14 @@ import Songs from "./components/Songs";
 import Likes from "./components/Likes";
 import SongDetails from "./components/SongDetails";
 import Import from "./components/Import";
-
-
-
+import MobileLayout from "./components/MobileLayout";
 
 
 
 
 const App = () => {
   return (
-    <div className="w-full h-screen">
+    <MobileLayout>
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/songs" element={<Songs />} />
@@ -35,9 +33,8 @@ const App = () => {
         <Route path="/artists/details/:id" element={<ArtistsDetails />} />
         <Route path="/likes" element={<Likes />} />
         <Route path="/import" element={<Import />} />
-
       </Routes>
-    </div>
+    </MobileLayout>
   );
 };
 

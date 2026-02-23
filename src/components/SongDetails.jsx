@@ -8,6 +8,8 @@ import {
   useNavigate,
   useParams,
 } from "react-router-dom";
+import { useMusic } from "../context/MusicContext";
+
 import Loading from "./Loading";
 const wavs = "/wavs.gif";
 import { getArtistMetadata } from "../utils/artistUtils";
@@ -32,13 +34,15 @@ const SongDetails = () => {
   let { id } = useParams();
   // let { pathname } = useLocation();
   const Navigate = useNavigate();
+  const { currentSong, isPlaying, playSong, togglePlay, setQueue } = useMusic();
   const [details, setdetails] = useState([]);
   const [song, setsong] = useState([]);
-  const [songlink, setsonglink] = useState([]);
-  var [index, setindex] = useState("");
+  // const [songlink, setsonglink] = useState([]);
+  // var [index, setindex] = useState("");
   const [like, setlike] = useState("");
   const [like2, setlike2] = useState(false);
   const [existingData, setexistingData] = useState(null);
+
 
   const Getdetails = async () => {
     try {
@@ -65,9 +69,16 @@ const SongDetails = () => {
   };
 
   function audioseter(i) {
-    setindex(i);
-    setsonglink([details[i]]);
+    if (!details?.[i]) return;
+
+    if (currentSong?.id === details[i].id) {
+      togglePlay();
+    } else {
+      setQueue(details);
+      playSong(details[i]);
+    }
   }
+
 
   function likeset(e) {
     // console.log(e);
@@ -217,23 +228,13 @@ const SongDetails = () => {
   }
 
   function next() {
-    if (index < details.length - 1) {
-      setindex(index++);
-      audioseter(index);
-    } else {
-      setindex(0);
-      setsonglink([details[0]]);
-    }
+    // Global next handled by context
   }
+
   function pre() {
-    if (index > 0) {
-      setindex(index--);
-      audioseter(index);
-    } else {
-      setindex(details.length - 1);
-      setsonglink([details[details.length - 1]]);
-    }
+    // Global previous handled by context
   }
+
 
   const handleDownloadSong = async (url, name) => {
     try {
@@ -276,8 +277,9 @@ const SongDetails = () => {
   }, [details, song]);
 
   useEffect(() => {
-    likeset(songlink[0]);
-  }, [details, song, like, songlink, like2, existingData]);
+    likeset(currentSong);
+  }, [details, song, like, currentSong, like2, existingData]);
+
 
   useEffect(() => {
     // Retrieve all data from localStorage
@@ -293,13 +295,15 @@ const SongDetails = () => {
     } else {
       console.log("No data found in localStorage.");
     }
-  }, [details, song, like, songlink, like2]);
+  }, [details, song, like, currentSong, like2]);
+
 
   // useEffect(() => {
   //   Getdetails();
   // }, []);
 
-  var title = songlink[0]?.name;
+  var title = currentSong?.name;
+
 
   document.title = `${title ? title : "MAX-VIBE"}`;
 
@@ -333,7 +337,7 @@ const SongDetails = () => {
             <div className="w-[80%] sm:w-full flex flex-col gap-1 h-full text-white ">
               <p className="text-3xl flex  gap-5  font-bold text-white">
                 {removeSourceAttribution(e.name)}
-                {existingData.find((element) => element.id == e.id) ? (
+                {existingData?.find((element) => element.id == e.id) ? (
                   <i
                     onClick={() => likehandle2(e)}
                     className={`text-xl w-[3vw] sm:w-[9vw] rounded-full  h-[3vw] sm:h-[9vw]    duration-300 cursor-pointer text-red-500  ri-heart-3-fill`}
@@ -344,6 +348,7 @@ const SongDetails = () => {
                     className={`text-xl  w-[3vw] sm:w-[9vw] rounded-full  h-[3vw] sm:h-[9vw]   duration-300 cursor-pointer text-white/40  ri-heart-3-fill`}
                   ></i>
                 )}
+
               </p>
               <p
                 onClick={() => Navigate(`/albums/details/${e.album.id}`)}
@@ -506,11 +511,12 @@ const SongDetails = () => {
                   alt=""
                 />
                 <img
-                  className={`absolute top-4 w-[20%] sm:w-[25%] rounded-md ${i === index ? "block" : "hidden"
+                  className={`absolute top-4 w-[20%] sm:w-[25%] rounded-md ${t.id === currentSong?.id ? "block" : "hidden"
                     } `}
                   src={wavs}
                   alt=""
                 />
+
                 <motion.div
                   //  initial={{ y: 50, scale:0}}
                   //  whileInView={{ y: 0,scale: 1 }}
@@ -544,175 +550,7 @@ const SongDetails = () => {
           </motion.div>
         </div>
       </div>
-      <motion.div
-        className={
-          songlink.length > 0
-            ? `duration-700 rounded-full  sm:rounded-none sm:rounded-t-[30%]  flex  gap-3 items-center  w-full min-h-[20vh] sm:min-h-[28vh] bg-black/80 backdrop-blur-xl border-t border-white/5 `
-            : "block"
-        }
-      >
-        {songlink?.map((e, i) => (
-          <motion.div
-            initial={{ y: 100, opacity: 0, scale: 0 }}
-            animate={{ y: 0, opacity: 1, scale: 1 }}
-            transition={{ ease: Circ.easeIn, duration: 0.7 }}
-            key={i}
-            className=" flex sm:block w-full sm:w-full sm:h-full items-center justify-center gap-3"
-          >
-            <motion.div
-              initial={{ x: -100, opacity: 0, scale: 0 }}
-              animate={{ x: 0, opacity: 1, scale: 1 }}
-              // transition={{ease:Circ.easeIn,duration:1}}
-
-              className="w-[25vw] sm:w-full  flex gap-3 items-center sm:justify-center rounded-md  h-[7vw] sm:h-[30vw]"
-            >
-              <motion.img
-                initial={{ x: -100, opacity: 0, scale: 0 }}
-                animate={{ x: 0, opacity: 1, scale: 1 }}
-                // transition={{ease:Circ.easeIn,duration:1}}
-
-                className={`rounded-md h-[7vw] sm:h-[25vw]`}
-                src={e?.image[2]?.url}
-                alt=""
-              />
-              <h3 className=" sm:w-[30%] text-white text-xs font-semibold">
-                {removeSourceAttribution(e?.name)}
-              </h3>
-              <i
-                onClick={() => handleDownloadSong(e.downloadUrl[4].url, e.name)}
-                className="hidden sm:visible sm:flex cursor-pointer  items-center justify-center bg-green-700 sm:w-[9vw] sm:h-[9vw] w-[3vw] h-[3vw]   rounded-full text-2xl ri-download-line"
-              ></i>
-              <i
-                onClick={() => likehandle(e)}
-                className={`text-xl hover:scale-150 sm:hover:scale-100 duration-300 cursor-pointer ${like ? "text-red-500" : "text-white/40"
-                  }  ri-heart-3-fill`}
-              ></i>
-
-              {/* <i
-                onClick={() => idch(e.id)}
-                className="text-zinc-300 text-xl hover:scale-150 sm:hover:scale-100 duration-300 cursor-pointer  ri-information-fill"
-              ></i> */}
-
-              {/* {localStorage.getItem("likeData") &&
-              JSON.parse(localStorage.getItem("likeData")).some(
-                (item) => item.id === e.id
-              ) ? (
-                <i
-                  onClick={() => likehandle(e)}
-                  className={`text-xl cursor-pointer text-red-500 ri-heart-3-fill`}
-                ></i>
-              ) : (
-                <i
-                  onClick={() => likehandle(e)}
-                  className={`text-xl cursor-pointer text-zinc-300 ri-heart-3-fill`}
-                ></i>
-              )} */}
-
-              {/* {like ? (
-                <i
-                  onClick={() => likehandle(e)}
-                  className="text-xl cursor-pointer text-red-500 ri-heart-3-fill"
-                ></i>
-              ) : (
-                <i
-                  onClick={() => likehandle(e)}
-                  className="text-xl cursor-pointer text-zinc-300  ri-heart-3-fill"
-                ></i>
-              )} */}
-            </motion.div>
-            <motion.div
-              initial={{ y: 100, opacity: 0, scale: 0 }}
-              animate={{ y: 0, opacity: 1, scale: 1 }}
-              // transition={{ease:Circ.easeIn,duration:1}}
-              className="w-[35%]  sm:w-full h-[10vh] flex gap-3 sm:gap-1 items-center justify-center"
-            >
-              <button
-                onClick={pre}
-                className="text-3xl text-white bg-white/10 shadow-purple-glow cursor-pointer rounded-full"
-              >
-                <i className="ri-skip-back-mini-fill"></i>
-              </button>
-              <audio
-                className="w-[80%]"
-                controls
-                autoPlay
-                onEnded={next}
-                src={e?.downloadUrl[4]?.url}
-              ></audio>
-              <button
-                onClick={next}
-                className="text-3xl text-white bg-white/10 shadow-purple-glow cursor-pointer rounded-full"
-              >
-                <i className="ri-skip-right-fill"></i>
-              </button>
-            </motion.div>
-            <div className="sm:hidden flex flex-col text-[1vw] items-center  gap-2">
-              <div>
-                <h3 className="font-bold text-sm text-white/50">
-                  Download Options
-                </h3>
-              </div>
-              <div className="flex flex-row-reverse gap-2 ">
-                <p
-                  onClick={() =>
-                    handleDownloadSong(e.downloadUrl[0].url, e.name + " 12kbps")
-                  }
-                  className="duration-300 cursor-pointer hover:text-white hover:bg-purple-gradient hover:scale-90 w-fit p-1 font-semibold rounded-md shadow-purple-glow bg-white/10 border border-white/10 flex flex-col items-center"
-                >
-                  12kbps <br />
-                  <p className="text-xs">Very low quality</p>
-                </p>
-                <p
-                  onClick={() =>
-                    handleDownloadSong(e.downloadUrl[1].url, e.name + " 48kbps")
-                  }
-                  className="duration-300 cursor-pointer  hover:text-white hover:bg-purple-gradient hover:scale-90 w-fit p-1 font-semibold rounded-md shadow-purple-glow bg-white/10 border border-white/10 flex flex-col items-center"
-                >
-                  48kbps <br />
-                  <p className="text-xs">Low quality</p>
-                </p>
-                <p
-                  onClick={() =>
-                    handleDownloadSong(e.downloadUrl[2].url, e.name + " 96kbps")
-                  }
-                  className="duration-300 cursor-pointer  hover:text-white hover:bg-purple-gradient hover:scale-90 w-fit p-1 font-semibold rounded-md shadow-purple-glow bg-white/10 border border-white/10 flex flex-col items-center"
-                >
-                  96kbps <br />
-                  <p className="text-xs">Fair quality</p>
-                </p>
-                <p
-                  onClick={() =>
-                    handleDownloadSong(
-                      e.downloadUrl[3].url,
-                      e.name + " 160kbps"
-                    )
-                  }
-                  className="duration-300 cursor-pointer  hover:text-white hover:bg-purple-gradient hover:scale-90 w-fit p-1 font-semibold rounded-md shadow-purple-glow bg-white/10 border border-white/10 flex flex-col items-center"
-                >
-                  160kbps <br />
-                  <p className="text-xs">Good quality</p>
-                </p>
-                <p
-                  onClick={() =>
-                    handleGenerateAudio({
-                      audioUrl: e.downloadUrl[4].url,
-                      imageUrl: e.image[2].url,
-                      songName: removeSourceAttribution(e.name),
-                      year: e.year,
-                      album: getAlbumFromTitle(e?.name) || removeSourceAttribution(e?.album.name),
-                      artist: e?.artists?.primary?.map((a) => a.name).join(", "),
-                    })
-                  }
-                  className="duration-300 cursor-pointer  hover:text-white hover:bg-purple-gradient hover:scale-90 w-fit p-1 font-semibold rounded-md shadow-purple-glow bg-white/10 border border-white/10 flex flex-col items-center"
-                >
-                  320kbps <br />
-                  <p className="text-xs"> High quality</p>
-                </p>
-              </div>
-            </div>
-          </motion.div>
-        ))}
-      </motion.div>
+      {/* Player bar removed (global PlayerBar used instead) */}
     </div>
   ) : (
     <Loading />

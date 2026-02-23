@@ -1,6 +1,8 @@
 import axios from "axios";
 import React, { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useMusic } from "../context/MusicContext";
+
 import Loading from "./Loading";
 const wavs = "/wavs.gif";
 const empty = "/empty3.gif";
@@ -29,34 +31,30 @@ function Likes() {
   const navigate = useNavigate();
   let location = useLocation();
 
+  const { currentSong, isPlaying, playSong, togglePlay, setQueue } = useMusic();
   const [details, setdetails] = useState([]);
   const [songs, setSongs] = useState([]);
 
-  const [songlink, setsonglink] = useState([]);
-  var [index, setindex] = useState("");
+  // const [songlink, setsonglink] = useState([]);
+  // var [index, setindex] = useState("");
   var [rerender, setrerender] = useState(false);
   const [like, setlike] = useState(false);
   const [download, setdownload] = useState(false);
-  const audioRef = useRef();
-  const [audiocheck, setaudiocheck] = useState(true);
+  // const audioRef = useRef();
+  // const [audiocheck, setaudiocheck] = useState(true);
+
 
   function audioseter(i) {
-    if (songlink[0]?.id === details[i].id) {
-      const audio = audioRef.current;
-      if (!audio.paused) {
-        audio.pause();
-        setaudiocheck(false);
-      } else {
-        setaudiocheck(true);
-        audio.play().catch((error) => {
-          console.error("Playback failed:", error);
-        });
-      }
+    if (!details[i]) return;
+
+    if (currentSong?.id === details[i].id) {
+      togglePlay();
     } else {
-      setindex(i);
-      setsonglink([details[i]]);
+      setQueue(details);
+      playSong(details[i]);
     }
   }
+
 
   //   const downloadSongsfile = () => {
   //     if (details.length>0) {
@@ -294,18 +292,16 @@ function Likes() {
         },
       });
       setrerender(!rerender);
-      if (songlink[0].id != i) {
+      if (currentSong?.id != i) {
         setrerender(!rerender);
-        if (index > ind) {
-          setindex(index - 1);
-        }
-        // else{
-        //   setindex(details.findIndex((item) => item.id === songlink[0].id)+1)
+        // if (index > ind) {
+        //   setindex(index - 1);
         // }
       } else {
         setrerender(!rerender);
-        setsonglink([]);
+        // setsonglink([]);
       }
+
       // setsonglink([]);
 
       // if (index>0 && details.length>=0) {
@@ -319,8 +315,9 @@ function Likes() {
       // }
     } else {
       toast.error("Song not found in localStorage.");
-      setsonglink([]);
+      // setsonglink([]);
       setrerender(!rerender);
+
 
       //   console.log("Song not found in localStorage.");
     }
@@ -374,70 +371,16 @@ function Likes() {
   //   }
   // };
 
-  const initializeMediaSession = () => {
-    const isIOS = /(iPhone|iPod|iPad)/i.test(navigator.userAgent);
+  // Media session handled by MusicContext
 
-    if (!isIOS && "mediaSession" in navigator) {
-      navigator.mediaSession.metadata = new MediaMetadata({
-        title: songlink[0]?.name || "",
-        artist: songlink[0]?.album?.name || "",
-        artwork: [
-          {
-            src: songlink[0]?.image[2]?.url || "",
-            sizes: "512x512",
-            type: "image/jpeg",
-          },
-        ],
-      });
-
-      navigator.mediaSession.setActionHandler("play", function () {
-        // Handle play action
-        if (audioRef.current) {
-          audioRef.current.play().catch((error) => {
-            console.error("Play error:", error);
-          });
-        }
-      });
-
-      navigator.mediaSession.setActionHandler("pause", function () {
-        // Handle pause action
-        if (audioRef.current) {
-          audioRef.current.pause().catch((error) => {
-            console.error("Pause error:", error);
-          });
-        }
-      });
-
-      navigator.mediaSession.setActionHandler("previoustrack", function () {
-        pre();
-      });
-
-      navigator.mediaSession.setActionHandler("nexttrack", function () {
-        next();
-      });
-    } else {
-      console.warn("MediaSession API is not supported or the device is iOS.");
-    }
-  };
 
   function next() {
-    if (index < details.length - 1) {
-      setindex(index++);
-      audioseter(index);
-    } else {
-      setindex(0);
-      setsonglink([details[0]]);
-    }
+    // Global next handled by context
   }
   function pre() {
-    if (index > 0) {
-      setindex(index--);
-      audioseter(index);
-    } else {
-      setindex(details.length - 1);
-      setsonglink([details[details.length - 1]]);
-    }
+    // Global previous handled by context
   }
+
 
   // const handleDownloadSong = async (url, name, img) => {
   //   try {
@@ -517,16 +460,11 @@ function Likes() {
     } else {
       console.log("No data found in localStorage.");
     }
-  }, [rerender, songlink]);
+  }, [rerender, currentSong]);
 
-  useEffect(() => {
-    const isIOS = /(iPhone|iPod|iPad)/i.test(navigator.userAgent);
 
-    if (!isIOS && songlink.length > 0) {
-      audioRef.current.play();
-      initializeMediaSession();
-    }
-  }, [songlink]);
+  // Auto-play handled by context
+
 
   // const downloadSongs = () => {
   //   if (songs.length > 0) {
@@ -666,8 +604,9 @@ function Likes() {
   //   }
   // };
 
-  var title = songlink[0]?.name;
+  var title = currentSong?.name;
   document.title = `${title ? title : "MAX-VIBE"}`;
+
   // console.log(details[1]?.artists.primary.map(artist => artist.name).join(","));
   //   console.log(rerender);
   // console.log(index);
@@ -738,26 +677,28 @@ function Likes() {
                 />
                 <p className="pl-1 text-green-400">{i + 1}</p>
                 <img
-                  className={`absolute top-0 w-[8%] sm:w-[10%] rounded-md ${d.id === songlink[0]?.id ? "block" : "hidden"
+                  className={`absolute top-0 w-[8%] sm:w-[10%] rounded-md ${d.id === currentSong?.id ? "block" : "hidden"
                     } `}
                   src={wavs}
                   alt=""
                 />
-                {songlink.length > 0 && (
+                {currentSong && (
                   <i
-                    className={`absolute top-0 sm:h-[15vh] w-[10vw] h-full flex items-center justify-center text-5xl sm:w-[15vh]  opacity-90  duration-300 rounded-md ${d.id === songlink[0]?.id ? "block" : "hidden"
-                      } ${audiocheck
+                    className={`absolute top-0 sm:h-[15vh] w-[10vw] h-full flex items-center justify-center text-5xl sm:w-[15vh]  opacity-90  duration-300 rounded-md ${d.id === currentSong?.id ? "block" : "hidden"
+                      } ${isPlaying
                         ? "ri-pause-circle-fill"
                         : "ri-play-circle-fill"
                       }`}
                   ></i>
                 )}
+
                 <div className="ml-3 sm:ml-3 flex justify-center items-center gap-5 mt-2">
                   <div className="flex flex-col">
                     <h3
-                      className={`text-lg sm:text-base leading-none font-bold ${d.id === songlink[0]?.id && "text-green-300"
+                      className={`text-lg sm:text-base leading-none font-bold ${d.id === currentSong?.id && "text-green-300"
                         }`}
                     >
+
                       {removeSourceAttribution(d.name)}
                     </h3>
                     {(() => {
@@ -809,224 +750,8 @@ function Likes() {
           </p>
         </div>
       )}
-      {songlink !== null ? (
-        <motion.div
-          className={
-            songlink.length > 0
-              ? `duration-700 flex fixed z-[99] bottom-0    gap-3 items-center  w-full py-2  backdrop-blur-xl `
-              : "block"
-          }
-        >
-          {songlink?.map((e, i) => (
-            <motion.div
-              initial={{ y: 50, opacity: 0, scale: 0 }}
-              animate={{ y: 0, opacity: 1, scale: 1 }}
-              key={i}
-              className="flex sm:block w-full sm:w-full sm:h-full items-center justify-center gap-3"
-            >
-              <motion.div
-                initial={{ x: -50, opacity: 0, scale: 0 }}
-                animate={{ x: 0, opacity: 1, scale: 1 }}
-                className="w-[25vw] sm:w-full  flex gap-3 items-center sm:justify-center rounded-md  h-[7vw] sm:h-[30vw]"
-              >
-                <p className=" text-green-400">{index + 1}</p>
-                <motion.img
-                  initial={{ x: -50, opacity: 0, scale: 0 }}
-                  animate={{ x: 0, opacity: 1, scale: 1 }}
-                  className="rounded-md h-[7vw] sm:h-[25vw]"
-                  src={e?.image[2]?.url}
-                  alt=""
-                />
+      {/* Global PlayerBar handles playback UI */}
 
-                <h3 className=" sm:w-[30%] text-white text-xs font-semibold">
-                  {removeSourceAttribution(e?.name)}
-                </h3>
-                {/* <i
-                  onClick={() =>
-                    handleDownloadSong(e?.downloadUrl[4].url, e?.name)
-                  }
-                  className="hidden sm:flex  cursor-pointer  items-center justify-center bg-green-700 sm:w-[9vw] sm:h-[9vw] w-[3vw] h-[3vw]   rounded-full text-2xl ri-download-line"
-                ></i> */}
-
-                {/* {like ? (
-                  <i
-                    title="You Liked This Song"
-                    onClick={() => likehandle(e)}
-                    className="text-xl hover:scale-150 sm:hover:scale-100 duration-300 cursor-pointer text-red-500 ri-heart-3-fill"
-                  ></i>
-                ) : (
-                  <i
-                    title="Like Song"
-                    onClick={() => likehandle(e)}
-                    className="text-xl hover:scale-150 sm:hover:scale-100 duration-300 cursor-pointer text-zinc-300  ri-heart-3-fill"
-                  ></i>
-                )} */}
-                <i
-                  title="Remove Song "
-                  onClick={() => removehandle(e.id)}
-                  className="text-xl hover:scale-150 sm:hover:scale-100 duration-300 cursor-pointer text-zinc-300 ri-dislike-fill"
-                ></i>
-              </motion.div>
-              <motion.div
-                initial={{ y: 50, opacity: 0, scale: 0 }}
-                animate={{ y: 0, opacity: 1, scale: 1 }}
-                className="w-[35%]  sm:w-full h-[10vh] flex gap-3 sm:gap-1 items-center justify-center"
-              >
-                <i
-                  onClick={pre}
-                  className="text-3xl text-white bg-zinc-800 cursor-pointer rounded-full ri-skip-back-mini-fill"
-                ></i>
-                <audio
-                  className="w-[80%] "
-                  ref={audioRef}
-                  onPause={() => setaudiocheck(false)}
-                  onPlay={() => setaudiocheck(true)}
-                  controls
-                  autoPlay
-                  onEnded={next}
-                  src={e?.downloadUrl[4]?.url}
-                ></audio>
-                <i
-                  onClick={next}
-                  className=" text-3xl text-white bg-zinc-800 cursor-pointer rounded-full ri-skip-right-fill"
-                ></i>
-              </motion.div>
-              <div className=" flex flex-col text-[1vw] items-center  gap-2">
-                <div>
-                  <h3 className="font-bold text-sm text-slate-400">
-                    Download Options
-                  </h3>
-                </div>
-                <div className="flex flex-row-reverse gap-2 ">
-                  {/* <p
-                    onClick={() =>
-                      handleDownloadSong(
-                        e.downloadUrl[0].url,
-                        e.name + " (12kbps)"
-                      )
-                    }
-                    className="duration-300 cursor-pointer hover:text-slate-400 hover:bg-slate-600 hover:scale-90 w-fit p-1 font-semibold rounded-md shadow-2xl bg-slate-400 flex flex-col items-center"
-                  >
-                    12kbps <br />
-                    <p className="text-xs">Very low quality</p>
-                  </p>
-                  <p
-                    onClick={() =>
-                      handleDownloadSong(
-                        e.downloadUrl[1].url,
-                        e.name + " (48kbps)"
-                      )
-                    }
-                    className="duration-300 cursor-pointer  hover:text-slate-400 hover:bg-slate-600 hover:scale-90 w-fit p-1 font-semibold rounded-md shadow-2xl bg-slate-400 flex flex-col items-center"
-                  >
-                    48kbps <br />
-                    <p className="text-xs">Low quality</p>
-                  </p>
-                  <p
-                    onClick={() =>
-                      handleDownloadSong(
-                        e.downloadUrl[2].url,
-                        e.name + " (96kbps)"
-                      )
-                    }
-                    className="duration-300 cursor-pointer  hover:text-slate-400 hover:bg-slate-600 hover:scale-90 w-fit p-1 font-semibold rounded-md shadow-2xl bg-slate-400 flex flex-col items-center"
-                  >
-                    96kbps <br />
-                    <p className="text-xs">Fair quality</p>
-                  </p>
-                  <p
-                    onClick={() =>
-                      handleDownloadSong(
-                        e.downloadUrl[3].url,
-                        e.name + " (160kbps)"
-                      )
-                    }
-                    className="duration-300 cursor-pointer  hover:text-slate-400 hover:bg-slate-600 hover:scale-90 w-fit p-1 font-semibold rounded-md shadow-2xl bg-slate-400 flex flex-col items-center"
-                  >
-                    160kbps <br />
-                    <p className="text-xs">Good quality</p>
-                  </p>
-                  <p
-                    onClick={() =>
-                      handleDownloadSong(
-                        e.downloadUrl[4].url,
-                        e.name + " (320kbps)"
-                      )
-                    }
-                    className="duration-300 cursor-pointer  hover:text-slate-400 hover:bg-slate-600 hover:scale-90 w-fit p-1 font-semibold rounded-md shadow-2xl bg-slate-400 flex flex-col items-center"
-                  >
-                    320kbps <br />
-                    <p className="text-xs"> High quality</p>
-                  </p> */}
-                  <p
-
-                    // onClick={() =>
-                    //   handleDownloadSong(
-                    //     e.downloadUrl[4].url,
-                    //     e.name + " 320kbps",
-                    //     e?.image[2]?.url
-                    //   )
-                    // }
-
-                    // onClick={() => window.open(`https://mp3-download-server-production.up.railway.app/generate-audio?audioUrl=${e.downloadUrl[4].url}&imageUrl=${e?.image[2]?.url}&songName=${e.name + " 320kbps"}&year=${e.year}&album=${e.album.name}`, "_blank")}
-
-                    onClick={() =>
-                      handleGenerateAudio2({
-                        audioUrl: e?.downloadUrl[4].url,
-                        imageUrl: e?.image[2]?.url,
-                        songName: e?.name,
-                        year: e?.year,
-                        album: getAlbumFromTitle(e?.name) || removeSourceAttribution(e?.album?.name),
-                        artist: e?.artists.primary.map(artist => artist.name).join(",")
-                      })
-                    }
-
-                    className="duration-300 cursor-pointer  hover:text-slate-400 hover:bg-slate-600 hover:scale-90 w-fit p-1 sm:text-sm font-semibold rounded-md shadow-2xl bg-slate-400 flex flex-col items-center"
-                  >
-                    Highest quality with <br />
-                    <p className="text-xs text-center">
-                      {" "}
-                      FLAC Format
-                    </p>
-                  </p>
-                  <p
-                    // onClick={() =>
-                    //   handleDownloadSong(
-                    //     e.downloadUrl[4].url,
-                    //     e.name + " 320kbps",
-                    //     e?.image[2]?.url
-                    //   )
-                    // }
-
-                    // onClick={() => window.open(`https://the-ultimate-songs-download-server.up.railway.app/generate-audio?audioUrl=${e.downloadUrl[4].url}&imageUrl=${e?.image[2]?.url}&songName=${e.name + " 320kbps"}&year=${e.year}&album=${e.album.name}`, "_blank")}
-
-                    onClick={() =>
-                      handleGenerateAudio({
-                        audioUrl: e?.downloadUrl[4].url,
-                        imageUrl: e?.image[2]?.url,
-                        songName: e?.name,
-                        year: e?.year,
-                        album: getAlbumFromTitle(e?.name) || removeSourceAttribution(e?.album?.name),
-                        artist: e?.artists.primary
-                          .map((artist) => artist.name)
-                          .join(","),
-                      })
-                    }
-                    className="duration-300 cursor-pointer  hover:text-slate-400 hover:bg-slate-600 hover:scale-90 w-fit p-1 sm:text-sm font-semibold rounded-md shadow-2xl bg-slate-400 flex flex-col items-center"
-                  >
-                    320kbps <br />
-                    <p className="text-xs text-center">
-                      High quality with poster embedded
-                    </p>
-                  </p>
-                </div>
-              </div>
-            </motion.div>
-          ))}
-        </motion.div>
-      ) : (
-        <h1>NO DATA</h1>
-      )}
     </div>
   );
 }

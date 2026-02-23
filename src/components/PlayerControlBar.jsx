@@ -2,27 +2,21 @@ import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { removeSourceAttribution, getAlbumFromTitle } from "../utils/stringUtils";
 import { getArtistMetadata } from "../utils/artistUtils";
+import { useMusic } from "../context/MusicContext";
 import handleGenerateAudio from "../utils/audioUtils";
 import handleGenerateAudio2 from "../utils/audioUtils2";
 import toast from "react-hot-toast";
 
-const PlayerControlBar = ({
-    currentSong,
-    nextSong,
-    prevSong,
-    onNext,
-    onPrev,
-    isPlaying,
-    setIsPlaying,
-    isLike,
-    onLikeToggle,
-}) => {
-    const audioRef = useRef(null);
+const PlayerControlBar = () => {
+    const { currentSong, isPlaying, togglePlay, playNext, playPrev } = useMusic();
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
     const [volume, setVolume] = useState(1);
     const [showDownload, setShowDownload] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
+    const [isLike, setIsLike] = useState(false);
+
+    const audioRef = useRef(null);
 
     // Handle Play/Pause
     useEffect(() => {
@@ -46,9 +40,8 @@ const PlayerControlBar = ({
         }
     }, [currentSong]);
 
-
-    const togglePlay = () => {
-        setIsPlaying(!isPlaying);
+    const onLikeToggle = () => {
+        setIsLike(!isLike);
     };
 
     const handleTimeUpdate = () => {
@@ -159,7 +152,7 @@ const PlayerControlBar = ({
                 {/* Desktop Controls & Progress */}
                 <div className="hidden md:flex flex-1 w-full flex-col items-center gap-2">
                     <div className="flex items-center gap-6">
-                        <button onClick={onPrev} className="text-white/60 hover:text-white transition-colors text-2xl">
+                        <button onClick={playPrev} className="text-white/60 hover:text-white transition-colors text-2xl">
                             <i className="ri-skip-back-mini-fill"></i>
                         </button>
                         <button
@@ -168,7 +161,7 @@ const PlayerControlBar = ({
                         >
                             <i className={`${isPlaying ? "ri-pause-fill" : "ri-play-fill"} text-2xl ml-0.5`}></i>
                         </button>
-                        <button onClick={onNext} className="text-white/60 hover:text-white transition-colors text-2xl">
+                        <button onClick={playNext} className="text-white/60 hover:text-white transition-colors text-2xl">
                             <i className="ri-skip-right-fill"></i>
                         </button>
                     </div>
@@ -242,7 +235,8 @@ const PlayerControlBar = ({
                                                         imageUrl: currentSong?.image[2]?.url,
                                                         songName: removeSourceAttribution(currentSong?.name),
                                                         year: currentSong?.year,
-                                                        album: getAlbumFromTitle(songlink[0]?.name) || removeSourceAttribution(songlink[0]?.album.name),
+                                                        album: getAlbumFromTitle(currentSong?.name) || removeSourceAttribution(currentSong?.album?.name),
+
                                                         artist: currentSong?.artists?.primary?.map(a => a.name).join(", "),
                                                     });
                                                 } else {
@@ -285,7 +279,7 @@ const PlayerControlBar = ({
                     src={currentSong?.downloadUrl?.[4]?.url}
                     onTimeUpdate={handleTimeUpdate}
                     onLoadedMetadata={handleLoadedMetadata}
-                    onEnded={onNext}
+                    onEnded={playNext}
                     crossOrigin="anonymous"
                 />
             </div>

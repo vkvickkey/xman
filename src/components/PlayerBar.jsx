@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
+import { NavLink } from "react-router-dom";
 import { useMusic } from "../context/MusicContext";
-import { IconPlay, IconPause, IconNext, IconPrev, IconVolume, IconShuffle, IconRepeat, IconHeart, IconList } from "./Icons";
+import { IconPlay, IconPause, IconNext, IconPrev, IconShuffle, IconRepeat, IconHeart, IconHome, IconSearch, IconList } from "./Icons";
 import { motion, AnimatePresence } from "framer-motion";
 import { processSong } from "../utils/audioProcessor";
 import { saveAs } from "file-saver";
@@ -9,11 +10,12 @@ import { getArtistMetadata } from "../utils/artistUtils";
 import toast from "react-hot-toast";
 
 const PlayerBar = () => {
-    const { currentSong, isPlaying, togglePlay, volume, setVolume, progress, duration, seek } = useMusic();
+    const {
+        currentSong, isPlaying, togglePlay, progress, duration, seek,
+        isShuffle, setIsShuffle, isRepeat, setIsRepeat, playNext, playPrev
+    } = useMusic();
     const [isExpanded, setIsExpanded] = useState(false);
     const [isLiked, setIsLiked] = useState(false);
-
-    if (!currentSong) return null;
 
     const formatTime = (time) => {
         if (!time) return "0:00";
@@ -45,73 +47,70 @@ const PlayerBar = () => {
 
     return (
         <>
-            {/* Mini Player (Always Visible when not expanded) */}
+            {/* NAVIGATION DOCK & MINI PLAYER */}
             <AnimatePresence>
                 {!isExpanded && (
-                    <motion.div
-                        initial={{ y: 100, opacity: 0 }}
-                        animate={{ y: 0, opacity: 1 }}
-                        exit={{ y: 100, opacity: 0 }}
-                        transition={{ duration: 0.3 }} // Fast spring
-                        onClick={() => setIsExpanded(true)}
-                        className="fixed bottom-[60px] left-2 right-2 h-[56px] bg-[#181818] rounded-lg flex items-center px-2 z-[190] shadow-lg shadow-black/50 border-b border-white/5 overflow-hidden cursor-pointer"
-                    >
-                        {/* Progress Bar Line */}
-                        <div className="absolute bottom-0 left-0 w-full h-[2px] bg-white/10">
-                            <div
-                                className="h-full bg-white rounded-r-sm"
-                                style={{ width: `${(progress / (duration || 100)) * 100}%` }}
-                            />
-                        </div>
+                    <div className="fixed bottom-0 left-0 w-full z-[200] px-4 pb-4 pointer-events-none">
+                        <div className="max-w-md mx-auto flex flex-col gap-2 items-center pointer-events-auto">
 
-                        {/* Thumbnail */}
-                        <div className="w-10 h-10 rounded-md overflow-hidden shrink-0 mr-3">
-                            <img
-                                src={currentSong?.image?.[2]?.url || currentSong?.image?.[0]?.url}
-                                alt={currentSong?.name}
-                                className="w-full h-full object-cover"
-                            />
-                        </div>
+                            {/* Mini Player Pill (Only if music playing) */}
+                            <AnimatePresence>
+                                {currentSong && (
+                                    <motion.div
+                                        initial={{ y: 20, opacity: 0 }}
+                                        animate={{ y: 0, opacity: 1 }}
+                                        exit={{ y: 20, opacity: 0 }}
+                                        onClick={() => setIsExpanded(true)}
+                                        className="w-full h-14 bg-[#1a1a1a]/90 backdrop-blur-xl rounded-2xl flex items-center px-2 shadow-2xl border border-white/10 cursor-pointer overflow-hidden group"
+                                    >
+                                        <div className="absolute bottom-0 left-0 w-full h-[2px] bg-white/5">
+                                            <div
+                                                className="h-full bg-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.8)]"
+                                                style={{ width: `${(progress / (duration || 100)) * 100}%` }}
+                                            />
+                                        </div>
 
-                        {/* Info */}
-                        <div className="flex-1 min-w-0 flex flex-col justify-center mr-3">
-                            <h4 className="text-sm font-semibold text-white truncate leading-tight">
-                                {removeSourceAttribution(currentSong?.name)}
-                            </h4>
-                            <p className="text-xs text-white/60 truncate">
-                                {getArtistMetadata(currentSong?.artists).singleLine}
-                            </p>
-                        </div>
+                                        <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0 mr-3 shadow-lg">
+                                            <img
+                                                src={currentSong?.image?.[2]?.url || currentSong?.image?.[0]?.url}
+                                                alt=""
+                                                className="w-full h-full object-cover"
+                                            />
+                                        </div>
 
-                        {/* Controls (Mini) */}
-                        <div className="flex items-center gap-3 mr-2" onClick={(e) => e.stopPropagation()}>
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleDownload();
-                                }}
-                                className="text-white/60 hover:text-white transition-colors"
+                                        <div className="flex-1 min-w-0 mr-2">
+                                            <h4 className="text-[13px] font-bold text-white truncate leading-none mb-1">
+                                                {removeSourceAttribution(currentSong?.name)}
+                                            </h4>
+                                            <p className="text-[10px] text-white/50 truncate uppercase tracking-tighter">
+                                                {getArtistMetadata(currentSong?.artists).singleLine}
+                                            </p>
+                                        </div>
+
+                                        <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
+                                            <button
+                                                onClick={togglePlay}
+                                                className="w-10 h-10 flex items-center justify-center text-white active:scale-90 transition-transform"
+                                            >
+                                                {isPlaying ? <IconPause className="w-6 h-6" /> : <IconPlay className="w-6 h-6 ml-0.5" />}
+                                            </button>
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+
+                            {/* Unified Navigation Dock */}
+                            <motion.div
+                                initial={{ y: 20, opacity: 0 }}
+                                animate={{ y: 0, opacity: 1 }}
+                                className="w-fit bg-black/80 backdrop-blur-2xl rounded-full px-2 py-1.5 flex items-center gap-1 shadow-2xl border border-white/5 shadow-purple-500/10"
                             >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                    <polyline points="7 10 12 15 17 10"></polyline>
-                                    <line x1="12" y1="15" x2="12" y2="3"></line>
-                                </svg>
-                            </button>
-                            <button
-                                onClick={() => setIsLiked(!isLiked)}
-                                className={`transition-transform active:scale-90 ${isLiked ? 'text-purple-500' : 'text-white/60'}`}
-                            >
-                                <IconHeart className="w-6 h-6" filled={isLiked} />
-                            </button>
-                            <button
-                                onClick={togglePlay}
-                                className="text-white focus:outline-none transition-transform active:scale-90"
-                            >
-                                {isPlaying ? <IconPause className="w-7 h-7" /> : <IconPlay className="w-7 h-7" />}
-                            </button>
+                                <NavPill to="/" icon={<IconHome />} label="Home" />
+                                <NavPill to="/songs" icon={<IconSearch />} label="Search" />
+                                <NavPill to="/playlist" icon={<IconList />} label="Library" />
+                            </motion.div>
                         </div>
-                    </motion.div>
+                    </div>
                 )}
             </AnimatePresence>
 
@@ -223,11 +222,17 @@ const PlayerBar = () => {
 
                         {/* Main Controls */}
                         <div className="flex items-center justify-between mb-8 px-2">
-                            <button onClick={() => setIsShuffle(!isShuffle)} className="text-white/40 hover:text-white transition-colors">
+                            <button
+                                onClick={() => setIsShuffle(!isShuffle)}
+                                className={`transition-colors ${isShuffle ? "text-[#bf40ff]" : "text-white/50 hover:text-white"}`}
+                            >
                                 <IconShuffle className="w-6 h-6" />
                             </button>
 
-                            <button className="text-white hover:scale-110 transition-transform active:scale-95">
+                            <button
+                                onClick={playPrev}
+                                className="text-white hover:scale-110 transition-transform active:scale-95"
+                            >
                                 <IconPrev className="w-10 h-10" />
                             </button>
 
@@ -238,11 +243,17 @@ const PlayerBar = () => {
                                 {isPlaying ? <IconPause className="w-8 h-8 fill-current" /> : <IconPlay className="w-8 h-8 fill-current ml-1" />}
                             </button>
 
-                            <button className="text-white hover:scale-110 transition-transform active:scale-95">
+                            <button
+                                onClick={playNext}
+                                className="text-white hover:scale-110 transition-transform active:scale-95"
+                            >
                                 <IconNext className="w-10 h-10" />
                             </button>
 
-                            <button onClick={() => setIsRepeat(!isRepeat)} className="text-white/40 hover:text-white transition-colors">
+                            <button
+                                onClick={() => setIsRepeat(!isRepeat)}
+                                className={`transition-colors ${isRepeat ? "text-[#bf40ff]" : "text-white/50 hover:text-white"}`}
+                            >
                                 <IconRepeat className="w-6 h-6" />
                             </button>
                         </div>
@@ -252,5 +263,20 @@ const PlayerBar = () => {
         </>
     );
 };
+
+const NavPill = ({ to, icon, label }) => (
+    <NavLink
+        to={to}
+        className={({ isActive }) =>
+            `flex items-center gap-2 px-6 py-3 rounded-full transition-all duration-300 ${isActive
+                ? "bg-purple-600 text-white shadow-[0_0_15px_rgba(168,85,247,0.4)]"
+                : "text-white/40 hover:text-white/70"
+            }`
+        }
+    >
+        {React.cloneElement(icon, { className: "w-5 h-5" })}
+        <span className="text-xs font-bold tracking-tight">{label}</span>
+    </NavLink>
+);
 
 export default PlayerBar;

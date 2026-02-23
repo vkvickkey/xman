@@ -69,6 +69,17 @@ const Artists = () => {
   }, [search, artists]);
 
   useEffect(() => {
+    const cache = sessionStorage.getItem("artists_cache");
+    if (cache) {
+      const { artists, query, requery, scrollY } = JSON.parse(cache);
+      setartists(artists);
+      setquery(query);
+      setrequery(requery);
+      setTimeout(() => window.scrollTo(0, scrollY), 100);
+      sessionStorage.removeItem("artists_cache");
+      return;
+    }
+
     const allData = localStorage.getItem("artists");
 
     // Check if data exists in localStorage
@@ -128,7 +139,18 @@ const Artists = () => {
               transition={{ delay: i * 0.1 }}
               viewport={{ once: true }}
               key={i}
-              onClick={() => navigate(`/artists/details/${e.id}`)}
+              onClick={() => {
+                sessionStorage.setItem(
+                  "artists_cache",
+                  JSON.stringify({
+                    artists,
+                    query,
+                    requery,
+                    scrollY: window.scrollY,
+                  })
+                );
+                navigate(`/artists/details/${e.id}`);
+              }}
               className="w-[15vw] h-[30vh] sm:w-[40vw] mb-5  sm:h-[20vh] sm:mb-12 rounded-xl bg-white/5 border border-white/10 backdrop-blur-md hover:bg-white/10 hover:border-white/20 transition-all duration-300 cursor-pointer shadow-lg hover:shadow-purple-glow"
             >
               <img

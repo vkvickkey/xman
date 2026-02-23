@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Link, Navigate, json, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useMusic } from "../context/MusicContext";
+
 
 const logo = "/logo3.jpg";
 import axios from "axios";
@@ -20,8 +22,6 @@ import {
   motion,
 } from "framer-motion";
 import { useAnimate, stagger } from "framer-motion";
-import { Bounce, Expo, Power4, Sine } from "gsap/all";
-import { Circ } from "gsap/all";
 import toast, { Toaster } from "react-hot-toast";
 import handleGenerateAudio from "./../utils/audioUtils";
 import handleGenerateAudio2 from "./../utils/audioUtils2";
@@ -145,7 +145,7 @@ const FreshHitRow = ({ language, data, navigate, onRefresh }) => {
             <motion.div
               initial={{ y: -100, scale: 0.5 }}
               whileInView={{ y: 0, scale: 1 }}
-              transition={{ ease: Circ.easeIn, duration: 0.05 }}
+              transition={{ ease: "circIn", duration: 0.05 }}
               onClick={() => navigate(`/playlist/details/${f.id}`)}
               key={i}
               className="hover:scale-110 sm:hover:scale-105 duration-300 flex-shrink-0 w-[15%] sm:w-[40%] rounded-md flex flex-col gap-2 py-4 cursor-pointer"
@@ -167,20 +167,24 @@ const FreshHitRow = ({ language, data, navigate, onRefresh }) => {
 };
 
 const Home = () => {
-  let navigate = useNavigate();
+  const navigate = useNavigate();
+  const { currentSong, isPlaying, playSong, togglePlay, setQueue } = useMusic();
   const [home, sethome] = useState(null);
   const [language, setlanguage] = useState(localStorage.getItem("language") || "Tamil");
   const [details, setdetails] = useState([]);
-  const [songlink, setsonglink] = useState([]);
-  const [songlink2, setsonglink2] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  // const [songlink, setsonglink] = useState([]);
+  // const [songlink2, setsonglink2] = useState([]);
   // const [songlinkchecker, setsonglinkchecker] = useState(null);
   const [like, setlike] = useState(false);
-  var [index, setindex] = useState(null);
-  var [index2, setindex2] = useState(null);
+  // var [index, setindex] = useState(null);
+  // var [index2, setindex2] = useState(null);
   var [page, setpage] = useState(Math.floor(Math.random() * 50) + 1);
   var [page2, setpage2] = useState(Math.floor(Math.random() * 50) + 1);
-  const audioRef = useRef();
-  const [audiocheck, setaudiocheck] = useState(true);
+  // const audioRef = useRef();
+  // const [audiocheck, setaudiocheck] = useState(false);
+
   // const [selectedSongIds, setSelectedSongIds] = useState([]);
   const [suggSong, setsuggSong] = useState([]);
   const [freshHitsData, setFreshHitsData] = useState([]);
@@ -189,9 +193,29 @@ const Home = () => {
   const [indiaSuperhitsTop50, setIndiaSuperhitsTop50] = useState([]);
   const [tamilPlaylists, setTamilPlaylists] = useState([]);
   const [newTamilSongs, setNewTamilSongs] = useState([]);
+  const [newTamilSongsLoading, setNewTamilSongsLoading] = useState(false);
   const [devotionalPlaylists, setDevotionalPlaylists] = useState([]);
   const [jioSaavanUpdatePlaylists, setJioSaavanUpdatePlaylists] = useState([]);
   const [currentDevotionalKeyword, setCurrentDevotionalKeyword] = useState("");
+
+  useEffect(() => {
+    const cache = sessionStorage.getItem("home_cache");
+    if (cache) {
+      const { scrollY } = JSON.parse(cache);
+      setTimeout(() => window.scrollTo(0, scrollY), 100);
+      sessionStorage.removeItem("home_cache");
+    }
+  }, []);
+
+  const navigateWithHomeCache = (path) => {
+    sessionStorage.setItem(
+      "home_cache",
+      JSON.stringify({
+        scrollY: window.scrollY,
+      })
+    );
+    navigate(path);
+  };
 
   const freshHitsLanguages = ["Tamil", "Hindi", "English", "Telugu", "Malayalam"];
 
@@ -262,7 +286,8 @@ const Home = () => {
 
   // Updated by Antigravity on ${new Date().toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })} - Content categories: Music Playlists & New Songs & Devotional
   const Gethome = async () => {
-    detailsseter();
+    setLoading(true);
+    setError("");
     try {
       const [trendingSongsRes, trendingAlbumsRes, chartsRes, playlistsRes, albumsRes] = await Promise.all([
         axios.get(getApiUrl("search", `/search/songs?query=New ${language} Songs&limit=10`)),
@@ -271,7 +296,7 @@ const Home = () => {
         axios.get(getApiUrl("search", `/search/playlists?query=${language} Hits today&limit=10`)),
         axios.get(getApiUrl("search", `/search/albums?query=Latest ${language} today&limit=10`))
       ]);
-
+      console.log('API responses:', { trendingSongsRes, trendingAlbumsRes, chartsRes, playlistsRes, albumsRes });
       const mapItems = (items) => items ? items.map(item => ({
         id: item.id,
         name: item.name,
@@ -282,7 +307,6 @@ const Home = () => {
         url: item.url,
         songs: item.songs || []
       })) : [];
-
       const homeData = {
         charts: mapItems(chartsRes.data.data.results),
         albums: mapItems(albumsRes.data.data.results),
@@ -292,10 +316,12 @@ const Home = () => {
           albums: mapItems(trendingAlbumsRes.data.data.results)
         }
       };
-
       sethome(homeData);
+      setLoading(false);
     } catch (error) {
-      console.log("Error fetching home data:", error);
+      setError("Failed to load home data. Check your connection or try again later.");
+      setLoading(false);
+      console.error("Error fetching home data:", error);
     }
   };
 
@@ -369,13 +395,42 @@ const Home = () => {
       setNewTamilSongs([]);
       return;
     }
+    
+    setNewTamilSongsLoading(true);
+    
+    // Shuffle system with different Tamil song queries
+    const tamilQueries = [
+      "New Tamil Songs",
+      "Latest Tamil Hits",
+      "Tamil Trending Songs",
+      "New Tamil Releases",
+      "Tamil Popular Songs",
+      "Latest Tamil Music",
+      "Tamil New Releases",
+      "Trending Tamil Songs",
+      "Fresh Tamil Songs",
+      "Tamil Chart Toppers"
+    ];
+    
+    // Get a random query from the list
+    const randomQuery = tamilQueries[Math.floor(Math.random() * tamilQueries.length)];
+    
     try {
       const { data } = await axios.get(
-        getApiUrl("search", `/search/songs?query=New Tamil Songs&limit=20`)
+        getApiUrl("search", `/search/songs?query=${encodeURIComponent(randomQuery)}&limit=20`)
       );
       setNewTamilSongs(data?.data?.results || []);
+      
+      // Show toast notification for user feedback
+      toast.success(`Shuffled: ${randomQuery}`, {
+        duration: 2000,
+        position: 'top-center',
+      });
     } catch (error) {
       console.error("Error fetching New Tamil Songs:", error);
+      toast.error("Failed to refresh songs");
+    } finally {
+      setNewTamilSongsLoading(false);
     }
   };
 
@@ -591,7 +646,7 @@ const Home = () => {
     setpage(randomPage); // Use randomized page
     setpage2(randomPage);
 
-    GetLanguageSongs(randomPage); // Use GetLanguageSongs for relevant languages
+    Getdetails(randomPage, shuffleQuery); // Now actually uses the random modifier!
   };
 
   const handleRefreshSongs = () => {
@@ -676,53 +731,29 @@ const Home = () => {
     }
   };
 
+  const toggleAudio = (song, queue = []) => {
+    if (!song) return;
+
+    if (currentSong?.id === song.id) {
+      togglePlay();
+    } else {
+      if (queue.length > 0) {
+        setQueue(queue);
+      }
+      playSong(song);
+    }
+  };
+
   function audioseter(i) {
     if (i === null || !details[i]) return;
-
-    if (songlink[0]?.id === details[i].id) {
-      const audio = audioRef.current;
-      if (audio) {
-        if (!audio.paused) {
-          audio.pause();
-          setaudiocheck(false);
-        } else {
-          setaudiocheck(true);
-          audio.play().catch((error) => {
-            console.error("Playback failed:", error);
-          });
-        }
-      }
-    } else {
-      setindex2(null);
-      setsonglink2([]);
-      setindex(i);
-      setsonglink([details[i]]);
-    }
+    toggleAudio(details[i], details);
   }
 
   function audioseter2(i) {
     if (i === null || !suggSong[i]) return;
-
-    if (songlink2[0]?.id === suggSong[i].id) {
-      const audio = audioRef.current;
-      if (audio) {
-        if (!audio.paused) {
-          audio.pause();
-          setaudiocheck(false);
-        } else {
-          setaudiocheck(true);
-          audio.play().catch((error) => {
-            console.error("Playback failed:", error);
-          });
-        }
-      }
-    } else {
-      setindex(null);
-      setsonglink([]);
-      setindex2(i);
-      setsonglink2([suggSong[i]]);
-    }
+    toggleAudio(suggSong[i], suggSong);
   }
+
 
 
   // Function to get a random subset of IDs without duplicates
@@ -965,126 +996,22 @@ const Home = () => {
   //     console.warn("MediaSession API is not supported.");
   //   }
   // };
-  const initializeMediaSession = () => {
-    const isIOS = /(iPhone|iPod|iPad)/i.test(navigator.userAgent);
+  // Media session is now handled by MusicContext / PlayerBar
+  const initializeMediaSession = () => { };
 
-    if (!isIOS && "mediaSession" in navigator) {
-      navigator.mediaSession.metadata = new MediaMetadata({
-        title: songlink[0]?.name || "",
-        artist: songlink[0]?.album?.name || "",
-        artwork: [
-          {
-            src: songlink[0]?.image[2]?.url || "",
-            sizes: "512x512",
-            type: "image/jpeg",
-          },
-        ],
-      });
 
-      navigator.mediaSession.setActionHandler("play", function () {
-        // Handle play action
-        if (audioRef.current) {
-          audioRef.current.play().catch((error) => {
-            console.error("Play error:", error);
-          });
-        }
-      });
-
-      navigator.mediaSession.setActionHandler("pause", function () {
-        // Handle pause action
-        if (audioRef.current) {
-          audioRef.current.pause().catch((error) => {
-            console.error("Pause error:", error);
-          });
-        }
-      });
-
-      navigator.mediaSession.setActionHandler("previoustrack", function () {
-        pre();
-      });
-
-      navigator.mediaSession.setActionHandler("nexttrack", function () {
-        next();
-      });
-    } else {
-      console.warn("MediaSession API is not supported or the device is iOS.");
-    }
-  };
-
-  const initializeMediaSession2 = () => {
-    const isIOS = /(iPhone|iPod|iPad)/i.test(navigator.userAgent);
-
-    if (!isIOS && "mediaSession" in navigator) {
-      navigator.mediaSession.metadata = new MediaMetadata({
-        title: songlink2[0]?.name || "",
-        artist: songlink2[0]?.album?.name || "",
-        artwork: [
-          {
-            src: songlink2[0]?.image[2]?.url || "",
-            sizes: "512x512",
-            type: "image/jpeg",
-          },
-        ],
-      });
-
-      navigator.mediaSession.setActionHandler("play", function () {
-        // Handle play action
-        if (audioRef.current) {
-          audioRef.current.play().catch((error) => {
-            console.error("Play error:", error);
-          });
-        }
-      });
-
-      navigator.mediaSession.setActionHandler("pause", function () {
-        // Handle pause action
-        if (audioRef.current) {
-          audioRef.current.pause().catch((error) => {
-            console.error("Pause error:", error);
-          });
-        }
-      });
-
-      navigator.mediaSession.setActionHandler("previoustrack", function () {
-        pre2();
-      });
-
-      navigator.mediaSession.setActionHandler("nexttrack", function () {
-        next2();
-      });
-    } else {
-      console.warn("MediaSession API is not supported or the device is iOS.");
-    }
-  };
+  // Media session 2 is now handled by MusicContext / PlayerBar
+  const initializeMediaSession2 = () => { };
 
 
 
-  function next() {
-    if (!details || details.length === 0) return;
-    const nextIndex = (index === null || index >= details.length - 1) ? 0 : index + 1;
-    setindex(nextIndex);
-    // Explicitly pass the new index to audioseter to avoid using stale state
-    audioseter(nextIndex);
-  }
-  function next2() {
-    if (!suggSong || suggSong.length === 0) return;
-    const nextIndex = (index2 === null || index2 >= suggSong.length - 1) ? 0 : index2 + 1;
-    setindex2(nextIndex);
-    audioseter2(nextIndex);
-  }
 
-  function pre() {
-    if (!details || details.length === 0) return;
-    const prevIndex = (index === null || index <= 0) ? details.length - 1 : index - 1;
-    setindex(prevIndex);
-    audioseter(prevIndex);
-  }
-  function pre2() {
-    if (!suggSong || suggSong.length === 0) return;
-    const prevIndex = (index2 === null || index2 <= 0) ? suggSong.length - 1 : index2 - 1;
-    setindex2(prevIndex);
-    audioseter2(prevIndex);
-  }
+  // next/prev now handled globally by MusicContext
+  function next() { }
+  function next2() { }
+  function pre() { }
+  function pre2() { }
+
 
   // const handleDownloadSong = async (url, name) => {
   //   try {
@@ -1178,23 +1105,22 @@ const Home = () => {
 
   function detailsseter() {
     setpage(Math.floor(Math.random() * 50) + 1);
-    setindex(null);
-    setindex2(null);
-    setsonglink([]);
-    setsonglink2([]);
     setdetails([]);
     setsuggSong([]);
   }
 
 
 
+  // Retry fetching home data if it failed
   function seccall() {
     const intervalId = setInterval(() => {
-      if (home === null) {
-        // sethome([])
+      // This will be checked using the ref to avoid stale closure
+      if (!homeRef.current) {
         Getartists();
+      } else {
+        clearInterval(intervalId);
       }
-    }, 1000);
+    }, 3000);
     return intervalId;
   }
   useEffect(() => {
@@ -1234,46 +1160,39 @@ const Home = () => {
     } else {
       Getdetails();
     }
-
+    
+    // Add timeout to prevent infinite loading
+    const timeout = setTimeout(() => {
+      setLoading(false);
+    }, 10000); // 10 seconds timeout
+    
+    return () => clearTimeout(timeout);
+    // eslint-disable-next-line
   }, [language]);
+
+  // Keep a ref for home to avoid stale closure in seccall
+  const homeRef = useRef(home);
+  useEffect(() => {
+    homeRef.current = home;
+  }, [home]);
 
   useEffect(() => {
     const interval = seccall();
     return () => clearInterval(interval);
-  }, [language, home]);
+  }, [language]);
 
+  // Like state now tracked via currentSong from context
   useEffect(() => {
-    likeset(songlink[0]);
-  }, [songlink]);
-
-  useEffect(() => {
-    likeset(songlink2[0]);
-  }, [songlink2]);
+    likeset(currentSong);
+  }, [currentSong]);
 
 
-  useEffect(() => {
-    const isIOS = /(iPhone|iPod|iPad)/i.test(navigator.userAgent);
-
-    if (!isIOS && songlink.length > 0) {
-      audioRef.current.play();
-      initializeMediaSession();
-    }
-  }, [songlink, initializeMediaSession]);
-
-  useEffect(() => {
-    const isIOS = /(iPhone|iPod|iPad)/i.test(navigator.userAgent);
-
-    if (!isIOS && songlink2.length > 0) {
-      audioRef.current.play();
-      initializeMediaSession2();
-    }
-  }, [songlink2, initializeMediaSession2]);
 
 
   useEffect(() => {
     processLikedSongIds();
     // console.log('Selected Song IDs:', selectedIds);
-  }, [language, processLikedSongIds]);
+  }, [language]); // processLikedSongIds removed from deps to prevent infinite loop
 
   // useEffect(() => {
   //   initializeMediaSession();
@@ -1296,7 +1215,8 @@ const Home = () => {
   //   return () => clearInterval(interval2);
   // }, [details, page, language]);
 
-  var title = songlink[0]?.name;
+  var title = currentSong?.name;
+
   document.title = `${title ? title : "Max-Vibe"}`;
   // console.log(details);
   // console.log(home);
@@ -1307,23 +1227,40 @@ const Home = () => {
   // console.log(suggSong);
   // console.log(songlinkchecker);
 
-  return details.length > 0 ? (
+  if (loading) {
+    return (
+      <div className="w-full h-screen bg-black text-white flex items-center justify-center">
+        <Loading />
+      </div>
+    );
+  }
+  if (error) {
+    return (
+      <div className="w-full h-screen bg-black text-white flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-400 text-lg font-bold mb-4">{error}</p>
+          <button onClick={() => window.location.reload()} className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700">Reload</button>
+        </div>
+      </div>
+    );
+  }
+  return (
     <div className="w-full h-screen bg-black text-white">
       <Toaster position="top-center" reverseOrder={false} />
       <motion.div
         initial={{ opacity: 0, y: -50 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ ease: Circ.easeIn, duration: 0.5 }}
+        transition={{ ease: "circIn", duration: 0.5 }}
         className="logo fixed flex items-center z-[99] top-0 w-full duration-200 max-h-[20vh] flex sm:block backdrop-blur-xl py-3 px-10 sm:px-5 items-center gap-3 border-b border-white/5"
       >
-        <div className="flex items-center sm:justify-center sm:pt-2 gap-2 w-[-10%]">
+        <div className="flex items-center sm:justify-center sm:pt-2 gap-2 w-auto">
           <img className="w-[5vw] sm:w-[10vw] rounded-full shadow-purple-glow" src={logo} alt="" />
           <h1 className="text-3xl text-white p-0 rounded-full sm:text-2xl font-bold whitespace-nowrap">MAX-VIBE</h1>
         </div>
         <motion.div
           initial={{ opacity: 0, y: -50 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ ease: Circ.easeIn, duration: 1 }}
+          transition={{ ease: "circIn", duration: 1 }}
           className="sm:pt-3 sm:ml-4 text-white ml-20 sm:justify-center"
         >
           {/* <h3 className="inline text-xl sm:hidden">Search : </h3> */}
@@ -1338,7 +1275,7 @@ const Home = () => {
             className="ml-2 sm:ml-4 px-4 py-2 text-xl sm:text-sm font-bold text-white rounded-xl bg-white/5 backdrop-blur-md border border-white/10 shadow-purple-glow hover:bg-purple-gradient hover:shadow-purple-glow hover:border-white/20 transition-all duration-300 ease-out"
             to={"/playlist"}
           >
-            PlayLists
+            Playlist
           </Link>
           <Link
             className="ml-2 sm:ml-4 px-4 py-2 text-xl sm:text-sm font-bold text-white rounded-xl bg-white/5 backdrop-blur-md border border-white/10 shadow-purple-glow hover:bg-purple-gradient hover:shadow-purple-glow hover:border-white/20 transition-all duration-300 ease-out"
@@ -1370,7 +1307,7 @@ const Home = () => {
           ></a>
         </div> */}
       </motion.div>
-      <div className="w-full  bg-black  min-h-[40vh] pt-[20vh] pb-[15vh]  text-white p-2 flex flex-col gap-1 overflow-auto">
+      <div className="w-full bg-black min-h-[40vh] pt-[20vh] pb-[15vh] text-white p-2 flex flex-col gap-1 overflow-auto">
         <div className="w-full flex justify-end dropdown-control">
           <Dropdown
             className=" w-[100%] text-sm sm:w-[100%] mb-8 p-2 rounded-xl"
@@ -1396,68 +1333,97 @@ const Home = () => {
             </div>
 
             {/* Center Title */}
-            <h3 className="text-2xl font-bold text-white/90 tracking-wide capitalize drop-shadow-lg font-sans">
-              Best {language} Hits
-            </h3>
+            <div className="flex flex-col items-center">
+              <h3 className="text-2xl font-bold text-white/90 tracking-wide capitalize drop-shadow-lg font-sans">
+                Best {language} Hits
+              </h3>
+              <div className="flex gap-2 mt-1">
+                <span className="text-[10px] text-white/40 uppercase tracking-widest px-2 py-0.5 rounded-full bg-white/5 border border-white/10">Dynamic Mix</span>
+              </div>
+            </div>
 
-            {/* Right Icon */}
-            <div onClick={handleRefreshSongs} className="flex items-center justify-center w-10 h-10 rounded-full bg-black/20 border border-white/5 backdrop-blur-md shadow-[inset_0_1px_4px_rgba(255,255,255,0.1)] cursor-pointer hover:bg-white/10 hover:scale-105 transition-all duration-300">
-              <i className="ri-refresh-line text-white text-xl"></i>
+            {/* Right Icons */}
+            <div className="flex items-center gap-3">
+              <div
+                onClick={handleAiShuffle}
+                className="flex items-center justify-center w-10 h-10 rounded-full bg-purple-gradient/20 border border-purple-500/20 backdrop-blur-md shadow-purple-glow cursor-pointer hover:bg-purple-gradient/40 hover:scale-110 transition-all duration-300 group/ai"
+                title="AI Shuffle"
+              >
+                <i className="ri-robot-2-line text-white text-xl group-hover/ai:animate-bounce"></i>
+              </div>
+              <div
+                onClick={handleRefreshSongs}
+                className="flex items-center justify-center w-10 h-10 rounded-full bg-black/20 border border-white/5 backdrop-blur-md shadow-[inset_0_1px_4px_rgba(255,255,255,0.1)] cursor-pointer hover:bg-white/10 hover:scale-105 transition-all duration-300"
+                title="Refresh List"
+              >
+                <i className="ri-refresh-line text-white text-xl"></i>
+              </div>
             </div>
           </div>
           <div className="relative group w-full">
             <ScrollButtons scrollRef={detailsRef} />
             <motion.div ref={detailsRef} className="songs custom-scrollbar px-5 sm:px-3 flex flex-shrink gap-5 overflow-x-auto w-full pb-4">
-              {details?.map((t, i) => (
+              {details && details.length === 0 && (
+                <div className="w-full text-center text-white/60 py-10">
+                  <span>No songs found. Please try refreshing or check your connection.</span>
+                </div>
+              )}
+              {Array.isArray(details) && details.map((t, i) => (
                 <motion.div
-                  //  whileHover={{  y: 0,scale: 0.9 }}
-                  //  viewport={{ once: true }}
                   initial={{ y: -100, scale: 0.5 }}
                   whileInView={{ y: 0, scale: 1 }}
-                  transition={{ ease: Circ.easeIn, duration: 0.05 }}
+                  transition={{ ease: "circIn", duration: 0.05 }}
                   onClick={() => audioseter(i)}
                   key={i}
-                  className="relative hover:scale-95 sm:hover:scale-105 duration-300 flex-shrink-0 w-[15%] sm:w-[40%] rounded-md flex flex-col gap-1 py-4 cursor-pointer"
+                  className="relative group/card hover:scale-95 sm:hover:scale-105 duration-300 flex-shrink-0 w-[15%] sm:w-[40%] rounded-md flex flex-col gap-1 py-4 cursor-pointer"
                 >
-                  <motion.img
-                    className="relative w-full  rounded-md"
-                    // src={t.image[2].link}
-                    src={t.image?.[2]?.url || t.image?.[0]?.url}
-                    alt=""
-                  />
-                  <div className="flex  items-center ">
-                    <p className=" font-bold text-transparent bg-clip-text bg-gradient-to-r from-p-violet to-p-magenta">{i + 1}</p>
+                  <div className="relative overflow-hidden rounded-md shadow-lg">
+                    <motion.img
+                      className="relative w-full rounded-md transition-transform duration-500 group-hover/card:scale-110"
+                      src={t.image?.[2]?.url || t.image?.[0]?.url}
+                      alt=""
+                    />
+
+
+                    {/* Play/Pause Button Overlay */}
+                    <button
+                      className="absolute inset-0 flex items-center justify-center w-full h-full bg-black/40 opacity-0 group-hover/card:opacity-100 transition-opacity duration-300 focus:opacity-100"
+                      style={{ zIndex: 2 }}
+                      onClick={e => {
+                        e.stopPropagation();
+                        audioseter(i);
+                      }}
+                      aria-label={t.id === currentSong?.id && isPlaying ? 'Pause' : 'Play'}
+                    >
+                      <i className={`text-6xl ${t.id === currentSong?.id && isPlaying ? 'ri-pause-circle-fill text-p-magenta' : 'ri-play-circle-fill text-white'} drop-shadow-glow`}></i>
+                    </button>
+
+                    {/* Wave animation for active song */}
+                    <img
+                      className={`absolute top-2 left-2 w-[20%] sm:w-[25%] rounded-md ${t.id === currentSong?.id ? "block" : "hidden"} `}
+                      src={wavs}
+                      alt=""
+                    />
+
                   </div>
 
-                  <img
-                    className={`absolute top-4 w-[20%] sm:w-[25%] rounded-md ${i === index ? "block" : "hidden"
-                      } `}
-                    src={wavs}
-                    alt=""
-                  />
-                  {songlink.length > 0 && (
-                    <i className={`absolute top-20 sm:top-16 w-full  flex items-center justify-center text-5xl text-p-magenta drop-shadow-[0_0_15px_rgba(191,64,255,0.8)] opacity-90  duration-300 rounded-md  ${t.id === songlink[0]?.id ? "block" : "hidden"
-                      } ${audiocheck
-                        ? "ri-pause-circle-fill"
-                        : "ri-play-circle-fill"
-                      }`}
-                    ></i>
-                  )}
-
-                  <motion.div
-                    className="flex flex-col"
-                  >
+                  <div className="flex items-center gap-1 mt-1">
+                    <p className="font-bold text-xs text-transparent bg-clip-text bg-gradient-to-r from-p-violet to-p-magenta">{i + 1}</p>
                     <h3
-                      className={`text-sm sm:text-xs leading-none font-bold ${i === index ? "text-p-magenta shadow-purple-glow" : "text-white"
+                      className={`text-sm sm:text-xs leading-none font-bold truncate ${t.id === currentSong?.id ? "text-p-magenta" : "text-white"
                         }`}
                     >
                       {removeSourceAttribution(t.name)}
                     </h3>
-                    <h4 className="text-xs sm:text-[2.5vw] text-white/60">
+
+                  </div>
+
+                  <motion.div className="flex flex-col">
+                    <h4 className="text-xs sm:text-[2.5vw] text-white/50 truncate">
                       {removeSourceAttribution(t.album?.name || "")}
                     </h4>
-                    <div className="flex flex-col mt-1">
-                      <span className="text-[10px] sm:text-[8px] text-zinc-400">
+                    <div className="flex flex-col mt-0.5">
+                      <span className="text-[10px] sm:text-[8px] text-zinc-500 truncate">
                         {getArtistMetadata(t.artists).singleLine}
                       </span>
                     </div>
@@ -1499,13 +1465,13 @@ const Home = () => {
             <div className="relative group w-full">
               <ScrollButtons scrollRef={suggRef} />
               <motion.div ref={suggRef} className="songs custom-scrollbar px-5 sm:px-3 flex flex-shrink gap-5 overflow-x-auto w-full pb-4">
-                {suggSong?.map((t, i) => (
+                {Array.isArray(suggSong) && suggSong.map((t, i) => (
                   <motion.div
                     //  whileHover={{  y: 0,scale: 0.9 }}
                     //  viewport={{ once: true }}
                     initial={{ y: -100, scale: 0.5 }}
                     whileInView={{ y: 0, scale: 1 }}
-                    transition={{ ease: Circ.easeIn, duration: 0.05 }}
+                    transition={{ ease: "circIn", duration: 0.05 }}
                     onClick={() => audioseter2(i)}
                     key={i}
                     className="relative hover:scale-95 sm:hover:scale-105 duration-300 flex-shrink-0 w-[15%] sm:w-[40%] rounded-md flex flex-col gap-1 py-4 cursor-pointer"
@@ -1520,30 +1486,34 @@ const Home = () => {
                       <p className=" font-bold text-transparent bg-clip-text bg-gradient-to-r from-p-violet to-p-magenta">{i + 1}</p>
                     </div>
 
+                    {/* Wave animation for active song */}
                     <img
-                      className={`absolute top-4 w-[20%] sm:w-[25%] rounded-md ${i === index2 ? "block" : "hidden"
-                        } `}
+                      className={`absolute top-2 left-2 w-[20%] sm:w-[25%] rounded-md ${t.id === currentSong?.id ? "block" : "hidden"} `}
                       src={wavs}
                       alt=""
                     />
-                    {songlink2.length > 0 && (
-                      <i className={`absolute top-20 sm:top-16 w-full  flex items-center justify-center text-5xl text-p-magenta drop-shadow-[0_0_15px_rgba(191,64,255,0.8)] opacity-90  duration-300 rounded-md  ${t.id === songlink2[0]?.id ? "block" : "hidden"
-                        } ${audiocheck
-                          ? "ri-pause-circle-fill"
-                          : "ri-play-circle-fill"
-                        }`}
-                      ></i>
+
+                    {/* Play/Pause Icons */}
+                    {t.id === currentSong?.id ? (
+                      <i className={`absolute inset-0 flex items-center justify-center text-5xl text-p-magenta drop-shadow-[0_0_20px_rgba(191,64,255,1)] opacity-100 duration-300 rounded-md bg-black/20 ${isPlaying ? "ri-pause-circle-fill" : "ri-play-circle-fill"}`}></i>
+                    ) : (
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                        <i className="ri-play-circle-fill text-5xl text-white drop-shadow-glow"></i>
+                      </div>
+
                     )}
+
 
                     <motion.div
                       className="flex flex-col"
                     >
                       <h3
-                        className={`text-sm sm:text-xs leading-none font-bold ${t.id === songlink2[0]?.id ? "text-p-magenta shadow-purple-glow" : "text-white"
+                        className={`text-sm sm:text-xs leading-none font-bold ${t.id === currentSong?.id ? "text-p-magenta shadow-purple-glow" : "text-white"
                           }`}
                       >
                         {removeSourceAttribution(t.name)}
                       </h3>
+
                       <h4 className="text-xs sm:text-[2.5vw] text-white/70">
                         {t.album.name}
                       </h4>
@@ -1609,9 +1579,9 @@ const Home = () => {
                 <motion.div
                   initial={{ y: -100, scale: 0.5 }}
                   whileInView={{ y: 0, scale: 1 }}
-                  transition={{ ease: Circ.easeIn, duration: 0.05 }}
+                  transition={{ ease: "circIn", duration: 0.05 }}
                   // onClick={`/playlist/details/${c.id}`}
-                  onClick={() => navigate(`/playlist/details/${c.id}`)}
+                  onClick={() => navigateWithHomeCache(`/playlist/details/${c.id}`)}
                   key={i}
                   className="hover:scale-110 sm:hover:scale-105  duration-300 flex-shrink-0 w-[15%] sm:w-[40%] rounded-md flex flex-col gap-2 py-4 cursor-pointer"
                 >
@@ -1653,12 +1623,12 @@ const Home = () => {
             <div className="relative group w-full">
               <ScrollButtons scrollRef={indiaSuperhitsTop50Ref} />
               <div ref={indiaSuperhitsTop50Ref} className="indiasuperhitstop50data custom-scrollbar px-5 sm:px-3 flex flex-shrink gap-5 overflow-x-auto w-full pb-4">
-                {indiaSuperhitsTop50?.map((f, i) => (
+                {Array.isArray(indiaSuperhitsTop50) && indiaSuperhitsTop50.map((f, i) => (
                   <motion.div
                     initial={{ y: -100, scale: 0.5 }}
                     whileInView={{ y: 0, scale: 1 }}
-                    transition={{ ease: Circ.easeIn, duration: 0.05 }}
-                    onClick={() => navigate(`/playlist/details/${f.id}`)}
+                    transition={{ ease: "circIn", duration: 0.05 }}
+                    onClick={() => navigateWithHomeCache(`/playlist/details/${f.id}`)}
                     key={i}
                     className="hover:scale-110 sm:hover:scale-105 duration-300 flex-shrink-0 w-[15%] sm:w-[40%] rounded-md flex flex-col gap-2 py-4 cursor-pointer"
                   >
@@ -1682,7 +1652,7 @@ const Home = () => {
             key="fresh-hits"
             language="All" // Not used for title anymore but might be needed for prop types if strictly typed (not here)
             data={freshHitsData}
-            navigate={navigate}
+            navigate={navigateWithHomeCache}
             onRefresh={() => GetFreshHits()}
           />
         )}
@@ -1703,12 +1673,12 @@ const Home = () => {
             <div className="relative group w-full">
               <ScrollButtons scrollRef={bestOf90sRef} />
               <div ref={bestOf90sRef} className="bestof90sdata custom-scrollbar px-5 sm:px-3 flex flex-shrink gap-5 overflow-x-auto w-full pb-4">
-                {bestOf90s?.map((f, i) => (
+                {Array.isArray(bestOf90s) && bestOf90s.map((f, i) => (
                   <motion.div
                     initial={{ y: -100, scale: 0.5 }}
                     whileInView={{ y: 0, scale: 1 }}
-                    transition={{ ease: Circ.easeIn, duration: 0.05 }}
-                    onClick={() => navigate(`/playlist/details/${f.id}`)}
+                    transition={{ ease: "circIn", duration: 0.05 }}
+                    onClick={() => navigateWithHomeCache(`/playlist/details/${f.id}`)}
                     key={i}
                     className="hover:scale-110 sm:hover:scale-105 duration-300 flex-shrink-0 w-[15%] sm:w-[40%] rounded-md flex flex-col gap-2 py-4 cursor-pointer"
                   >
@@ -1726,153 +1696,87 @@ const Home = () => {
             </div>
           </div>
         )}
+
+        {newTamilSongs.length > 0 && (
+          <div className="new-tamil-songs w-full flex flex-col gap-3 ">
+            <div className="relative w-full py-3 px-6 mb-2 flex items-center justify-between rounded-3xl bg-white/5 backdrop-blur-2xl border-t border-l border-r border-white/10 border-b-0 shadow-xl overflow-hidden shrink-0 group">
+              <div className="absolute bottom-0 left-0 w-full h-[2px] bg-gradient-to-r from-[#8A2BE2] via-[#BF40FF] to-[#8A2BE2] blur-[1px] shadow-[0_0_20px_rgba(191,64,255,0.6)]"></div>
+              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-black/20 border border-white/5 backdrop-blur-md shadow-[inset_0_1px_4px_rgba(255,255,255,0.1)] cursor-pointer hover:bg-white/10 hover:scale-105 transition-all duration-300">
+                <i className="ri-music-fill text-white text-xl"></i>
+              </div>
+              <h3 className="text-2xl font-bold text-white/90 tracking-wide capitalize drop-shadow-lg font-sans">
+                New Tamil Songs
+              </h3>
+              <div onClick={GetNewTamilSongs} className="flex items-center justify-center w-10 h-10 rounded-full bg-black/20 border border-white/5 backdrop-blur-md shadow-[inset_0_1px_4px_rgba(255,255,255,0.1)] cursor-pointer hover:bg-white/10 hover:scale-105 transition-all duration-300" title="Shuffle New Tamil Songs">
+                {newTamilSongsLoading ? (
+                  <i className="ri-loader-4-line text-white text-xl animate-spin"></i>
+                ) : (
+                  <i className="ri-shuffle-line text-white text-xl"></i>
+                )}
+              </div>
+            </div>
+            <div className="relative group w-full">
+              <ScrollButtons scrollRef={newTamilSongsRef} />
+              <div ref={newTamilSongsRef} className="newtamilsongsdata custom-scrollbar px-5 sm:px-3 flex flex-shrink gap-5 overflow-x-auto w-full pb-4">
+                {Array.isArray(newTamilSongs) && newTamilSongs.map((t, i) => (
+                  <motion.div
+                    initial={{ y: -100, scale: 0.5 }}
+                    whileInView={{ y: 0, scale: 1 }}
+                    transition={{ ease: "circIn", duration: 0.05 }}
+                    onClick={() => {
+                      toggleAudio(t);
+                    }}
+                    key={i}
+                    className="relative hover:scale-110 sm:hover:scale-105 duration-300 flex-shrink-0 w-[15%] sm:w-[40%] rounded-md flex flex-col gap-2 py-4 cursor-pointer group"
+                  >
+                    <div className="relative overflow-hidden rounded-md shadow-lg border border-white/5">
+                      <img
+                        className="w-full transition-transform duration-500 group-hover:scale-110"
+                        src={t.image?.[2]?.url || t.image?.[0]?.url}
+                        alt=""
+                      />
+
+                      {/* Wave animation for active song */}
+                      <img
+                        className={`absolute top-2 left-2 w-[20%] sm:w-[25%] rounded-md ${t.id === currentSong?.id ? "block" : "hidden"} `}
+                        src={wavs}
+                        alt=""
+                      />
+
+                      {/* Play/Pause Icons */}
+                      {t.id === currentSong?.id ? (
+                        <i className={`absolute inset-0 flex items-center justify-center text-5xl text-p-magenta drop-shadow-[0_0_20px_rgba(191,64,255,1)] opacity-100 duration-300 rounded-md bg-black/20 ${isPlaying ? "ri-pause-circle-fill" : "ri-play-circle-fill"}`}></i>
+                      ) : (
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                          <i className="ri-play-circle-fill text-5xl text-white drop-shadow-glow"></i>
+                        </div>
+                      )}
+
+                    </div>
+                    <motion.h3 className="leading-none mt-1 font-semibold truncate">
+                      {removeSourceAttribution(t.name)}
+                    </motion.h3>
+                    <p className="text-[10px] text-white/50 truncate">
+                      {removeSourceAttribution(t.album?.name || "")}
+                    </p>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
         <div>
-          <p className="font-semibold text-white/50 sm:text-sm">
-            <b></b>
+          <p className="font-semibold text-white/50 sm:text-sm text-center py-10">
+            <b>Made with ❤️ Max-Vibe</b>
           </p>
         </div>
       </div >
 
-      <motion.div
-        className={
-          (songlink.length > 0 || songlink2.length > 0)
-            ? `duration-700 fixed z-[99] bottom-0 flex gap-3 items-center w-full py-3 backdrop-blur-xl`
-            : "hidden"
-        }
-      >
-        {(() => {
-          let activeLink = [];
-          let activeIndex = 0;
-          let handleNext = next;
-          let handlePre = pre;
+      {/* Global PlayerBar handles playback UI */}
 
-          if (songlink.length > 0) {
-            activeLink = songlink;
-            activeIndex = index;
-            handleNext = next;
-            handlePre = pre;
-          } else if (songlink2.length > 0) {
-            activeLink = songlink2;
-            activeIndex = index2;
-            handleNext = next2;
-            handlePre = pre2;
-          }
 
-          return activeLink?.map((e, i) => (
-            <motion.div
-              initial={{ y: 100, opacity: 0, scale: 0 }}
-              animate={{ y: 0, opacity: 1, scale: 1 }}
-              transition={{ ease: Circ.easeIn, duration: 0.7 }}
-              key={i}
-              className={`flex sm:block w-full sm:w-full sm:h-full items-center justify-center gap-3`}
-            >
-              <motion.div
-                initial={{ x: -100, opacity: 0, scale: 0 }}
-                animate={{ x: 0, opacity: 1, scale: 1 }}
-                className="w-[25vw] sm:w-full flex gap-3 items-center sm:justify-center rounded-md h-[7vw] sm:h-[30vw]"
-              >
-                <p className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-p-violet to-p-magenta">{activeIndex + 1}</p>
-                <motion.img
-                  initial={{ x: -100, opacity: 0, scale: 0 }}
-                  animate={{ x: 0, opacity: 1, scale: 1 }}
-                  className={`rounded-md h-[7vw] sm:h-[25vw]`}
-                  src={e?.image[2]?.url}
-                  alt=""
-                />
-
-                <div className="flex flex-col">
-                  <h3 className="sm:w-[30%] text-white text-xs font-semibold">
-                    {removeSourceAttribution(e?.name)}
-                  </h3>
-                  <div className="flex flex-col">
-                    <span className="text-[10px] sm:text-[8px] text-zinc-400">
-                      {getArtistMetadata(e?.artists || { primary: [] }).singleLine}
-                    </span>
-                  </div>
-                </div>
-                <i
-                  onClick={() => likehandle(e)}
-                  className={`text-xl hover:scale-150 sm:hover:scale-100 duration-300 cursor-pointer ${like ? "text-p-magenta drop-shadow-[0_0_10px_rgba(191,64,255,0.8)]" : "text-white"} ri-heart-3-fill`}
-                ></i>
-              </motion.div>
-              <motion.div
-                initial={{ y: 100, opacity: 0, scale: 0 }}
-                animate={{ y: 0, opacity: 1, scale: 1 }}
-                className="w-[35%] sm:w-full h-[10vh] flex gap-3 sm:gap-1 items-center justify-center"
-              >
-                <button
-                  onClick={handlePre}
-                  className="text-3xl text-white bg-white/10 hover:bg-white/20 border border-white/5 cursor-pointer rounded-full"
-                >
-                  <i className="ri-skip-back-mini-fill"></i>
-                </button>
-                <audio
-                  ref={audioRef}
-                  onPause={() => setaudiocheck(false)}
-                  onPlay={() => setaudiocheck(true)}
-                  className="w-[80%]"
-                  controls
-                  autoPlay
-                  onEnded={handleNext}
-                  src={e?.downloadUrl?.[4]?.url || e?.downloadUrl?.[0]?.url}
-                ></audio>
-                <button
-                  onClick={handleNext}
-                  className="text-3xl text-white bg-white/10 hover:bg-white/20 border border-white/5 cursor-pointer rounded-full"
-                >
-                  <i className="ri-skip-right-fill"></i>
-                </button>
-              </motion.div>
-              <div className="flex flex-col text-[1vw] items-center gap-2">
-                <div>
-                  <h3 className="font-bold text-sm text-white/70">
-                    Download Options
-                  </h3>
-                </div>
-                <div className="flex flex-row-reverse gap-2 ">
-                  <p
-                    onClick={() =>
-                      handleGenerateAudio2({
-                        audioUrl: e?.downloadUrl?.[4]?.url || e?.downloadUrl?.[0]?.url,
-                        imageUrl: e?.image?.[2]?.url || e?.image?.[2]?.link,
-                        songName: e?.name,
-                        year: e?.year,
-                        album: e?.album?.name,
-                        artist: e?.artists?.primary?.map(artist => artist.name).join(",")
-                      })
-                    }
-                    className="duration-300 cursor-pointer hover:text-white hover:bg-white/20 hover:scale-90 w-fit p-1 sm:text-sm font-semibold rounded-md shadow-2xl bg-white/10 border border-white/10 flex flex-col items-center"
-                  >
-                    Highest quality with <br />
-                    <p className="text-xs text-center">FLAC Format</p>
-                  </p>
-                  <p
-                    onClick={() =>
-                      handleGenerateAudio({
-                        audioUrl: e?.downloadUrl?.[4]?.url || e?.downloadUrl?.[0]?.url,
-                        imageUrl: e?.image?.[2]?.url || e?.image?.[2]?.link,
-                        songName: removeSourceAttribution(e?.name),
-                        year: e?.year,
-                        album: getAlbumFromTitle(e?.name) || removeSourceAttribution(e?.album?.name),
-                        artist: e?.artists?.primary?.map(artist => artist.name).join(",")
-                      })
-                    }
-                    className="duration-300 cursor-pointer hover:text-white hover:bg-white/20 hover:scale-90 w-fit p-1 sm:text-sm font-semibold rounded-md shadow-2xl bg-white/10 border border-white/10 flex flex-col items-center"
-                  >
-                    320kbps<br />
-                    <p className="text-xs text-center">High quality with poster embedded
-                      <br /></p>
-                  </p>
-                </div>
-              </div>
-            </motion.div>
-          ));
-        })()}
-      </motion.div>
 
     </div >
-  ) : (
-    <Loading />
   );
 };
 

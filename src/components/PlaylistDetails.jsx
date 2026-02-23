@@ -1,6 +1,8 @@
 import axios from "axios";
 import React, { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useMusic } from "../context/MusicContext";
+
 import Loading from "./Loading";
 const wavs = "/wavs.gif";
 import {
@@ -34,14 +36,16 @@ const PlaylistDetails = () => {
   let newid = id.split("/");
   let finalid = newid[3];
 
+  const { currentSong, isPlaying, playSong, togglePlay, setQueue } = useMusic();
   const [details, setdetails] = useState([]);
-  const [songlink, setsonglink] = useState([]);
-  var [index, setindex] = useState("");
+  // const [songlink, setsonglink] = useState([]);
+  // var [index, setindex] = useState("");
   const [like, setlike] = useState("");
   const [like2, setlike2] = useState(false);
   const [existingData, setexistingData] = useState(null);
-  const audioRef = useRef();
-  const [audiocheck, setaudiocheck] = useState(true);
+  // const audioRef = useRef();
+  // const [audiocheck, setaudiocheck] = useState(false);
+
   const [isDownloadingAll, setIsDownloadingAll] = useState(false);
   // settitle(songlink.name);
 
@@ -131,22 +135,16 @@ const PlaylistDetails = () => {
   };
 
   function audioseter(i) {
-    if (songlink[0]?.id === details[i].id) {
-      const audio = audioRef.current;
-      if (!audio.paused) {
-        audio.pause();
-        setaudiocheck(false);
-      } else {
-        setaudiocheck(true);
-        audio.play().catch((error) => {
-          console.error("Playback failed:", error);
-        });
-      }
+    if (!details[i]) return;
+
+    if (currentSong?.id === details[i].id) {
+      togglePlay();
     } else {
-      setindex(i);
-      setsonglink([details[i]]);
+      setQueue(details);
+      playSong(details[i]);
     }
   }
+
 
   function likeset(e) {
     // console.log(e);
@@ -332,23 +330,13 @@ const PlaylistDetails = () => {
   }
 
   function next() {
-    if (index < details.length - 1) {
-      setindex(index++);
-      audioseter(index);
-    } else {
-      setindex(0);
-      setsonglink([details[0]]);
-    }
+    // Global next handled by context
   }
+
   function pre() {
-    if (index > 0) {
-      setindex(index--);
-      audioseter(index);
-    } else {
-      setindex(details.length - 1);
-      setsonglink([details[details.length - 1]]);
-    }
+    // Global previous handled by context
   }
+
 
   // const handleDownloadSong = async (url, name) => {
   //   try {
@@ -482,51 +470,8 @@ const PlaylistDetails = () => {
   //   }
   // };
 
-  const initializeMediaSession = () => {
-    const isIOS = /(iPhone|iPod|iPad)/i.test(navigator.userAgent);
+  // Media session handled by MusicContext
 
-    if (!isIOS && "mediaSession" in navigator) {
-      navigator.mediaSession.metadata = new MediaMetadata({
-        title: songlink[0]?.name || "",
-        artist: songlink[0]?.album?.name || "",
-        artwork: [
-          {
-            src: songlink[0]?.image[2]?.url || "",
-            sizes: "512x512",
-            type: "image/jpeg",
-          },
-        ],
-      });
-
-      navigator.mediaSession.setActionHandler("play", function () {
-        // Handle play action
-        if (audioRef.current) {
-          audioRef.current.play().catch((error) => {
-            console.error("Play error:", error);
-          });
-        }
-      });
-
-      navigator.mediaSession.setActionHandler("pause", function () {
-        // Handle pause action
-        if (audioRef.current) {
-          audioRef.current.pause().catch((error) => {
-            console.error("Pause error:", error);
-          });
-        }
-      });
-
-      navigator.mediaSession.setActionHandler("previoustrack", function () {
-        pre();
-      });
-
-      navigator.mediaSession.setActionHandler("nexttrack", function () {
-        next();
-      });
-    } else {
-      console.warn("MediaSession API is not supported or the device is iOS.");
-    }
-  };
 
   function seccall() {
     const intervalId = setInterval(() => {
@@ -544,8 +489,9 @@ const PlaylistDetails = () => {
   }, [details]);
 
   useEffect(() => {
-    likeset(songlink[0]);
-  }, [details, like, songlink, like2, existingData]);
+    likeset(currentSong);
+  }, [details, like, currentSong, like2, existingData]);
+
 
   useEffect(() => {
     // Retrieve all data from localStorage
@@ -561,22 +507,18 @@ const PlaylistDetails = () => {
     } else {
       console.log("No data found in localStorage.");
     }
-  }, [details, like, songlink, like2]);
+  }, [details, like, currentSong, like2]);
+
 
   // useEffect(() => {
   //   Getdetails();
   // }, []);
 
-  useEffect(() => {
-    const isIOS = /(iPhone|iPod|iPad)/i.test(navigator.userAgent);
+  // Auto-play handled by context
 
-    if (!isIOS && songlink.length > 0) {
-      audioRef.current.play();
-      initializeMediaSession();
-    }
-  }, [songlink]);
 
-  var title = songlink[0]?.name;
+  var title = currentSong?.name;
+
 
   document.title = `${title ? title : "MAX-VIBE"}`;
   // console.log(finalid);
@@ -587,25 +529,28 @@ const PlaylistDetails = () => {
   // console.log(like);
 
   return details.length ? (
-    <div className=" w-full h-screen  bg-black">
+    <div className="w-full h-screen bg-black">
       <Toaster position="top-center" reverseOrder={false} />
-      <div className="w-full fixed backdrop-blur-xl z-[99] flex items-center gap-3 sm:h-[7vh]  h-[10vh]">
+
+      {/* Header */}
+      <div className="w-full fixed z-[99] backdrop-blur-xl bg-black/40 border-b border-white/5 flex items-center gap-3 sm:h-[7vh] h-[10vh] px-6">
         <i
           onClick={() => navigate(-1)}
-          className="ml-5 cursor-pointer text-4xl p-2 bg-white/5 backdrop-blur-2xl border border-white/10 rounded-full shadow-purple-glow hover:bg-purple-gradient text-white transition-all duration-300 ease-out ri-arrow-left-line"
+          className="cursor-pointer text-3xl p-2 bg-white/5 border border-white/10 rounded-full shadow-purple-glow hover:bg-purple-gradient text-white transition-all duration-300 ri-arrow-left-line"
         ></i>
-        <h1 className="text-xl text-white font-black">MAX-VIBE</h1>
+        <h1 className="text-xl text-white font-black tracking-tighter">MAX-VIBE</h1>
+
         <button
           onClick={handleDownloadAll}
           disabled={isDownloadingAll}
-          className={`ml-auto mr-5 px-4 py-2 rounded-full border border-white/10 backdrop-blur-md shadow-purple-glow transition-all duration-300 ${isDownloadingAll
-            ? "bg-white/10 cursor-not-allowed text-white/50"
-            : "bg-purple-gradient text-white shadow-lg hover:scale-105 hover:shadow-purple-glow"
+          className={`ml-auto px-5 py-2 rounded-full border border-white/10 backdrop-blur-md transition-all duration-300 font-bold text-sm ${isDownloadingAll
+            ? "bg-white/10 text-white/50 cursor-not-allowed"
+            : "bg-purple-gradient text-white shadow-purple-glow hover:scale-105"
             }`}
         >
           {isDownloadingAll ? (
             <span className="flex items-center gap-2">
-              <i className="ri-loader-4-line animate-spin"></i> Downloading...
+              <i className="ri-loader-4-line animate-spin"></i> Zipping...
             </span>
           ) : (
             <span className="flex items-center gap-2">
@@ -615,139 +560,62 @@ const PlaylistDetails = () => {
         </button>
       </div>
 
-      {/* <div className="w-full text-white p-10 sm:p-3 sm:gap-3 h-[65vh] overflow-y-auto flex sm:block flex-wrap gap-7 justify-center ">
-        {details?.map((d, i) => (
-          <Link
-            initial={{ scale: 0 }}
-            whileInView={{ scale: 1 }}
-            transition={{ ease: Circ.easeIn, duration: 0.05 }}
-            key={i}
-            onClick={() => audioseter(i)}
-            className=" relative hover:scale-90 sm:hover:scale-100 duration-150 w-[15vw] sm:mb-3 sm:w-full sm:flex sm:items-center sm:gap-3  rounded-md h-[20vw] sm:h-[15vh] cursor-pointer "
-          >
-            <motion.img
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: i * 0.1 }}
-              viewport={{ once: true }}
-              className=" w-full h-[15vw] sm:h-[15vh] sm:w-[15vh] rounded-md"
-              src={d.image[2].url}
-              alt=""
-            />
-            <img
-              className={`absolute top-0 w-[20%] sm:w-[10%] rounded-md ${
-                i === index ? "block" : "hidden"
-              } `}
-              src={wavs}
-              alt=""
-            />
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: i * 0.1 }}
-              viewport={{ once: true }}
-              className="flex flex-col mt-2"
-            >
-              <h3
-                className={`text-sm sm:text-xs leading-none  font-bold ${
-                  i === index && "text-green-300"
-                }`}
-              >
-                {d.name}
-              </h3>
-              <h4 className="text-xs sm:text-[2.5vw] text-zinc-300 ">
-                {d.album.name}
-              </h4>
-            </motion.div>
-          </Link>
-        ))}
-        <div className="flex gap-3 text-2xl  ">
-          <h1>MADE BY ❤️ HARSH PATEL</h1>
-          <a
-            target="_blank"
-            href="https://www.instagram.com/harsh_patel_80874/"
-          >
-            <i className=" ri-instagram-fill"></i>
-          </a>
-        </div>
-      </div> */}
-
-      <div className="flex w-full pt-[15vh] sm:pt-[10vh] pb-[25vh] sm:pb-[35vh] text-white p-10 sm:p-3 sm:gap-3 bg-black min-h-[65vh] overflow-y-auto  sm:block flex-wrap gap-5 justify-center ">
+      {/* Song List */}
+      <div className="flex w-full pt-[15vh] sm:pt-[10vh] pb-[25vh] sm:pb-[35vh] text-white p-10 sm:p-3 sm:gap-3 bg-black min-h-screen overflow-y-auto sm:block flex-wrap gap-5 justify-center">
         {details?.map((d, i) => (
           <div
-            title="click on song image or name to play the song"
+            title="Click to play"
             key={i}
-            className="items-center justify-center relative hover:scale-95 sm:hover:scale-100 duration-150 w-[40%] flex mb-3 sm:mb-3 sm:w-full sm:flex sm:items-center sm:gap-3 rounded-xl h-[10vw] sm:h-[15vh] cursor-pointer bg-white/5 border border-white/10 backdrop-blur-md hover:bg-white/10 hover:border-white/20 transition-all shadow-lg hover:shadow-purple-glow"
+            className="items-center justify-center relative hover:scale-[1.02] duration-300 w-[45%] flex mb-3 sm:mb-4 sm:w-full sm:flex sm:items-center sm:gap-3 rounded-2xl h-[200px] sm:h-[220px] cursor-pointer bg-white/5 border border-white/10 backdrop-blur-md hover:bg-white/10 hover:border-white/20 transition-all shadow-lg hover:shadow-purple-glow/20 group"
           >
             <div
               onClick={() => audioseter(i)}
-              className="flex w-[80%] items-center"
+              className="flex flex-1 min-w-0 items-center h-full px-5"
             >
-              <motion.img
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ delay: 0.7 }}
-                viewport={{ once: true }}
-                className="w-[10vw] h-[10vw] sm:h-[15vh] sm:w-[15vh] rounded-md"
-                src={d.image[2].url}
-                alt=""
-              />
-              <p className="pl-1 text-white opacity-50">{i + 1}</p>
-              <img
-                className={`absolute top-0 w-[8%] sm:w-[10%] rounded-md ${d.id === songlink[0]?.id ? "block" : "hidden"
-                  } `}
-                src={wavs}
-                alt=""
-              />
-              {songlink.length > 0 && (
-                <i
-                  className={`absolute top-0 sm:h-[15vh] w-[10vw] h-full flex items-center justify-center text-5xl sm:w-[15vh]  opacity-90  duration-300 rounded-md ${d.id === songlink[0]?.id ? "block" : "hidden"
-                    } ${audiocheck ? "ri-pause-circle-fill" : "ri-play-circle-fill"
-                    }`}
-                ></i>
-              )}
-              <div className="ml-3 sm:ml-3 flex justify-center items-center gap-5 mt-2">
-                <div className="flex flex-col">
-                  <h3
-                    className={`text-lg sm:text-base leading-none font-bold ${d.id === songlink[0]?.id && "text-green-300"
-                      }`}
-                  >
-                    {removeSourceAttribution(d.name)}
-                  </h3>
-                  {(() => {
-                    const extractedAlbum = getAlbumFromTitle(d.name);
-                    const displayAlbum = extractedAlbum || removeSourceAttribution(d.album.name);
-                    return (
-                      removeSourceAttribution(d.name) !== displayAlbum && (
-                        <h4 className="text-sm sm:text-xs text-zinc-300">
-                          {displayAlbum}
-                        </h4>
-                      )
-                    );
-                  })()}
-                  <div className="flex flex-col mt-1">
-                    <span className="text-xs sm:text-[10px] text-zinc-400">
-                      {getArtistMetadata(d.artists).singleLine}
-                    </span>
+              <div className="relative flex-shrink-0 p-2 rounded-2xl bg-white/10 border border-white/10">
+                <motion.img
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="w-[180px] h-[180px] sm:w-[180px] sm:h-[180px] rounded-xl object-cover shadow-xl border border-white/10"
+                  src={d.image[2].url}
+                  alt=""
+                />
+                {d.id === currentSong?.id && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-xl backdrop-blur-[2px]">
+                    <img className="w-[40%] opacity-90" src={wavs} alt="Playing" />
                   </div>
+                )}
+                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/20 rounded-xl">
+                  <i className={`text-4xl text-white ${d.id === currentSong?.id && isPlaying ? "ri-pause-circle-fill" : "ri-play-circle-fill"}`}></i>
+                </div>
+
+              </div>
+
+              <div className="ml-6 flex flex-col justify-center overflow-hidden">
+                <h3 className={`text-lg sm:text-base font-bold truncate tracking-tight ${d.id === currentSong?.id ? "text-p-magenta" : "text-white"}`}>
+
+                  {removeSourceAttribution(d.name)}
+                </h3>
+                <div className="flex flex-col">
+                  <span className="text-sm sm:text-xs text-zinc-400 truncate">
+                    {getArtistMetadata(d.artists).singleLine}
+                  </span>
+                  <span className="text-[11px] text-zinc-500 uppercase tracking-tighter mt-0.5">
+                    {removeSourceAttribution(d.album.name)}
+                  </span>
                 </div>
               </div>
             </div>
 
-            <div className="flex flex-col items-center gap-3">
-              {existingData?.find((element) => element?.id == d?.id) ? (
-                <i
-                  onClick={() => likehandle2(d)}
-                  className={`text-xl m-auto flex w-[3vw] sm:w-[9vw] rounded-full justify-center items-center h-[3vw] sm:h-[9vw]    duration-300 cursor-pointer text-red-500  ri-heart-3-fill`}
-                ></i>
-              ) : (
-                <i
-                  onClick={() => likehandle2(d)}
-                  className={`text-xl m-auto flex w-[3vw] sm:w-[9vw] rounded-full justify-center items-center h-[3vw] sm:h-[9vw]   duration-300 cursor-pointer text-zinc-300  ri-heart-3-fill`}
-                ></i>
-              )}
+            <div className="flex flex-col items-center justify-center gap-4 pr-6">
               <i
-                title="Download"
+                onClick={() => likehandle2(d)}
+                className={`text-2xl transition-all duration-300 hover:scale-125 cursor-pointer ${existingData?.find((element) => element?.id == d?.id)
+                  ? "text-p-magenta drop-shadow-[0_0_10px_rgba(191,64,255,0.6)] ri-heart-3-fill"
+                  : "text-white/20 ri-heart-3-line"
+                  }`}
+              ></i>
+              <i
                 onClick={() =>
                   handleGenerateAudio({
                     audioUrl: d?.downloadUrl[4].url,
@@ -755,268 +623,22 @@ const PlaylistDetails = () => {
                     songName: removeSourceAttribution(d?.name),
                     year: d?.year,
                     album: getAlbumFromTitle(d?.name) || removeSourceAttribution(d?.album.name),
-                    artist: d?.artists?.primary
-                      ?.map((artist) => artist.name)
-                      .join(","),
+                    artist: d?.artists?.primary?.map((a) => a.name).join(","),
                   })
                 }
-                className={` text-xl m-auto flex w-[3vw] sm:w-[9vw] rounded-full justify-center items-center h-[3vw] sm:h-[9vw]   duration-300 cursor-pointer text-white/40 hover:text-white ri-download-2-fill`}
+                className="text-xl text-white/20 hover:text-white hover:scale-110 transition-all ri-download-2-fill"
               ></i>
             </div>
-
-            {/* <i
-                onClick={() => likehandle(d)}
-                className={`text-xl m-auto flex w-[3vw] sm:w-[9vw] rounded-full justify-center items-center h-[3vw] sm:h-[9vw]  bg-red-500   text-zinc-300 hover:scale-150 sm:hover:scale-100 duration-300 cursor-pointer ${
-                  like ? "text-red-500" : "text-zinc-300"
-                }  ri-heart-3-fill`}
-              ></i> */}
-
-            {/* <i
-              title="Remove Song "
-              onClick={() => removehandle(d.id)}
-              className="m-auto flex w-[3vw] sm:w-[9vw] rounded-full justify-center items-center h-[3vw] sm:h-[9vw] text-xl bg-red-500  duration-300 cursor-pointer text-zinc-300 ri-dislike-fill"
-            ></i> */}
           </div>
         ))}
-
-        {/* <div className="flex gap-3 text-2xl  ">
-          <h1>MADE BY ❤️ HARSH PATEL</h1>
-          <a
-            target="_blank"
-            href="https://www.instagram.com/harsh_patel_80874/"
-          >
-            <i className=" ri-instagram-fill"></i>
-          </a>
-        </div> */}
       </div>
 
-      <motion.div
-        className={
-          songlink.length > 0
-            ? ` duration-700 flex fixed z-[99] bottom-0  gap-3 items-center  w-full  py-3  backdrop-blur-xl `
-            : "block"
-        }
-      >
-        {songlink?.map((e, i) => (
-          <motion.div
-            initial={{ y: 50, opacity: 0, scale: 0 }}
-            animate={{ y: 0, opacity: 1, scale: 1 }}
-            key={i}
-            className="flex sm:block w-full sm:w-full sm:h-full items-center justify-center gap-3"
-          >
-            <motion.div
-              initial={{ x: -50, opacity: 0, scale: 0 }}
-              animate={{ x: 0, opacity: 1, scale: 1 }}
-              className="w-[25vw] sm:w-full  flex gap-3 items-center sm:justify-center rounded-md  h-[7vw] sm:h-[30vw]"
-            >
-              <p className=" text-white opacity-50">{index + 1}</p>
-              <motion.img
-                initial={{ x: -50, opacity: 0, scale: 0 }}
-                animate={{ x: 0, opacity: 1, scale: 1 }}
-                className="rounded-md h-[7vw] sm:h-[25vw]"
-                src={e?.image[2]?.url}
-                alt=""
-              />
-              <h3 className=" sm:w-[30%] text-white text-xs font-semibold">
-                {removeSourceAttribution(e?.name)}
-              </h3>
-              {/* <i
-                onClick={() => handleDownloadSong(e.downloadUrl[4].url, e.name)}
-                className="hidden sm:flex cursor-pointer  items-center justify-center bg-green-700 sm:w-[9vw] sm:h-[9vw] w-[3vw] h-[3vw]   rounded-full text-2xl ri-download-line"
-              ></i> */}
-              <i
-                onClick={() => likehandle(e)}
-                className={`text-xl hover:scale-150 sm:hover:scale-100 duration-300 cursor-pointer ${like ? "text-red-500" : "text-zinc-300"
-                  }  ri-heart-3-fill`}
-              ></i>
-
-              {/* <i
-                onClick={() => navigate(`/songs/details/${e.id}`)}
-                className="text-zinc-300 text-xl hover:scale-150 sm:hover:scale-100 duration-300 cursor-pointer ri-information-fill"
-              ></i> */}
-              {/* 
-              {localStorage.getItem("likeData") &&
-              JSON.parse(localStorage.getItem("likeData")).some(
-                (item) => item.id === e.id
-              ) ? (
-                <i
-                  onClick={() => likehandle(e)}
-                  className={`text-xl cursor-pointer text-red-500 ri-heart-3-fill`}
-                ></i>
-              ) : (
-                <i
-                  onClick={() => likehandle(e)}
-                  className={`text-xl cursor-pointer text-zinc-300 ri-heart-3-fill`}
-                ></i>
-              )} */}
-
-              {/* {like ? (
-                <i
-                  onClick={() => likehandle(e)}
-                  className="text-xl cursor-pointer text-red-500 ri-heart-3-fill"
-                ></i>
-              ) : (
-                <i
-                  onClick={() => likehandle(e)}
-                  className="text-xl cursor-pointer text-zinc-300  ri-heart-3-fill"
-                ></i>
-              )} */}
-            </motion.div>
-            <motion.div
-              initial={{ y: 50, opacity: 0, scale: 0 }}
-              animate={{ y: 0, opacity: 1, scale: 1 }}
-              className="w-[35%]  sm:w-full h-[10vh] flex gap-3 sm:gap-1 items-center justify-center"
-            >
-              <button
-                onClick={() => pre()}
-                className="text-3xl text-white bg-white/10 shadow-purple-glow cursor-pointer rounded-full"
-              >
-                <i className="ri-skip-back-mini-fill"></i>
-              </button>
-              <audio
-                className="w-[80%]"
-                ref={audioRef}
-                onPause={() => setaudiocheck(false)}
-                onPlay={() => setaudiocheck(true)}
-                controls
-                autoPlay
-                onEnded={() => next()}
-                src={e?.downloadUrl[4]?.url}
-              ></audio>
-              <button
-                onClick={() => next()}
-                className="text-3xl text-white bg-white/10 shadow-purple-glow cursor-pointer rounded-full"
-              >
-                <i className="ri-skip-right-fill"></i>
-              </button>
-            </motion.div>
-            <div className=" flex flex-col text-[1vw] items-center  gap-2">
-              <div>
-                <h3 className="font-bold text-sm text-slate-400">
-                  Download Options
-                </h3>
-              </div>
-              <div className="flex flex-row-reverse gap-2 ">
-                {/* <p
-                  onClick={() =>
-                    handleDownloadSong(e.downloadUrl[0].url, e.name + " 12kbps")
-                  }
-                  className="duration-300 cursor-pointer hover:text-slate-400 hover:bg-slate-600 hover:scale-90 w-fit p-1 font-semibold rounded-md shadow-2xl bg-slate-400 flex flex-col items-center"
-                >
-                  12kbps <br />
-                  <p className="text-xs">Very low quality</p>
-                </p>
-                <p
-                  onClick={() =>
-                    handleDownloadSong(e.downloadUrl[1].url, e.name + " 48kbps")
-                  }
-                  className="duration-300 cursor-pointer  hover:text-slate-400 hover:bg-slate-600 hover:scale-90 w-fit p-1 font-semibold rounded-md shadow-2xl bg-slate-400 flex flex-col items-center"
-                >
-                  48kbps <br />
-                  <p className="text-xs">Low quality</p>
-                </p>
-                <p
-                  onClick={() =>
-                    handleDownloadSong(e.downloadUrl[2].url, e.name + " 96kbps")
-                  }
-                  className="duration-300 cursor-pointer  hover:text-slate-400 hover:bg-slate-600 hover:scale-90 w-fit p-1 font-semibold rounded-md shadow-2xl bg-slate-400 flex flex-col items-center"
-                >
-                  96kbps <br />
-                  <p className="text-xs">Fair quality</p>
-                </p>
-                <p
-                  onClick={() =>
-                    handleDownloadSong(
-                      e.downloadUrl[3].url,
-                      e.name + " 160kbps"
-                    )
-                  }
-                  className="duration-300 cursor-pointer  hover:text-slate-400 hover:bg-slate-600 hover:scale-90 w-fit p-1 font-semibold rounded-md shadow-2xl bg-slate-400 flex flex-col items-center"
-                >
-                  160kbps <br />
-                  <p className="text-xs">Good quality</p>
-                </p>
-                <p
-                  onClick={() =>
-                    handleDownloadSong(
-                      e.downloadUrl[4].url,
-                      e.name + " 320kbps"
-                    )
-                  }
-                  className="duration-300 cursor-pointer  hover:text-slate-400 hover:bg-slate-600 hover:scale-90 w-fit p-1 font-semibold rounded-md shadow-2xl bg-slate-400 flex flex-col items-center"
-                >
-                  320kbps <br />
-                  <p className="text-xs"> High quality</p>
-                </p> */}
-                <p
-
-                  // onClick={() =>
-                  //   handleDownloadSong(
-                  //     e.downloadUrl[4].url,
-                  //     e.name + " 320kbps",
-                  //     e?.image[2]?.url
-                  //   )
-                  // }
-
-                  // onClick={() => window.open(`https://mp3-download-server-production.up.railway.app/generate-audio?audioUrl=${e.downloadUrl[4].url}&imageUrl=${e?.image[2]?.url}&songName=${e.name + " 320kbps"}&year=${e.year}&album=${e.album.name}`, "_blank")}
-
-                  onClick={() =>
-                    handleGenerateAudio2({
-                      audioUrl: e?.downloadUrl[4].url,
-                      imageUrl: e?.image[2]?.url,
-                      songName: e?.name,
-                      year: e?.year,
-                      album: e?.album.name,
-                      artist: e?.artists.primary.map(artist => artist.name).join(",")
-                    })
-                  }
-
-                  className="duration-300 cursor-pointer  hover:text-slate-400 hover:bg-slate-600 hover:scale-90 w-fit p-1 sm:text-sm font-semibold rounded-md shadow-2xl bg-slate-400 flex flex-col items-center"
-                >
-                  Highest quality with <br />
-                  <p className="text-xs text-center">
-                    {" "}
-                    FLAC Format
-                  </p>
-                </p>
-                <p
-                  // onClick={() =>
-                  //   handleDownloadSong(
-                  //     e.downloadUrl[4].url,
-                  //     e.name + " 320kbps",
-                  //     e?.image[2]?.url
-                  //   )
-                  // }
-                  // onClick={() => window.open(`https://the-ultimate-songs-download-server.up.railway.app/generate-audio?audioUrl=${e.downloadUrl[4].url}&imageUrl=${e?.image[2]?.url}&songName=${e.name + " 320kbps"}&year=${e.year}&album=${e.album.name}`, "_blank")}
-
-                  onClick={() =>
-                    handleGenerateAudio({
-                      audioUrl: e?.downloadUrl[4].url,
-                      imageUrl: e?.image[2]?.url,
-                      songName: e?.name,
-                      year: e?.year,
-                      album: e?.album.name,
-                      artist: e?.artists.primary
-                        .map((artist) => artist.name)
-                        .join(","),
-                    })
-                  }
-                  className="duration-300 cursor-pointer  hover:text-slate-400 hover:bg-slate-600 hover:scale-90 w-fit p-1 sm:text-sm font-semibold rounded-md shadow-2xl bg-slate-400 flex flex-col items-center"
-                >
-                  320kbps <br />
-                  <p className="text-xs text-center">
-                    High quality with poster embedded
-                  </p>
-                </p>
-              </div>
-            </div>
-          </motion.div>
-        ))}
-      </motion.div>
+      {/* Player bar removed (global PlayerBar used instead) */}
     </div>
   ) : (
     <Loading />
   );
 };
+
 
 export default PlaylistDetails;

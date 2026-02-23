@@ -1,6 +1,8 @@
 import axios from "axios";
 import { getApiUrl } from "../apiConfig";
 import React, { useEffect, useRef, useState } from "react";
+import { useMusic } from "../context/MusicContext";
+
 import { Link, useNavigate } from "react-router-dom";
 const wavs = "/wavs.gif";
 import {
@@ -25,19 +27,21 @@ import { getArtistMetadata } from "../utils/artistUtils";
 
 const Songs = () => {
   const navigate = useNavigate();
+  const { currentSong, isPlaying, playSong, togglePlay, setQueue } = useMusic();
   const [query, setquery] = useState("");
   const [requery, setrequery] = useState("");
   const [search, setsearch] = useState([]);
-  var [index, setindex] = useState("");
-  const [songlink, setsonglink] = useState([]);
+  // var [index, setindex] = useState("");
+  // const [songlink, setsonglink] = useState([]);
   const [page, setpage] = useState(null);
   const [searchclick, setsearchclick] = useState(false);
   const [like, setlike] = useState(false);
   const [like2, setlike2] = useState(false);
   const [existingData, setexistingData] = useState(null);
-  const audioRef = useRef();
+  // const audioRef = useRef();
   const [hasMore, sethasMore] = useState(true);
-  const [audiocheck, setaudiocheck] = useState(true);
+  // const [audiocheck, setaudiocheck] = useState(true);
+
 
   // const Getsearch = async () => {
   //   try {
@@ -134,34 +138,29 @@ const Songs = () => {
     if (query !== requery) {
       toast.success(`Searching ${query} , Wait For Results`);
       setsearch([]);
-      setsonglink([]);
+      // setsonglink([]);
       sethasMore(true);
-      setindex("");
+      // setindex("");
       setpage(1);
       setrequery(query);
       setsearchclick(!searchclick);
+
     } else {
       toast.error(`Please Check Your Search Query , Its Same As Before `);
     }
   }
 
   function audioseter(i) {
-    if (songlink[0]?.id === search[i].id) {
-      const audio = audioRef.current;
-      if (!audio.paused) {
-        audio.pause();
-        setaudiocheck(false);
-      } else {
-        setaudiocheck(true);
-        audio.play().catch((error) => {
-          console.error("Playback failed:", error);
-        });
-      }
+    if (!search[i]) return;
+
+    if (currentSong?.id === search[i].id) {
+      togglePlay();
     } else {
-      setindex(i);
-      setsonglink([search[i]]);
+      setQueue(search);
+      playSong(search[i]);
     }
   }
+
 
   function likeset(e) {
     // console.log(e);
@@ -393,71 +392,8 @@ const Songs = () => {
   //   }
   // };
 
-  const initializeMediaSession = () => {
-    const isIOS = /(iPhone|iPod|iPad)/i.test(navigator.userAgent);
+  // Media session handled by MusicContext
 
-    if ("mediaSession" in navigator) {
-      navigator.mediaSession.metadata = new MediaMetadata({
-        title: songlink[0]?.name || "",
-        artist: songlink[0]?.album?.name || "",
-        artwork: [
-          {
-            src: songlink[0]?.image[2]?.url || "",
-            sizes: "512x512",
-            type: "image/jpeg",
-          },
-        ],
-      });
-
-      navigator.mediaSession.setActionHandler("play", function () {
-        // Handle play action
-        if (audioRef.current) {
-          audioRef.current.play().catch((error) => {
-            console.error("Play error:", error);
-          });
-        }
-      });
-
-      navigator.mediaSession.setActionHandler("pause", function () {
-        // Handle pause action
-        if (audioRef.current) {
-          audioRef.current.pause().catch((error) => {
-            console.error("Pause error:", error);
-          });
-        }
-      });
-
-      navigator.mediaSession.setActionHandler("previoustrack", function () {
-        pre();
-        audioRef.current.play();
-      });
-
-      navigator.mediaSession.setActionHandler("nexttrack", function () {
-        next();
-        audioRef.current.play();
-      });
-    } else {
-      console.warn("MediaSession API is not supported.");
-    }
-    if (isIOS) {
-      // Enable background audio playback for iOS
-      document.addEventListener("visibilitychange", () => {
-        if (document.visibilityState === "visible") {
-          if (audioRef.current && audioRef.current.paused) {
-            audioRef.current.play().catch((error) => {
-              console.error("Play error:", error);
-            });
-          }
-        } else {
-          if (audioRef.current && !audioRef.current.paused) {
-            audioRef.current.pause().catch((error) => {
-              console.error("Pause error:", error);
-            });
-          }
-        }
-      });
-    }
-  };
 
   // const initializeMediaSession = () => {
   //   const isIOS = /(iPhone|iPod|iPad)/i.test(navigator.userAgent);
@@ -552,27 +488,12 @@ const Songs = () => {
   // };
 
   function next() {
-    if (index < search.length - 1) {
-      setindex(index++);
-      audioseter(index);
-      audioRef.current.play();
-    } else {
-      setindex(0);
-      setsonglink([search[0]]);
-      audioRef.current.play();
-    }
+    // Global next handled by context
   }
   function pre() {
-    if (index > 0) {
-      setindex(index--);
-      audioseter(index);
-      audioRef.current.play();
-    } else {
-      setindex(search.length - 1);
-      setsonglink([search[search.length - 1]]);
-      audioRef.current.play();
-    }
+    // Global previous handled by context
   }
+
 
   // const handleDownloadSong = async (url, name, poster) => {
   //   try {
@@ -714,8 +635,9 @@ const Songs = () => {
   // }, [searchclick]);
 
   useEffect(() => {
-    likeset(songlink[0]);
-  }, [search, like, songlink, like2, existingData]);
+    likeset(currentSong);
+  }, [search, like, currentSong, like2, existingData]);
+
 
   useEffect(() => {
     // Retrieve all data from localStorage
@@ -731,7 +653,8 @@ const Songs = () => {
     } else {
       console.log("No data found in localStorage.");
     }
-  }, [search, like, songlink, like2]);
+  }, [search, like, currentSong, like2]);
+
 
   // useEffect(() => {
   //   if (query !== "") {
@@ -739,14 +662,8 @@ const Songs = () => {
   //   }
   // }, [query]);
 
-  useEffect(() => {
-    const isIOS = /(iPhone|iPod|iPad)/i.test(navigator.userAgent);
+  // Auto-play handled by context
 
-    if (!isIOS && songlink.length > 0) {
-      audioRef.current.play();
-      initializeMediaSession();
-    }
-  }, [songlink]);
 
   // useEffect(() => {
   //   const isIOS = /(iPhone|iPod|iPad)/i.test(navigator.userAgent);
@@ -777,7 +694,8 @@ const Songs = () => {
   //   }
   // }, [songlink]);
 
-  var title = songlink[0]?.name;
+  var title = currentSong?.name;
+
 
   document.title = `${title ? title : "MAX-VIBE"}`;
   // console.log(search);
@@ -907,30 +825,23 @@ const Songs = () => {
                 />
                 <p className="pl-1 text-white opacity-50">{i + 1}</p>
                 <img
-                  className={`absolute top-0 w-[8%] sm:w-[10%] rounded-md ${d.id === songlink[0]?.id ? "block" : "hidden"
+                  className={`absolute top-0 w-[8%] sm:w-[10%] rounded-md ${d.id === currentSong?.id ? "block" : "hidden"
                     } `}
                   src={wavs}
                   alt=""
                 />
-                {songlink.length > 0 && (
+                {currentSong?.id === d.id && (
                   <i
-                    className={`absolute top-0 sm:h-[15vh] w-[10vw] h-full flex items-center justify-center text-5xl sm:w-[15vh]  opacity-90  duration-300 rounded-md ${d.id === songlink[0]?.id ? "block" : "hidden"
-                      } ${audiocheck
+                    className={`absolute top-0 sm:h-[15vh] w-[10vw] h-full flex items-center justify-center text-5xl sm:w-[15vh]  opacity-90  duration-300 rounded-md ${d.id === currentSong?.id ? "block" : "hidden"
+                      } ${isPlaying
                         ? "ri-pause-circle-fill"
                         : "ri-play-circle-fill"
                       }`}
                   ></i>
                 )}
 
-                {/* { audiocheck ?  <i
-                      className={`absolute top-0 w-[10vw] h-full flex items-center justify-center text-5xl sm:w-full opacity-0 hover:opacity-70 duration-300 rounded-md ri-pause-circle-fill ${
-                        d.id === songlink[0]?.id ? "block" : "hidden"
-                      } `}
-                    ></i> :  <i
-                    className={`absolute top-0 w-[10vw] h-full flex items-center justify-center text-5xl sm:w-full opacity-0 hover:opacity-70 duration-300 rounded-md ri-play-circle-fill ${
-                      d.id === songlink[0]?.id ? "block" : "hidden"
-                    } `}
-                  ></i> } */}
+                {/* Old commented-out icon block removed */}
+
 
                 <div className="ml-3 sm:ml-3 flex justify-center items-center gap-5 mt-2">
                   <div className="flex flex-col">
@@ -1030,241 +941,10 @@ const Songs = () => {
         </div>
       </InfiniteScroll>
 
-      <motion.div
-        className={
-          songlink.length > 0
-            ? ` duration-700 fixed z-[99] bottom-0    gap-3 items-center justify-center py-3 w-full  backdrop-blur-xl`
-            : "block"
-        }
-      >
-        {songlink?.map((e, i) => (
-          <motion.div
-            initial={{ y: 50, opacity: 0, scale: 0 }}
-            animate={{ y: 0, opacity: 1, scale: 1 }}
-            key={i}
-            className="flex  sm:block w-full sm:w-full sm:h-full items-center justify-center gap-3"
-          >
-            <motion.div
-              initial={{ x: -50, opacity: 0, scale: 0 }}
-              animate={{ x: 0, opacity: 1, scale: 1 }}
-              className="w-[25vw] sm:w-full  flex gap-3 items-center sm:justify-center rounded-md  h-[7vw] sm:h-[30vw]"
-            >
-              <p className=" text-white opacity-50">{index + 1}</p>
-              <motion.img
-                initial={{ x: -50, opacity: 0, scale: 0 }}
-                animate={{ x: 0, opacity: 1, scale: 1 }}
-                className="rounded-md h-[7vw] sm:h-[25vw]"
-                src={e?.image[2]?.url}
-                alt=""
-              />
-              <h3 className=" sm:w-[30%] text-white text-xs font-semibold">
-                {removeSourceAttribution(e?.name)}
-              </h3>
-              {/* <i
-                // onClick={() =>
-                //   handleDownloadSong(e?.downloadUrl[4].url, e.name)
-                // }
-                onClick={() => window.open(`https://mp3-download-server-production.up.railway.app/generate-audio?audioUrl=${e.downloadUrl[4].url}&imageUrl=${e?.image[2]?.url}&songName=${e.name + " 320kbps"}&year=${e.year}&album=${e.album.name}`, "_blank")}
-                className="hidden sm:flex cursor-pointer  items-center justify-center bg-green-700 sm:w-[9vw] sm:h-[9vw] w-[3vw] h-[3vw]   rounded-full text-2xl ri-download-line"
-              ></i> */}
-
-              <i
-                onClick={() => likehandle(e)}
-                className={`text-xl hover:scale-150 sm:hover:scale-100 duration-300 cursor-pointer ${like ? "text-red-500" : "text-white/40"
-                  }  ri-heart-3-fill`}
-              ></i>
-              {/* <i onClick={()=>navigate(`/songs/details/${e.id}`)} className="text-zinc-300 text-xl hover:scale-150 sm:hover:scale-100 duration-300 cursor-pointer ri-information-fill"></i> */}
-              {/*               
-              {localStorage.getItem("likeData") &&
-                JSON.parse(localStorage.getItem("likeData")).some(
-                  (item) => item.id === e.id) ? <i
-                    onClick={() => likehandle(e)}
-                    className={`text-xl cursor-pointer text-red-500 ri-heart-3-fill`}
-                  ></i> :  <i
-                  onClick={() => likehandle(e)}
-                  className={`text-xl cursor-pointer text-zinc-300 ri-heart-3-fill`}
-                ></i> } */}
-
-              {/* {like ? (
-                <i
-                  onClick={() => likehandle(e)}
-                  className="text-xl cursor-pointer ri-heart-3-fill"
-                ></i>
-              ) : (
-                <i
-                  onClick={() => likehandle(e)}
-                  className="text-xl cursor-pointer text-zinc-300  ri-heart-3-fill"
-                ></i>
-              )} */}
-            </motion.div>
-            <motion.div
-              initial={{ y: 50, opacity: 0, scale: 0 }}
-              animate={{ y: 0, opacity: 1, scale: 1 }}
-              className="w-[35%]  sm:w-full h-[10vh] flex gap-3 sm:gap-1 items-center justify-center"
-            >
-              <button
-                onClick={pre}
-                className="text-3xl text-white bg-zinc-800 cursor-pointer rounded-full"
-              >
-                <i className="ri-skip-back-mini-fill"></i>
-              </button>
-              <audio
-                className="w-[80%]"
-                ref={audioRef}
-                onPause={() => setaudiocheck(false)}
-                onPlay={() => setaudiocheck(true)}
-                controls
-                autoPlay
-                onEnded={next}
-                src={e?.downloadUrl[4]?.url}
-              ></audio>
-              <button
-                onClick={next}
-                className="text-3xl text-white bg-zinc-800 cursor-pointer rounded-full"
-              >
-                <i className="ri-skip-right-fill"></i>
-              </button>
-            </motion.div>
-            <div className=" flex flex-col text-[1vw] items-center  gap-2">
-              <div>
-                <h3 className="font-bold text-sm text-slate-400">
-                  Download Options
-                </h3>
-              </div>
-              <div className="flex flex-row-reverse gap-2 ">
-                {/* <p
-                  // onClick={() =>
-                  //   handleDownloadSong(e.downloadUrl[0].url, e.name + " 12kbps")
-                  // }
-                  onClick={() => window.open(`https://mp3-download-server-production.up.railway.app/generate-audio?audioUrl=${e.downloadUrl[0].url}&imageUrl=${e?.image[2]?.url}&songName=${e.name + " 12kbps"}&year=${e.year}&album=${e.album.name}`, "_blank")}
-                  className="duration-300 cursor-pointer hover:text-slate-400 hover:bg-slate-600 hover:scale-90 w-fit p-1 font-semibold rounded-md shadow-2xl bg-slate-400 flex flex-col items-center"
-                >
-                  12kbps <br />
-                  <p className="text-xs">Very low quality</p>
-                </p>
-                <p
-                  // onClick={() =>
-                  //   handleDownloadSong(e.downloadUrl[1].url, e.name + " 48kbps")
-                  // }
-                  onClick={() => window.open(`https://mp3-download-server-production.up.railway.app/generate-audio?audioUrl=${e.downloadUrl[1].url}&imageUrl=${e?.image[2]?.url}&songName=${e.name + " 48kbps"}&year=${e.year}&album=${e.album.name}`, "_blank")}
-                  className="duration-300 cursor-pointer  hover:text-slate-400 hover:bg-slate-600 hover:scale-90 w-fit p-1 font-semibold rounded-md shadow-2xl bg-slate-400 flex flex-col items-center"
-                >
-                  48kbps <br />
-                  <p className="text-xs">Low quality</p>
-                </p>
-                <p
-                  // onClick={() =>
-                  //   handleDownloadSong(e.downloadUrl[2].url, e.name + " 96kbps")
-                  // }
-                  onClick={() => window.open(`https://mp3-download-server-production.up.railway.app/generate-audio?audioUrl=${e.downloadUrl[2].url}&imageUrl=${e?.image[2]?.url}&songName=${e.name + " 96kbps"}&year=${e.year}&album=${e.album.name}`, "_blank")}
-                  className="duration-300 cursor-pointer  hover:text-slate-400 hover:bg-slate-600 hover:scale-90 w-fit p-1 font-semibold rounded-md shadow-2xl bg-slate-400 flex flex-col items-center"
-                >
-                  96kbps <br />
-                  <p className="text-xs">Fair quality</p>
-                </p>
-                <p
-                  // onClick={() =>
-                  //   handleDownloadSong(
-                  //     e.downloadUrl[3].url,
-                  //     e.name + " 160kbps"
-                  //   )
-                  // }
-                  onClick={() => window.open(`https://mp3-download-server-production.up.railway.app/generate-audio?audioUrl=${e.downloadUrl[3].url}&imageUrl=${e?.image[2]?.url}&songName=${e.name + " 160kbps"}&year=${e.year}&album=${e.album.name}`, "_blank")}
-                  className="duration-300 cursor-pointer  hover:text-slate-400 hover:bg-slate-600 hover:scale-90 w-fit p-1 font-semibold rounded-md shadow-2xl bg-slate-400 flex flex-col items-center"
-                >
-                  160kbps <br />
-                  <p className="text-xs">Good quality</p>
-                </p> */}
-                <p
-
-                  // onClick={() =>
-                  //   handleDownloadSong(
-                  //     e.downloadUrl[4].url,
-                  //     e.name + " 320kbps",
-                  //     e?.image[2]?.url
-                  //   )
-                  // }
-
-                  // onClick={() => window.open(`https://mp3-download-server-production.up.railway.app/generate-audio?audioUrl=${e.downloadUrl[4].url}&imageUrl=${e?.image[2]?.url}&songName=${e.name + " 320kbps"}&year=${e.year}&album=${e.album.name}`, "_blank")}
-
-                  onClick={() =>
-                    handleGenerateAudio2({
-                      audioUrl: e?.downloadUrl[4].url,
-                      imageUrl: e?.image[2]?.url,
-                      songName: e?.name,
-                      year: e?.year,
-                      album: e?.album.name,
-                      artist: e?.artists.primary.map(artist => artist.name).join(",")
-                    })
-                  }
-
-                  className="duration-300 cursor-pointer  hover:text-slate-400 hover:bg-slate-600 hover:scale-90 w-fit p-1 sm:text-sm font-semibold rounded-md shadow-2xl bg-slate-400 flex flex-col items-center"
-                >
-                  Highest quality with <br />
-                  <p className="text-xs text-center">
-                    {" "}
-                    FLAC Format
-                  </p>
-                </p>
-                {/* <p
-                  // onClick={() =>
-                  //   handleDownloadSong(
-                  //     e.downloadUrl[4].url,
-                  //     e.name + " 320kbps",
-                  //     e?.image[2]?.url
-                  //   )
-                  // }
-                  onClick={() => window.open(`https://the-ultimate-songs-download-server.up.railway.app/generate-audio?audioUrl=${e.downloadUrl[4].url}&imageUrl=${e?.image[2]?.url}&songName=${e.name + " 320kbps"}&year=${e.year}&album=${e.album.name}`, "_blank")}
-
-                  className="duration-300 cursor-pointer  hover:text-slate-400 hover:bg-slate-600 hover:scale-90 w-fit p-1 sm:text-sm font-semibold rounded-md shadow-2xl bg-slate-400 flex flex-col items-center"
-                >
-                  320kbps <br />
-                  <p className="text-xs text-center">High quality with poster embedded<br/>(some time this will not work)</p>
-                </p> */}
-
-                <p
-                  // onClick={() =>
-                  //   handleDownloadSong(
-                  //     e.downloadUrl[4].url,
-                  //     e.name + " 320kbps",
-                  //     e?.image[2]?.url
-                  //   )
-                  // }
-                  // onClick={() =>
-                  //   window.open(
-                  //     `https://the-ultimate-songs-download-server.up.railway.app/generate-audio?audioUrl=${
-                  //       e.downloadUrl[4].url
-                  //     }&imageUrl=${e?.image[2]?.url}&songName=${
-                  //       e.name + " 320kbps"
-                  //     }&year=${e.year}&album=${e.album.name}`,
-                  //     "_blank"
-                  //   )
-                  // }
-                  onClick={() =>
-                    handleGenerateAudio({
-                      audioUrl: e?.downloadUrl[4].url,
-                      imageUrl: e?.image[2]?.url,
-                      songName: removeSourceAttribution(e?.name),
-                      year: e?.year,
-                      album: removeSourceAttribution(e?.album.name),
-                      artist: e?.artists.primary.map(artist => artist.name).join(",")
-                    })
-                  }
-
-                  className="duration-300 cursor-pointer hover:text-white hover:bg-purple-gradient hover:scale-90 w-fit p-1 sm:text-sm font-semibold rounded-md shadow-purple-glow bg-white/10 border border-white/10 flex flex-col items-center"
-                >
-                  320kbps <br />
-                  <p className="text-xs text-center">
-                    High quality with poster embedded
-                  </p>
-                </p>
-              </div>
-            </div>
-          </motion.div>
-        ))}
-      </motion.div>
+      {/* Player bar removed (global PlayerBar used instead) */}
     </motion.div>
   );
 };
 
 export default Songs;
+

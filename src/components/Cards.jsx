@@ -2,31 +2,26 @@ import React, { useState } from "react";
 import axios from "axios";
 import InfiniteScroll from "react-infinite-scroll-component";
 import { removeSourceAttribution } from "../utils/stringUtils";
+import { useMusic } from "../context/MusicContext";
+
 
 
 const Cards = ({ searches, query, requery }) => {
   //   console.log(searches);
 
-  const handleDownloadSong = async (url, name, img) => {
-    try {
-      const res = await fetch(url);
-      const blob = await res.blob();
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = `${name}.mp3`;
+  const { currentSong, isPlaying, playSong, togglePlay, setQueue } = useMusic();
 
-      const image = document.createElement("img");
-      image.src = `${img}`;
-      link.appendChild(image);
+  const audioseter = (i) => {
+    if (!searches[i]) return;
 
-      document.body.appendChild(link);
-      link.click();
-
-      document.body.removeChild(link);
-    } catch (error) {
-      console.log("Error fetching or downloading files", error);
+    if (currentSong?.id === searches[i].id) {
+      togglePlay();
+    } else {
+      setQueue(searches);
+      playSong(searches[i]);
     }
   };
+
 
 
 
@@ -46,31 +41,26 @@ const Cards = ({ searches, query, requery }) => {
               <div className="img w-full sm:w-[35%] h-[30vh] sm:h-[15vh] bg-slate-500">
                 <img
                   className="w-full h-full object-fill"
-                  src={d.image[2].link}
+                  src={d.image?.[2]?.url || d.image?.[2]?.link}
                   alt=""
                 />
               </div>
-              <div className="w-full sm:w-[75%]  flex justify-between px-5 sm:px-3  items-center h-[10vh] sm:h-[15vh]  bg-slate-700">
-                <h3 className="text-sm sm:text-lg ">{removeSourceAttribution(d.name)}</h3>
+              <div
+                onClick={() => audioseter(i)}
+                className="w-full sm:w-[75%] flex justify-between px-5 sm:px-3 items-center h-[10vh] sm:h-[15vh] bg-slate-700 cursor-pointer"
+              >
+                <div className="flex flex-col">
+                  <h3 className="text-sm sm:text-lg font-bold">{removeSourceAttribution(d.name)}</h3>
+                  <p className="text-xs text-white/50">{d.album?.name}</p>
+                </div>
                 <i
-                  onClick={() =>
-                    handleDownloadSong(
-                      d.downloadUrl[4].link,
-                      d.name,
-                      d.image[2].link
-                    )
-                  }
-                  className=" cursor-pointer flex items-center justify-center bg-green-700 sm:w-[9vw] sm:h-[9vw] w-[3vw] h-[3vw]   rounded-full text-2xl ri-download-line"
+                  className={`text-3xl ${currentSong?.id === d.id && isPlaying ? "ri-pause-circle-fill text-p-magenta" : "ri-play-circle-fill"}`}
                 ></i>
               </div>
+
             </div>
-            <div className="song w-full h-full sm:h-[5vh] sm:flex  sm:items-center sm:justify-center  ">
-              <audio
-                className="w-full  sm:h-[10vh]  "
-                controls
-                src={d.downloadUrl[4].link}
-              ></audio>
-            </div>
+            {/* Local audio player removed */}
+
           </div>
         ))}
         {/* <div className="flex gap-3 text-2xl  ">

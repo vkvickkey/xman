@@ -1,5 +1,6 @@
 import React from "react";
 import PlayerBar from "./PlayerBar";
+import PlayerControlBar from "./PlayerControlBar";
 import MobileNav from "./MobileNav";
 import { Toaster } from "react-hot-toast";
 
@@ -9,14 +10,14 @@ const MobileLayout = ({ children }) => {
             <Toaster position="top-center" reverseOrder={false} />
 
             {/* Main Content Area */}
-            {/* padding-bottom to separate content from fixed player + nav */}
-            <div className="w-full pb-[120px] relative z-0">
+            {/* Increased padding for floating dock */}
+            <div className="w-full pb-[160px] relative z-0">
                 {children}
             </div>
 
             {/* Fixed Elements */}
+            <PlayerControlBar />
             <PlayerBar />
-            <MobileNav />
         </div>
     );
 };

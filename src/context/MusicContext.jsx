@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useRef, useEffect } from "react";
+import React, { createContext, useContext, useState, useRef, useEffect, useCallback } from "react";
 
 const MusicContext = createContext();
 
@@ -14,45 +14,53 @@ export const MusicProvider = ({ children }) => {
     // Queue could be implemented here later
     const [queue, setQueue] = useState([]);
     const [currentIndex, setCurrentIndex] = useState(-1);
+    const [isShuffle, setIsShuffle] = useState(false);
+    const [isRepeat, setIsRepeat] = useState(false);
 
-    // Initialize audio behavior
-    useEffect(() => {
+    const playSong = (song) => {
+        setCurrentSong(song);
+        setIsPlaying(true);
+    };
+
+    const togglePlay = () => {
+        setIsPlaying(!isPlaying);
+    };
+
+    const seek = (time) => {
         const audio = audioRef.current;
+        audio.currentTime = time;
+        setProgress(time);
+    };
 
-        const handleTimeUpdate = () => {
-            setProgress(audio.currentTime);
-        };
+    const playNext = useCallback(() => {
+        if (queue.length > 0) {
+            let nextIndex = currentIndex + 1;
+            if (isShuffle) {
+                nextIndex = Math.floor(Math.random() * queue.length);
+            } else if (nextIndex >= queue.length) {
+                if (isRepeat) nextIndex = 0;
+                else return;
+            }
+            setCurrentIndex(nextIndex);
+            playSong(queue[nextIndex]);
+        }
+    }, [queue, currentIndex, isShuffle, isRepeat]);
 
-        const handleLoadedMetadata = () => {
-            setDuration(audio.duration);
-        };
-
-        const handleEnded = () => {
-            setIsPlaying(false);
-            // Auto play next song if queue exists
-        };
-
-        audio.addEventListener("timeupdate", handleTimeUpdate);
-        audio.addEventListener("loadedmetadata", handleLoadedMetadata);
-        audio.addEventListener("ended", handleEnded);
-
-        return () => {
-            audio.removeEventListener("timeupdate", handleTimeUpdate);
-            audio.removeEventListener("loadedmetadata", handleLoadedMetadata);
-            audio.removeEventListener("ended", handleEnded);
-        };
-    }, []);
+    const playPrev = useCallback(() => {
+        if (queue.length > 0) {
+            let prevIndex = currentIndex - 1;
+            if (prevIndex < 0) {
+                if (isRepeat) prevIndex = queue.length - 1;
+                else return;
+            }
+            setCurrentIndex(prevIndex);
+            playSong(queue[prevIndex]);
+        }
+    }, [queue, currentIndex, isRepeat]);
 
     useEffect(() => {
         const audio = audioRef.current;
         if (currentSong) {
-            // Assuming highest quality url is at index 2 or 4, or just 'url' property depending on API
-            // Based on previous code analysis: e?.image[2]?.url so likely downloadUrl is similar array or direct
-            // Let's assume standard Jiosaavn API structure for now, usually downloadUrl[4] is 320kbps
-            // But looking at Home.jsx, it doesn't explicitly show the url path logic clearly in the brief look
-            // I will assume the object passed has a direct url or I'll implement a helper.
-
-            // We will try to find the best quality URL
             let src = "";
             if (typeof currentSong.downloadUrl === 'string') src = currentSong.downloadUrl;
             else if (Array.isArray(currentSong.downloadUrl)) src = currentSong.downloadUrl[currentSong.downloadUrl.length - 1]?.url;
@@ -76,20 +84,32 @@ export const MusicProvider = ({ children }) => {
         audio.volume = volume;
     }, [volume]);
 
-    const playSong = (song) => {
-        setCurrentSong(song);
-        setIsPlaying(true);
-    };
-
-    const togglePlay = () => {
-        setIsPlaying(!isPlaying);
-    };
-
-    const seek = (time) => {
+    // Initialize audio behavior
+    useEffect(() => {
         const audio = audioRef.current;
-        audio.currentTime = time;
-        setProgress(time);
-    };
+
+        const handleTimeUpdate = () => {
+            setProgress(audio.currentTime);
+        };
+
+        const handleLoadedMetadata = () => {
+            setDuration(audio.duration);
+        };
+
+        const handleEnded = () => {
+            playNext();
+        };
+
+        audio.addEventListener("timeupdate", handleTimeUpdate);
+        audio.addEventListener("loadedmetadata", handleLoadedMetadata);
+        audio.addEventListener("ended", handleEnded);
+
+        return () => {
+            audio.removeEventListener("timeupdate", handleTimeUpdate);
+            audio.removeEventListener("loadedmetadata", handleLoadedMetadata);
+            audio.removeEventListener("ended", handleEnded);
+        };
+    }, [playNext]);
 
     return (
         <MusicContext.Provider
@@ -102,7 +122,15 @@ export const MusicProvider = ({ children }) => {
                 setVolume,
                 progress,
                 duration,
-                seek
+                seek,
+                isShuffle,
+                setIsShuffle,
+                isRepeat,
+                setIsRepeat,
+                playNext,
+                playPrev,
+                queue,
+                setQueue
             }}
         >
             {children}
