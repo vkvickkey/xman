@@ -686,10 +686,10 @@ const Home = () => {
           audio.pause();
           setaudiocheck(false);
         } else {
-          setaudiocheck(true);
           audio.play().catch((error) => {
             console.error("Playback failed:", error);
           });
+          setaudiocheck(true);
         }
       }
     } else {
@@ -710,10 +710,10 @@ const Home = () => {
           audio.pause();
           setaudiocheck(false);
         } else {
-          setaudiocheck(true);
           audio.play().catch((error) => {
             console.error("Playback failed:", error);
           });
+          setaudiocheck(true);
         }
       }
     } else {
