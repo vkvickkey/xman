@@ -24,7 +24,6 @@ import {
 import { useAnimate, stagger } from "framer-motion";
 import toast, { Toaster } from "react-hot-toast";
 import handleGenerateAudio from "./../utils/audioUtils";
-import handleGenerateAudio2 from "./../utils/audioUtils2";
 import { getArtistMetadata } from "../utils/artistUtils";
 import { removeSourceAttribution, getAlbumFromTitle } from "../utils/stringUtils";
 import useDragScroll from "../utils/useDragScroll";
@@ -192,8 +191,6 @@ const Home = () => {
 
   const [indiaSuperhitsTop50, setIndiaSuperhitsTop50] = useState([]);
   const [tamilPlaylists, setTamilPlaylists] = useState([]);
-  const [newTamilSongs, setNewTamilSongs] = useState([]);
-  const [newTamilSongsLoading, setNewTamilSongsLoading] = useState(false);
   const [devotionalPlaylists, setDevotionalPlaylists] = useState([]);
   const [jioSaavanUpdatePlaylists, setJioSaavanUpdatePlaylists] = useState([]);
   const [currentDevotionalKeyword, setCurrentDevotionalKeyword] = useState("");
@@ -229,7 +226,6 @@ const Home = () => {
   const bestOf90sRef = useRef(null);
   const indiaSuperhitsTop50Ref = useRef(null);
   const tamilPlaylistsRef = useRef(null);
-  const newTamilSongsRef = useRef(null);
   const devotionalPlaylistsRef = useRef(null);
   const jioSaavanUpdatePlaylistsRef = useRef(null);
 
@@ -242,7 +238,6 @@ const Home = () => {
   useDragScroll(bestOf90sRef, bestOf90s);
   useDragScroll(indiaSuperhitsTop50Ref, indiaSuperhitsTop50);
   useDragScroll(tamilPlaylistsRef, tamilPlaylists);
-  useDragScroll(newTamilSongsRef, newTamilSongs);
   useDragScroll(devotionalPlaylistsRef, devotionalPlaylists);
   useDragScroll(jioSaavanUpdatePlaylistsRef, jioSaavanUpdatePlaylists);
 
@@ -286,7 +281,6 @@ const Home = () => {
 
   // Updated by Antigravity on ${new Date().toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })} - Content categories: Music Playlists & New Songs & Devotional
   const Gethome = async () => {
-    setLoading(true);
     setError("");
     try {
       const [trendingSongsRes, trendingAlbumsRes, chartsRes, playlistsRes, albumsRes] = await Promise.all([
@@ -296,7 +290,6 @@ const Home = () => {
         axios.get(getApiUrl("search", `/search/playlists?query=${language} Hits today&limit=10`)),
         axios.get(getApiUrl("search", `/search/albums?query=Latest ${language} today&limit=10`))
       ]);
-      console.log('API responses:', { trendingSongsRes, trendingAlbumsRes, chartsRes, playlistsRes, albumsRes });
       const mapItems = (items) => items ? items.map(item => ({
         id: item.id,
         name: item.name,
@@ -308,19 +301,17 @@ const Home = () => {
         songs: item.songs || []
       })) : [];
       const homeData = {
-        charts: mapItems(chartsRes.data.data.results),
-        albums: mapItems(albumsRes.data.data.results),
-        playlists: mapItems(playlistsRes.data.data.results),
+        charts: mapItems(chartsRes?.data?.data?.results || []),
+        albums: mapItems(albumsRes?.data?.data?.results || []),
+        playlists: mapItems(playlistsRes?.data?.data?.results || []),
         trending: {
-          songs: mapItems(trendingSongsRes.data.data.results),
-          albums: mapItems(trendingAlbumsRes.data.data.results)
+          songs: mapItems(trendingSongsRes?.data?.data?.results || []),
+          albums: mapItems(trendingAlbumsRes?.data?.data?.results || [])
         }
       };
       sethome(homeData);
-      setLoading(false);
     } catch (error) {
       setError("Failed to load home data. Check your connection or try again later.");
-      setLoading(false);
       console.error("Error fetching home data:", error);
     }
   };
@@ -387,50 +378,6 @@ const Home = () => {
       setTamilPlaylists(data?.data?.results || []);
     } catch (error) {
       console.error("Error fetching Tamil Playlists:", error);
-    }
-  };
-
-  const GetNewTamilSongs = async () => {
-    if (language !== "Tamil") {
-      setNewTamilSongs([]);
-      return;
-    }
-    
-    setNewTamilSongsLoading(true);
-    
-    // Shuffle system with different Tamil song queries
-    const tamilQueries = [
-      "New Tamil Songs",
-      "Latest Tamil Hits",
-      "Tamil Trending Songs",
-      "New Tamil Releases",
-      "Tamil Popular Songs",
-      "Latest Tamil Music",
-      "Tamil New Releases",
-      "Trending Tamil Songs",
-      "Fresh Tamil Songs",
-      "Tamil Chart Toppers"
-    ];
-    
-    // Get a random query from the list
-    const randomQuery = tamilQueries[Math.floor(Math.random() * tamilQueries.length)];
-    
-    try {
-      const { data } = await axios.get(
-        getApiUrl("search", `/search/songs?query=${encodeURIComponent(randomQuery)}&limit=20`)
-      );
-      setNewTamilSongs(data?.data?.results || []);
-      
-      // Show toast notification for user feedback
-      toast.success(`Shuffled: ${randomQuery}`, {
-        duration: 2000,
-        position: 'top-center',
-      });
-    } catch (error) {
-      console.error("Error fetching New Tamil Songs:", error);
-      toast.error("Failed to refresh songs");
-    } finally {
-      setNewTamilSongsLoading(false);
     }
   };
 
@@ -731,29 +678,59 @@ const Home = () => {
     }
   };
 
-  const toggleAudio = (song, queue = []) => {
-    if (!song) return;
-
-    if (currentSong?.id === song.id) {
-      togglePlay();
+  const audioseter = (i) => {
+    if (i === null || !details[i]) return;
+    
+    const song = details[i];
+    
+    // Check if clicking on the currently playing song
+    if (song.id === currentSong?.id) {
+      togglePlay(); // Just toggle play/pause if same song
     } else {
-      if (queue.length > 0) {
-        setQueue(queue);
-      }
+      // Set the queue to all songs in details and play the selected song
+      setQueue(details);
       playSong(song);
     }
   };
 
-  function audioseter(i) {
-    if (i === null || !details[i]) return;
-    toggleAudio(details[i], details);
+  const toggleAudio = (song, queue = []) => {
+    if (!song) return;
+
+    if (songlink[0]?.id === details[i].id) {
+      const audio = audioRef.current;
+      if (audio) {
+        if (!audio.paused) {
+          audio.pause();
+          setaudiocheck(false);
+        } else {
+          setaudiocheck(true);
+          audio.play().catch((error) => {
+            console.error("Playback failed:", error);
+          });
+        }
+      }
+    } else {
+      setindex2(null);
+      setsonglink2([]);
+      setindex(i);
+      setsonglink([details[i]]);
+    }
   }
 
   function audioseter2(i) {
     if (i === null || !suggSong[i]) return;
-    toggleAudio(suggSong[i], suggSong);
+    
+    const song = suggSong[i];
+    
+    // Check if clicking on the currently playing song
+    if (song.id === currentSong?.id) {
+      togglePlay(); // Just toggle play/pause if same song
+    } else {
+      // Set the queue to all suggested songs and play the selected song
+      setQueue(suggSong);
+      playSong(song);
+    }
   }
-
 
 
   // Function to get a random subset of IDs without duplicates
@@ -1144,27 +1121,39 @@ const Home = () => {
   }, [page, language]);
 
   useEffect(() => {
-    Gethome();
-    GetFreshHits();
-    GetBestOf90s();
-    GetIndiaSuperhitsTop50();
-    GetTamilPlaylists();
-    GetNewTamilSongs();
-    GetDevotionalPlaylists();
-    GetJioSaavanUpdatePlaylists();
-
-    // Initial fetch for songs based on language
-    const sequentialLanguages = ["english", "tamil", "malayalam", "telugu"];
-    if (sequentialLanguages.includes(language.toLowerCase())) {
-      GetLanguageSongs(page); // Use randomized page
-    } else {
-      Getdetails();
-    }
+    const fetchData = async () => {
+      try {
+        await Promise.all([
+          Gethome(),
+          GetFreshHits(),
+          GetBestOf90s(),
+          GetIndiaSuperhitsTop50(),
+          GetTamilPlaylists(),
+          GetDevotionalPlaylists(),
+          GetJioSaavanUpdatePlaylists(),
+        ]);
+        
+        // Initial fetch for songs based on language
+        const sequentialLanguages = ["english", "tamil", "malayalam", "telugu"];
+        if (sequentialLanguages.includes(language.toLowerCase())) {
+          GetLanguageSongs(page);
+        } else {
+          Getdetails();
+        }
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      } finally {
+        // Ensure loading is set to false after all operations
+        setLoading(false);
+      }
+    };
+    
+    fetchData();
     
     // Add timeout to prevent infinite loading
     const timeout = setTimeout(() => {
       setLoading(false);
-    }, 10000); // 10 seconds timeout
+    }, 5000); // 5 seconds timeout
     
     return () => clearTimeout(timeout);
     // eslint-disable-next-line
@@ -1690,75 +1679,6 @@ const Home = () => {
                     <motion.h3 className="leading-none">
                       {removeSourceAttribution(f.name)}
                     </motion.h3>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {newTamilSongs.length > 0 && (
-          <div className="new-tamil-songs w-full flex flex-col gap-3 ">
-            <div className="relative w-full py-3 px-6 mb-2 flex items-center justify-between rounded-3xl bg-white/5 backdrop-blur-2xl border-t border-l border-r border-white/10 border-b-0 shadow-xl overflow-hidden shrink-0 group">
-              <div className="absolute bottom-0 left-0 w-full h-[2px] bg-gradient-to-r from-[#8A2BE2] via-[#BF40FF] to-[#8A2BE2] blur-[1px] shadow-[0_0_20px_rgba(191,64,255,0.6)]"></div>
-              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-black/20 border border-white/5 backdrop-blur-md shadow-[inset_0_1px_4px_rgba(255,255,255,0.1)] cursor-pointer hover:bg-white/10 hover:scale-105 transition-all duration-300">
-                <i className="ri-music-fill text-white text-xl"></i>
-              </div>
-              <h3 className="text-2xl font-bold text-white/90 tracking-wide capitalize drop-shadow-lg font-sans">
-                New Tamil Songs
-              </h3>
-              <div onClick={GetNewTamilSongs} className="flex items-center justify-center w-10 h-10 rounded-full bg-black/20 border border-white/5 backdrop-blur-md shadow-[inset_0_1px_4px_rgba(255,255,255,0.1)] cursor-pointer hover:bg-white/10 hover:scale-105 transition-all duration-300" title="Shuffle New Tamil Songs">
-                {newTamilSongsLoading ? (
-                  <i className="ri-loader-4-line text-white text-xl animate-spin"></i>
-                ) : (
-                  <i className="ri-shuffle-line text-white text-xl"></i>
-                )}
-              </div>
-            </div>
-            <div className="relative group w-full">
-              <ScrollButtons scrollRef={newTamilSongsRef} />
-              <div ref={newTamilSongsRef} className="newtamilsongsdata custom-scrollbar px-5 sm:px-3 flex flex-shrink gap-5 overflow-x-auto w-full pb-4">
-                {Array.isArray(newTamilSongs) && newTamilSongs.map((t, i) => (
-                  <motion.div
-                    initial={{ y: -100, scale: 0.5 }}
-                    whileInView={{ y: 0, scale: 1 }}
-                    transition={{ ease: "circIn", duration: 0.05 }}
-                    onClick={() => {
-                      toggleAudio(t);
-                    }}
-                    key={i}
-                    className="relative hover:scale-110 sm:hover:scale-105 duration-300 flex-shrink-0 w-[15%] sm:w-[40%] rounded-md flex flex-col gap-2 py-4 cursor-pointer group"
-                  >
-                    <div className="relative overflow-hidden rounded-md shadow-lg border border-white/5">
-                      <img
-                        className="w-full transition-transform duration-500 group-hover:scale-110"
-                        src={t.image?.[2]?.url || t.image?.[0]?.url}
-                        alt=""
-                      />
-
-                      {/* Wave animation for active song */}
-                      <img
-                        className={`absolute top-2 left-2 w-[20%] sm:w-[25%] rounded-md ${t.id === currentSong?.id ? "block" : "hidden"} `}
-                        src={wavs}
-                        alt=""
-                      />
-
-                      {/* Play/Pause Icons */}
-                      {t.id === currentSong?.id ? (
-                        <i className={`absolute inset-0 flex items-center justify-center text-5xl text-p-magenta drop-shadow-[0_0_20px_rgba(191,64,255,1)] opacity-100 duration-300 rounded-md bg-black/20 ${isPlaying ? "ri-pause-circle-fill" : "ri-play-circle-fill"}`}></i>
-                      ) : (
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                          <i className="ri-play-circle-fill text-5xl text-white drop-shadow-glow"></i>
-                        </div>
-                      )}
-
-                    </div>
-                    <motion.h3 className="leading-none mt-1 font-semibold truncate">
-                      {removeSourceAttribution(t.name)}
-                    </motion.h3>
-                    <p className="text-[10px] text-white/50 truncate">
-                      {removeSourceAttribution(t.album?.name || "")}
-                    </p>
                   </motion.div>
                 ))}
               </div>

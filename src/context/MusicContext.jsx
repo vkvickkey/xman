@@ -20,6 +20,11 @@ export const MusicProvider = ({ children }) => {
     const playSong = (song) => {
         setCurrentSong(song);
         setIsPlaying(true);
+        // Update currentIndex if song is in queue
+        const songIndex = queue.findIndex(s => s.id === song.id);
+        if (songIndex !== -1) {
+            setCurrentIndex(songIndex);
+        }
     };
 
     const togglePlay = () => {
@@ -110,6 +115,51 @@ export const MusicProvider = ({ children }) => {
             audio.removeEventListener("ended", handleEnded);
         };
     }, [playNext]);
+
+    // Media Session API for Windows/Mobile notifications
+    useEffect(() => {
+        if ('mediaSession' in navigator) {
+            // Update metadata when song changes
+            if (currentSong) {
+                navigator.mediaSession.metadata = new MediaMetadata({
+                    title: currentSong.name || 'Unknown',
+                    artist: currentSong?.artists?.primary?.map(a => a.name).join(', ') || 'Unknown Artist',
+                    album: currentSong?.album?.name || 'Unknown Album',
+                    artwork: [
+                        { src: currentSong?.image?.[0]?.url || '', sizes: '96x96', type: 'image/jpeg' },
+                        { src: currentSong?.image?.[1]?.url || '', sizes: '128x128', type: 'image/jpeg' },
+                        { src: currentSong?.image?.[2]?.url || '', sizes: '256x256', type: 'image/jpeg' },
+                    ]
+                });
+            }
+
+            // Set up action handlers
+            navigator.mediaSession.setActionHandler('play', () => {
+                setIsPlaying(true);
+            });
+            
+            navigator.mediaSession.setActionHandler('pause', () => {
+                setIsPlaying(false);
+            });
+            
+            navigator.mediaSession.setActionHandler('previoustrack', () => {
+                playPrev();
+            });
+            
+            navigator.mediaSession.setActionHandler('nexttrack', () => {
+                playNext();
+            });
+            
+            navigator.mediaSession.setActionHandler('seekto', (details) => {
+                if (details.seekTime !== undefined) {
+                    seek(details.seekTime);
+                }
+            });
+
+            // Update playback state
+            navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
+        }
+    }, [currentSong, isPlaying, playNext, playPrev]);
 
     return (
         <MusicContext.Provider

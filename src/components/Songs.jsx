@@ -21,7 +21,6 @@ import { Circ } from "gsap/all";
 import toast, { Toaster } from "react-hot-toast";
 import InfiniteScroll from "react-infinite-scroll-component";
 import handleGenerateAudio from "./../utils/audioUtils";
-import handleGenerateAudio2 from "./../utils/audioUtils2";
 import { removeSourceAttribution, getAlbumFromTitle } from "../utils/stringUtils";
 import { getArtistMetadata } from "../utils/artistUtils";
 

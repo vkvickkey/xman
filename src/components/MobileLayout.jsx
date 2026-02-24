@@ -1,5 +1,4 @@
 import React from "react";
-import PlayerBar from "./PlayerBar";
 import PlayerControlBar from "./PlayerControlBar";
 import MobileNav from "./MobileNav";
 import { Toaster } from "react-hot-toast";
@@ -17,7 +16,6 @@ const MobileLayout = ({ children }) => {
 
             {/* Fixed Elements */}
             <PlayerControlBar />
-            <PlayerBar />
         </div>
     );
 };

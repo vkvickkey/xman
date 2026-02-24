@@ -23,7 +23,6 @@ import toast, { Toaster } from "react-hot-toast";
 import JSZip from "jszip";
 import CryptoJS from "crypto-js";
 import handleGenerateAudio from "./../utils/audioUtils";
-import handleGenerateAudio2 from "./../utils/audioUtils2";
 import { removeSourceAttribution, getAlbumFromTitle } from "../utils/stringUtils";
 import { getArtistMetadata } from "../utils/artistUtils";
 
