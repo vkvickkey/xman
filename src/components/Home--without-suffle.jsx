@@ -170,7 +170,7 @@ const Home = () => {
   const { currentSong, isPlaying, playSong, togglePlay, setQueue } = useMusic();
   const [home, sethome] = useState(null);
   const [language, setlanguage] = useState(localStorage.getItem("language") || "Tamil");
-  const [details, setdetails] = useState([]);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   // const [songlink, setsonglink] = useState([]);
@@ -179,8 +179,7 @@ const Home = () => {
   const [like, setlike] = useState(false);
   // var [index, setindex] = useState(null);
   // var [index2, setindex2] = useState(null);
-  var [page, setpage] = useState(Math.floor(Math.random() * 50) + 1);
-  var [page2, setpage2] = useState(Math.floor(Math.random() * 50) + 1);
+
   // const audioRef = useRef();
   // const [audiocheck, setaudiocheck] = useState(false);
 
@@ -217,7 +216,7 @@ const Home = () => {
   const freshHitsLanguages = ["Tamil", "Hindi", "English", "Telugu", "Malayalam"];
 
   // Refs for horizontal scrolling
-  const detailsRef = useRef(null);
+
   const suggRef = useRef(null);
   const chartsRef = useRef(null);
   const playlistsRef = useRef(null);
@@ -230,7 +229,7 @@ const Home = () => {
   const jioSaavanUpdatePlaylistsRef = useRef(null);
 
   // Initialize scroll hooks with dependencies
-  useDragScroll(detailsRef, details);
+
   useDragScroll(suggRef, suggSong);
   useDragScroll(chartsRef, home);
   useDragScroll(playlistsRef, home);
@@ -324,12 +323,7 @@ const Home = () => {
         setError("API rate limit exceeded. Please wait a moment and try again.");
         toast.error("Rate limited - please wait");
       } else if (error.response?.status === 502) {
-        // 502 Bad Gateway - upstream server error, retry once after delay
-        console.log("502 error in home data, retrying after delay...");
-        setTimeout(() => {
-          toast.error("Server temporarily unavailable, retrying home data...");
-          Gethome();
-        }, 5000);
+        console.log("502 error in home data");
       } else if (error.response?.status === 402) {
         setError("Music service requires payment. Service temporarily unavailable.");
         toast.error("Music service temporarily unavailable");
@@ -639,134 +633,7 @@ const Home = () => {
       console.error("Error fetching devotional playlists:", error);
     }
   };
-  const GetLanguageSongs = async (overridePage) => {
-    try {
-      // Add delay to avoid rate limiting
-      await new Promise(resolve => setTimeout(resolve, 1500));
 
-      // Use sequential page number
-      const queryPage = overridePage || page;
-
-      const { data } = await axios.get(
-        getApiUrl("search", `/search/songs?query=${encodeURIComponent(language.toLowerCase() + ' hits')}&page=${queryPage}&limit=20`)
-      );
-
-      setdetails((prevDetails) => {
-        const results = data?.data?.data?.results || data?.data?.results || [];
-        // Shuffle the newly fetched results to break up album clusters
-        const shuffledResults = shuffleArray(results);
-        // Filter out undesired content (kids/divine)
-        const filteredResults = filterUndesiredSongs(shuffledResults);
-
-        // Filter out duplicates
-        const newData = filteredResults.filter(
-          (newItem) => !prevDetails.some((prevItem) => prevItem.id === newItem.id)
-        );
-        return [...prevDetails, ...newData];
-      });
-    } catch (error) {
-      console.error("Error fetching language songs:", error);
-
-      // Handle specific error types
-      if (error.response?.status === 429) {
-        toast.error("Rate limited - please wait before loading more songs");
-      } else if (error.response?.status === 502) {
-        // 502 Bad Gateway - upstream server error, retry once after delay
-        console.log("502 error, retrying after delay...");
-        setTimeout(() => {
-          toast.error("Server temporarily unavailable, retrying...");
-          GetLanguageSongs(overridePage || page);
-        }, 3000);
-      } else if (error.response?.status === 402) {
-        toast.error("Music service temporarily unavailable for songs");
-      } else if (error.message?.includes('CORS') || error.message?.includes('Network Error')) {
-        toast.error("Connection to music service failed for songs");
-      } else if (error.code === 'ERR_NETWORK' || error.code === 'ECONNREFUSED') {
-        toast.error("Network connection failed while fetching songs");
-      } else {
-        toast.error("Failed to load songs");
-      }
-    }
-  };
-
-  const Getdetails = async (overridePage, customQuery) => {
-    try {
-      let queryPage;
-      if (overridePage) {
-        queryPage = overridePage;
-      } else {
-        // For other languages, keep using random page (page2)
-        // English is now handled by GetLanguageSongs, so we can default to page2 here for others
-        queryPage = page2;
-      }
-
-      const searchQuery = customQuery || `${language.toLowerCase()} hits`;
-
-      const { data } = await axios.get(
-        getApiUrl("search", `/search/songs?query=${encodeURIComponent(searchQuery)}&page=${queryPage}&limit=20`)
-      );
-
-      setdetails((prevDetails) => {
-        const results = data?.data?.results || [];
-        // Shuffle the newly fetched results
-        const shuffledResults = shuffleArray(results);
-        // Filter out undesired content
-        const filteredResults = filterUndesiredSongs(shuffledResults);
-
-        const newData = filteredResults.filter(
-          (newItem) => !prevDetails.some((prevItem) => prevItem.id === newItem.id)
-        );
-        return [...prevDetails, ...newData];
-      });
-    } catch (error) {
-      console.log("error", error);
-    }
-  };
-
-  const handleAiShuffle = () => {
-    const randomPage = Math.floor(Math.random() * 50) + 1;
-    const modifiers = ["Hits", "Top Songs", "Latest", "Trending", "Party Mix", "Melody", "Classic"];
-    const randomModifier = modifiers[Math.floor(Math.random() * modifiers.length)];
-    const shuffleQuery = `${language} ${randomModifier}`;
-
-    toast(`AI Shuffling ${language} ${randomModifier}! 🎲✨`, {
-      icon: "🤖",
-      style: {
-        borderRadius: "10px",
-        background: "linear-gradient(to right, #8A2BE2, #BF40FF)",
-        color: "#fff",
-      },
-    });
-
-    setdetails([]);
-    setpage(randomPage); // Use randomized page
-    setpage2(randomPage);
-
-    Getdetails(randomPage, shuffleQuery); // Now actually uses the random modifier!
-  };
-
-  const handleRefreshSongs = () => {
-    const randomPage = Math.floor(Math.random() * 50) + 1;
-    setdetails([]);
-    setpage(randomPage);
-
-    toast.success(`Refreshing ${language} Songs...`, {
-      icon: "🔄",
-      style: {
-        borderRadius: "10px",
-        background: "#1a1a1a",
-        color: "#fff",
-        border: "1px solid rgba(255,255,255,0.1)",
-      },
-    });
-
-    const sequentialLanguages = ["english", "tamil", "malayalam", "telugu", "hindi"];
-    if (sequentialLanguages.includes(language.toLowerCase())) {
-      GetLanguageSongs(randomPage);
-    } else {
-      Getdetails(randomPage);
-    }
-  };
 
   const refreshHomeData = async () => {
     try {
@@ -815,32 +682,9 @@ const Home = () => {
   };
 
 
-  const Getartists = async () => {
-    // If home is already being fetched, this might be redundant, 
-    // but defining it resolves the undefined error.
-    try {
-      if (home === null) {
-        await Gethome();
-      }
-    } catch (error) {
-      console.log("error", error);
-    }
-  };
 
-  const audioseter = (i) => {
-    if (i === null || !details[i]) return;
 
-    const song = details[i];
 
-    // Check if clicking on the currently playing song
-    if (song.id === currentSong?.id) {
-      togglePlay(); // Just toggle play/pause if same song
-    } else {
-      // Set the queue to all songs in details and play the selected song
-      setQueue(details);
-      playSong(song);
-    }
-  };
 
 
   function audioseter2(i) {
@@ -1206,49 +1050,9 @@ const Home = () => {
   //   }
   // };
 
-  function detailsseter() {
-    setpage(Math.floor(Math.random() * 50) + 1);
-    setdetails([]);
-    setsuggSong([]);
-  }
 
 
 
-  // Retry fetching home data if it failed
-  function seccall() {
-    const intervalId = setInterval(() => {
-      // This will be checked using the ref to avoid stale closure
-      if (!homeRef.current) {
-        Getartists();
-      } else {
-        clearInterval(intervalId);
-      }
-    }, 3000);
-    return intervalId;
-  }
-  // Preload a few extra pages of songs for smoother playback — runs once per language change only
-  useEffect(() => {
-    const sequentialLanguages = ["english", "tamil", "malayalam", "telugu"];
-    const extraPages = [page + 1, page + 2]; // only 2 extra pages, not infinite
-
-    const fetchExtraPages = async () => {
-      for (const p of extraPages) {
-        try {
-          if (sequentialLanguages.includes(language.toLowerCase())) {
-            await GetLanguageSongs(p);
-          } else {
-            await Getdetails();
-          }
-        } catch {
-          // silently ignore
-        }
-      }
-    };
-
-    const timeoutId = setTimeout(fetchExtraPages, 1500);
-    return () => clearTimeout(timeoutId);
-    // eslint-disable-next-line
-  }, [language]); // only re-run when language changes, NOT on every page change
 
   useEffect(() => {
     const fetchData = async () => {
@@ -1262,43 +1066,18 @@ const Home = () => {
           GetDevotionalPlaylists(),
           GetJioSaavanUpdatePlaylists(),
         ]);
-
-        // Initial fetch for songs based on language
-        const sequentialLanguages = ["english", "tamil", "malayalam", "telugu"];
-        if (sequentialLanguages.includes(language.toLowerCase())) {
-          GetLanguageSongs(page);
-        } else {
-          Getdetails();
-        }
       } catch (error) {
         console.error("Error in initial data fetch:", error);
-        // Don't show error toast here as individual functions handle their own errors
       } finally {
-        // Ensure loading is set to false after all operations
         setLoading(false);
       }
     };
 
     fetchData();
 
-    // Add timeout to prevent infinite loading
-    const timeout = setTimeout(() => {
-      setLoading(false);
-    }, 5000); // 5 seconds timeout
-
+    const timeout = setTimeout(() => setLoading(false), 5000);
     return () => clearTimeout(timeout);
     // eslint-disable-next-line
-  }, [language]);
-
-  // Keep a ref for home to avoid stale closure in seccall
-  const homeRef = useRef(home);
-  useEffect(() => {
-    homeRef.current = home;
-  }, [home]);
-
-  useEffect(() => {
-    const interval = seccall();
-    return () => clearInterval(interval);
   }, [language]);
 
   // Like state now tracked via currentSong from context
@@ -1492,122 +1271,7 @@ const Home = () => {
 
 
 
-        <div className="trending songs flex flex-col gap-3 w-full ">
-          <div className="relative w-full py-3 px-6 mb-2 flex items-center justify-between rounded-3xl bg-white/5 backdrop-blur-2xl border-t border-l border-r border-white/10 border-b-0 shadow-xl overflow-hidden shrink-0 group">
-            {/* Ambient Bottom Glow */}
-            <div className="absolute bottom-0 left-0 w-full h-[2px] bg-gradient-to-r from-[#8A2BE2] via-[#BF40FF] to-[#8A2BE2] blur-[1px] shadow-[0_0_20px_rgba(191,64,255,0.6)]"></div>
 
-            {/* Left Icon */}
-            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-black/20 border border-white/5 backdrop-blur-md shadow-[inset_0_1px_4px_rgba(255,255,255,0.1)] cursor-pointer hover:bg-white/10 hover:scale-105 transition-all duration-300">
-              <i className="ri-music-fill text-white text-xl"></i>
-            </div>
-
-            {/* Center Title */}
-            <div className="flex flex-col items-center">
-              <h3 className="text-2xl font-bold text-white/90 tracking-wide capitalize drop-shadow-lg font-sans">
-                Best {language} Hits
-              </h3>
-              <div className="flex gap-2 mt-1">
-                <span className="text-[10px] text-white/40 uppercase tracking-widest px-2 py-0.5 rounded-full bg-white/5 border border-white/10">Dynamic Mix</span>
-              </div>
-            </div>
-
-            {/* Right Icons */}
-            <div className="flex items-center gap-3">
-              <div
-                onClick={handleAiShuffle}
-                className="flex items-center justify-center w-10 h-10 rounded-full bg-purple-gradient/20 border border-purple-500/20 backdrop-blur-md shadow-purple-glow cursor-pointer hover:bg-purple-gradient/40 hover:scale-110 transition-all duration-300 group/ai"
-                title="AI Shuffle"
-              >
-                <i className="ri-robot-2-line text-white text-xl group-hover/ai:animate-bounce"></i>
-              </div>
-              <div
-                onClick={handleRefreshSongs}
-                className="flex items-center justify-center w-10 h-10 rounded-full bg-black/20 border border-white/5 backdrop-blur-md shadow-[inset_0_1px_4px_rgba(255,255,255,0.1)] cursor-pointer hover:bg-white/10 hover:scale-105 transition-all duration-300"
-                title="Refresh List"
-              >
-                <i className="ri-refresh-line text-white text-xl"></i>
-              </div>
-            </div>
-          </div>
-          <div className="relative group w-full">
-            <ScrollButtons scrollRef={detailsRef} />
-            <motion.div ref={detailsRef} className="songs custom-scrollbar px-5 sm:px-3 flex flex-shrink gap-5 overflow-x-auto w-full pb-4">
-              {details && details.length === 0 && (
-                <div className="w-full text-center text-white/60 py-10">
-                  <span>No songs found. Please try refreshing or check your connection.</span>
-                </div>
-              )}
-              {Array.isArray(details) && details.map((t, i) => (
-                <motion.div
-                  initial={{ y: -100, scale: 0.5 }}
-                  whileInView={{ y: 0, scale: 1 }}
-                  transition={{ ease: "circIn", duration: 0.05 }}
-                  onClick={() => audioseter(i)}
-                  key={i}
-                  className="relative group/card hover:scale-95 sm:hover:scale-105 duration-300 flex-shrink-0 w-[15%] sm:w-[40%] rounded-md flex flex-col gap-1 py-4 cursor-pointer"
-                >
-                  <div className="relative overflow-hidden rounded-md shadow-lg">
-                    <motion.img
-                      className="relative w-full rounded-md transition-transform duration-500 group-hover/card:scale-110"
-                      src={t.image?.[2]?.url || t.image?.[0]?.url}
-                      alt=""
-                    />
-
-
-                    {/* Play/Pause Button Overlay */}
-                    <button
-                      className="absolute inset-0 flex items-center justify-center w-full h-full bg-black/40 opacity-0 group-hover/card:opacity-100 transition-opacity duration-300 focus:opacity-100"
-                      style={{ zIndex: 2 }}
-                      onClick={e => {
-                        e.stopPropagation();
-                        audioseter(i);
-                      }}
-                      aria-label={t.id === currentSong?.id && isPlaying ? 'Pause' : 'Play'}
-                    >
-                      <i className={`text-6xl ${t.id === currentSong?.id && isPlaying ? 'ri-pause-circle-fill text-p-magenta' : 'ri-play-circle-fill text-white'} drop-shadow-glow`}></i>
-                    </button>
-
-                    {/* Wave animation for active song */}
-                    <img
-                      className={`absolute top-2 left-2 w-[20%] sm:w-[25%] rounded-md ${t.id === currentSong?.id ? "block" : "hidden"} `}
-                      src={wavs}
-                      alt=""
-                    />
-
-                  </div>
-
-                  <div className="flex items-center gap-1 mt-1">
-                    <p className="font-bold text-xs text-transparent bg-clip-text bg-gradient-to-r from-p-violet to-p-magenta">{i + 1}</p>
-                    <h3
-                      className={`text-sm sm:text-xs leading-none font-bold truncate ${t.id === currentSong?.id ? "text-p-magenta" : "text-white"
-                        }`}
-                    >
-                      {removeSourceAttribution(t.name)}
-                    </h3>
-
-                  </div>
-
-                  <motion.div className="flex flex-col">
-                    <h4 className="text-xs sm:text-[2.5vw] text-white/50 truncate">
-                      {removeSourceAttribution(t.album?.name || "")}
-                    </h4>
-                    <div className="flex flex-col mt-0.5">
-                      <span className="text-[10px] sm:text-[8px] text-zinc-500 truncate">
-                        {getArtistMetadata(t.artists).singleLine}
-                      </span>
-                    </div>
-                  </motion.div>
-                </motion.div>
-              ))}
-
-              <img
-                className={page >= 18 ? "hidden" : "w-[20%] h-[20%]"}
-                src={wait}
-              />
-            </motion.div>
-          </div>
-        </div>
         {suggSong.length > 0 && (
           <div className="trending songs flex flex-col gap-3 w-full ">
             <div className="relative w-full py-3 px-6 mb-2 flex items-center justify-between rounded-3xl bg-white/5 backdrop-blur-2xl border-t border-l border-r border-white/10 border-b-0 shadow-xl overflow-hidden shrink-0 group">

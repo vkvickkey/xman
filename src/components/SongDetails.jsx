@@ -29,6 +29,7 @@ import { Bounce, Expo, Power4, Sine } from "gsap/all";
 import { Circ } from "gsap/all";
 import toast, { Toaster } from "react-hot-toast";
 import { removeSourceAttribution, getAlbumFromTitle } from "../utils/stringUtils";
+import handleGenerateAudio from "./../utils/audioUtils";
 
 const SongDetails = () => {
   let { id } = useParams();
