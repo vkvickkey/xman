@@ -1,5 +1,5 @@
-export const SEARCH_API_BASE = import.meta.env.DEV ? "/api" : "https://saavn.sumit.co";
-export const MODULES_API_BASE = import.meta.env.DEV ? "/api/modules" : "https://saavn.sumit.co/api/modules";
+export const SEARCH_API_BASE = import.meta.env.DEV ? "/api" : "https://saavn.dev/api";
+export const MODULES_API_BASE = import.meta.env.DEV ? "/api/modules" : "https://saavn.dev/api/modules";
 export const DOWNLOAD_SERVER = "https://the-ultimate-songs-download-server-python.vercel.app";
 
 export const getApiUrl = (type, path) => {

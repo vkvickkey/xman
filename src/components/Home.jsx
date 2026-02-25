@@ -1868,7 +1868,7 @@ const Home = () => {
         )}
         <div>
           <p className="font-semibold text-white/50 sm:text-sm text-center py-10">
-            <b>Made with ❤️ Max-Vibe</b>
+            <b>Made with ❤️ Last-Man</b>
           </p>
         </div>
       </div >

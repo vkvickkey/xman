@@ -14,7 +14,7 @@ export default defineConfig({
     },
     proxy: {
       '/api': {
-        target: 'https://saavn.sumit.co',
+        target: 'https://saavn.dev',
         changeOrigin: true,
         secure: true,
         configure: (proxy, options) => {
