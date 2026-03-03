@@ -2,16 +2,102 @@ export const SEARCH_API_BASE = import.meta.env.DEV ? "/api" : "https://saavn.dev
 export const MODULES_API_BASE = import.meta.env.DEV ? "/api/modules" : "https://saavn.dev/api/modules";
 export const DOWNLOAD_SERVER = "https://the-ultimate-songs-download-server-python.vercel.app";
 
-export const getApiUrl = (type, path) => {
-  switch (type) {
-    case "search":
-      // For search endpoints, path already includes "/api/"
-      return `${SEARCH_API_BASE}${path}`;
-    case "modules":
-      return `${MODULES_API_BASE}${path}`;
-    case "download":
-      return `${DOWNLOAD_SERVER}${path}`;
-    default:
-      return path;
+// Jio Saavan API endpoints
+export const JIO_SAAVAN_APIS = {
+  primary: {
+    base: "https://saavn.dev/api",
+    modules: "https://saavn.dev/api/modules",
+    search: "https://saavn.dev/api/search",
+    songs: "https://saavn.dev/api/songs",
+    playlists: "https://saavn.dev/api/playlists",
+    albums: "https://saavn.dev/api/albums"
+  },
+  alternatives: [
+    {
+      name: "jiosavan-api-with-playlist",
+      base: "https://jiosavan-api-with-playlist.vercel.app/api",
+      modules: "https://jiosavan-api-with-playlist.vercel.app/api/modules",
+      search: "https://jiosavan-api-with-playlist.vercel.app/api/search",
+      songs: "https://jiosavan-api-with-playlist.vercel.app/api/songs",
+      playlists: "https://jiosavan-api-with-playlist.vercel.app/api/playlists",
+      albums: "https://jiosavan-api-with-playlist.vercel.app/api/albums"
+    },
+    {
+      name: "saavn.sumit",
+      base: "https://saavn.sumit.co/api",
+      modules: "https://saavn.sumit.co/api/modules",
+      search: "https://saavn.sumit.co/api/search",
+      songs: "https://saavn.sumit.co/api/songs",
+      playlists: "https://saavn.sumit.co/api/playlists",
+      albums: "https://saavn.sumit.co/api/albums"
+    }
+  ]
+};
+
+// Alternative API endpoints for fallback
+export const ALTERNATIVE_APIS = {
+  search: [
+    "https://saavn.dev/api",
+    "https://jiosavan-api-with-playlist.vercel.app/api",
+    "https://saavn.sumit.co/api"
+  ],
+  modules: [
+    "https://saavn.dev/api/modules",
+    "https://jiosavan-api-with-playlist.vercel.app/api/modules"
+  ],
+  download: [
+    "https://the-ultimate-songs-download-server-python.vercel.app"
+  ]
+};
+
+// GitHub API configuration
+export const GITHUB_API_BASE = "https://api.github.com";
+export const GITHUB_API_VERSION = "2022-11-28";
+
+export const getApiUrl = (type, path, useAlternative = false, alternativeIndex = 0) => {
+  let baseUrl;
+  
+  if (useAlternative && ALTERNATIVE_APIS[type]) {
+    const alternatives = ALTERNATIVE_APIS[type];
+    baseUrl = alternatives[alternativeIndex % alternatives.length];
+  } else {
+    switch (type) {
+      case "search":
+        // For search endpoints, path already includes "/api/"
+        baseUrl = SEARCH_API_BASE;
+        break;
+      case "modules":
+        baseUrl = MODULES_API_BASE;
+        break;
+      case "download":
+        baseUrl = DOWNLOAD_SERVER;
+        break;
+      case "github":
+        baseUrl = GITHUB_API_BASE;
+        break;
+      default:
+        return path;
+    }
   }
+  
+  return `${baseUrl}${path}`;
+};
+
+// API health check and switching utility
+export const switchToAlternativeAPI = async (type, path) => {
+  const alternatives = ALTERNATIVE_APIS[type] || [];
+  
+  for (let i = 0; i < alternatives.length; i++) {
+    try {
+      const testUrl = `${alternatives[i]}${path}`;
+      const response = await fetch(testUrl, { method: 'HEAD' });
+      if (response.ok) {
+        return alternatives[i];
+      }
+    } catch (error) {
+      console.warn(`Alternative API ${alternatives[i]} failed:`, error.message);
+    }
+  }
+  
+  return null;
 };

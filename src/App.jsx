@@ -13,6 +13,7 @@ import Likes from "./components/Likes";
 import SongDetails from "./components/SongDetails";
 import Import from "./components/Import";
 import MobileLayout from "./components/MobileLayout";
+import XmanDashboard from "./components/XmanDashboard";
 
 
 
@@ -33,6 +34,7 @@ const App = () => {
         <Route path="/artists/details/:id" element={<ArtistsDetails />} />
         <Route path="/likes" element={<Likes />} />
         <Route path="/import" element={<Import />} />
+        <Route path="/xman" element={<XmanDashboard />} />
       </Routes>
     </MobileLayout>
   );
