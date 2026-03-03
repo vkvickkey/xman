@@ -639,18 +639,30 @@ const Home = () => {
   const GetLanguageSongs = async (overridePage) => {
     try {
       // Add delay to avoid rate limiting
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await new Promise(resolve => setTimeout(resolve, 2000));
 
       // Use sequential page number
       const queryPage = overridePage || page;
 
-      const { data } = await axios.get(
-        getApiUrl("search", `/search/songs?query=${encodeURIComponent(language.toLowerCase() + ' hits')}&page=${queryPage}&limit=20`)
-      );
+      // Use working Jio Saavan API with fallback
+      let data;
+      try {
+        data = await jioSaavanAPI.searchSongs(`${language.toLowerCase()} hits`, queryPage, 20);
+      } catch (primaryError) {
+        console.warn("Primary API failed, trying alternative:", primaryError.message);
+        // Try alternative API if primary fails
+        try {
+          jioSaavanAPI.switchToAlternative(0); // Switch to saavn.dev
+          data = await jioSaavanAPI.searchSongs(`${language.toLowerCase()} hits`, queryPage, 20);
+        } catch (altError) {
+          console.error("All APIs failed for language songs:", altError);
+          throw new Error("All music APIs are currently rate limited. Please try again in a few minutes.");
+        }
+      }
 
+      const results = data?.data || [];
       setdetails((prevDetails) => {
-        const results = data?.data?.data?.results || data?.data?.results || [];
-        // Shuffle the newly fetched results to break up album clusters
+        // Shuffle newly fetched results to break up album clusters
         const shuffledResults = shuffleArray(results);
         // Filter out undesired content (kids/divine)
         const filteredResults = filterUndesiredSongs(shuffledResults);
@@ -664,24 +676,32 @@ const Home = () => {
     } catch (error) {
       console.error("Error fetching language songs:", error);
 
-      // Handle specific error types
+      // Handle specific error types with better messaging
       if (error.response?.status === 429) {
-        toast.error("Rate limited - please wait before loading more songs");
+        toast.error("⏳ Rate limited - Please wait 2-3 minutes before loading more songs");
+        setError("Rate limited - Please wait before loading more songs");
       } else if (error.response?.status === 502) {
-        // 502 Bad Gateway - upstream server error, retry once after delay
-        console.log("502 error, retrying after delay...");
+        toast.error("🔄 Server busy - Retrying automatically...");
+        setError("Server temporarily busy - Please wait");
+        // Auto retry after delay
         setTimeout(() => {
-          toast.error("Server temporarily unavailable, retrying...");
+          toast.success("🎵 Retrying now...");
           GetLanguageSongs(overridePage || page);
-        }, 3000);
+        }, 5000);
       } else if (error.response?.status === 402) {
-        toast.error("Music service temporarily unavailable for songs");
+        toast.error("💳 Music service requires payment - Switching to alternative API");
+        setError("Music service temporarily unavailable - Using backup");
+        // Try switching to alternative API
+        jioSaavanAPI.switchToAlternative(1);
       } else if (error.message?.includes('CORS') || error.message?.includes('Network Error')) {
-        toast.error("Connection to music service failed for songs");
+        toast.error("🌐 Connection issue - Check your internet connection");
+        setError("Unable to connect to music service - Please check connection");
       } else if (error.code === 'ERR_NETWORK' || error.code === 'ECONNREFUSED') {
-        toast.error("Network connection failed while fetching songs");
+        toast.error("📶 Network failed - Please check your internet");
+        setError("Network connection failed - Please check internet connection");
       } else {
-        toast.error("Failed to load songs");
+        toast.error("❌ Failed to load songs - Please try again");
+        setError("Failed to load songs - Please try again later");
       }
     }
   };

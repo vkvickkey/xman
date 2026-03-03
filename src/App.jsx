@@ -5,7 +5,7 @@ import PlaylistDetails from "./components/PlaylistDetails";
 import Artists from "./components/Artists";
 import ArtistsDetails from "./components/ArtistsDetails";
 import Download from "./components/Download";
-import Home from "./components/Home";
+import Home from "./components/Home_enhanced"; // Using enhanced Home with working API
 import AlbumDetails from "./components/AlbumDetails";
 import Album from "./components/Album";
 import Songs from "./components/Songs";
