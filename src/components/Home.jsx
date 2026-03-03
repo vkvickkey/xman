@@ -28,6 +28,7 @@ import { getArtistMetadata } from "../utils/artistUtils";
 import { removeSourceAttribution, getAlbumFromTitle } from "../utils/stringUtils";
 import useDragScroll from "../utils/useDragScroll";
 import { getApiUrl } from "../apiConfig";
+import { jioSaavanAPI } from "../jioSaavanApi";
 
 // Static playlist configuration removed
 
@@ -286,13 +287,13 @@ const Home = () => {
       // Add delay to avoid rate limiting
       await new Promise(resolve => setTimeout(resolve, 1000));
 
-      // Use the new API endpoints with correct parameter names
+      // Use the working Jio Saavan API
       const [trendingSongsRes, trendingAlbumsRes, chartsRes, playlistsRes, albumsRes] = await Promise.all([
-        axios.get(getApiUrl("search", `/search/songs?query=New ${language} Songs&limit=10`)),
-        axios.get(getApiUrl("search", `/search/albums?query=New ${language} Albums&limit=10`)),
-        axios.get(getApiUrl("search", `/search/playlists?query=${language} Music Playlists&limit=10`)),
-        axios.get(getApiUrl("search", `/search/playlists?query=${language} Hits today&limit=10`)),
-        axios.get(getApiUrl("search", `/search/albums?query=Latest ${language} today&limit=10`))
+        jioSaavanAPI.searchSongs(`New ${language} Songs`, 1, 10),
+        jioSaavanAPI.searchSongs(`New ${language} Albums`, 1, 10),
+        jioSaavanAPI.searchSongs(`${language} Music Playlists`, 1, 10),
+        jioSaavanAPI.searchSongs(`${language} Hits today`, 1, 10),
+        jioSaavanAPI.searchSongs(`Latest ${language} today`, 1, 10)
       ]);
 
       const mapItems = (items) => items ? items.map(item => ({
@@ -446,16 +447,12 @@ const Home = () => {
   const GetBestOf90s = async () => {
     try {
       const query = `Best of 90s ${language}`;
-      const { data } = await axios.get(
-        getApiUrl("search", `/search/playlists?query=${encodeURIComponent(query)}&limit=20`)
-      );
-      setBestOf90s(data?.data?.results || []);
+      const data = await jioSaavanAPI.searchSongs(query, 1, 20);
+      setBestOf90s(data?.data || []);
     } catch (error) {
       console.error("Error fetching Best of 90s:", error);
     }
   };
-
-
 
 
   const GetIndiaSuperhitsTop50 = async () => {

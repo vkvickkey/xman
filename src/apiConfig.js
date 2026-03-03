@@ -1,23 +1,35 @@
-export const SEARCH_API_BASE = import.meta.env.DEV ? "/api" : "https://saavn.dev/api";
-export const MODULES_API_BASE = import.meta.env.DEV ? "/api/modules" : "https://saavn.dev/api/modules";
+export const SEARCH_API_BASE = import.meta.env.DEV ? "/api" : "https://jiosaavn-api-ts.vercel.app/search/songs";
+export const MODULES_API_BASE = import.meta.env.DEV ? "/api/modules" : "https://jiosaavn-api-ts.vercel.app/modules";
 export const DOWNLOAD_SERVER = "https://the-ultimate-songs-download-server-python.vercel.app";
 
-// Jio Saavan API endpoints
+// Jio Saavan API endpoints - Updated with working primary API
 export const JIO_SAAVAN_APIS = {
   primary: {
-    base: "https://saavn.dev/api",
-    modules: "https://saavn.dev/api/modules",
-    search: "https://saavn.dev/api/search",
-    songs: "https://saavn.dev/api/songs",
-    playlists: "https://saavn.dev/api/playlists",
-    albums: "https://saavn.dev/api/albums"
+    name: "rajput-hemant-ts",
+    base: "https://jiosaavn-api-ts.vercel.app",
+    modules: "https://jiosaavn-api-ts.vercel.app/modules",
+    search: "https://jiosaavn-api-ts.vercel.app/search/songs",
+    songs: "https://jiosaavn-api-ts.vercel.app/song",
+    playlists: "https://jiosaavn-api-ts.vercel.app/playlist",
+    albums: "https://jiosaavn-api-ts.vercel.app/album",
+    searchAll: "https://jiosaavn-api-ts.vercel.app/search",
+    trending: "https://jiosaavn-api-ts.vercel.app/get/trending"
   },
   alternatives: [
+    {
+      name: "saavn.dev",
+      base: "https://saavn.dev/api",
+      modules: "https://saavn.dev/api/modules",
+      search: "https://saavn.dev/api/search/songs",
+      songs: "https://saavn.dev/api/songs",
+      playlists: "https://saavn.dev/api/playlists",
+      albums: "https://saavn.dev/api/albums"
+    },
     {
       name: "jiosavan-api-with-playlist",
       base: "https://jiosavan-api-with-playlist.vercel.app/api",
       modules: "https://jiosavan-api-with-playlist.vercel.app/api/modules",
-      search: "https://jiosavan-api-with-playlist.vercel.app/api/search",
+      search: "https://jiosavan-api-with-playlist.vercel.app/api/search/songs",
       songs: "https://jiosavan-api-with-playlist.vercel.app/api/songs",
       playlists: "https://jiosavan-api-with-playlist.vercel.app/api/playlists",
       albums: "https://jiosavan-api-with-playlist.vercel.app/api/albums"
@@ -26,7 +38,7 @@ export const JIO_SAAVAN_APIS = {
       name: "saavn.sumit",
       base: "https://saavn.sumit.co/api",
       modules: "https://saavn.sumit.co/api/modules",
-      search: "https://saavn.sumit.co/api/search",
+      search: "https://saavn.sumit.co/api/search/songs",
       songs: "https://saavn.sumit.co/api/songs",
       playlists: "https://saavn.sumit.co/api/playlists",
       albums: "https://saavn.sumit.co/api/albums"
@@ -34,14 +46,16 @@ export const JIO_SAAVAN_APIS = {
   ]
 };
 
-// Alternative API endpoints for fallback
+// Alternative API endpoints for fallback - Updated with working API first
 export const ALTERNATIVE_APIS = {
   search: [
-    "https://saavn.dev/api",
-    "https://jiosavan-api-with-playlist.vercel.app/api",
-    "https://saavn.sumit.co/api"
+    "https://jiosaavn-api-ts.vercel.app/search/songs",
+    "https://saavn.dev/api/search/songs",
+    "https://jiosavan-api-with-playlist.vercel.app/api/search/songs",
+    "https://saavn.sumit.co/api/search/songs"
   ],
   modules: [
+    "https://jiosaavn-api-ts.vercel.app/modules",
     "https://saavn.dev/api/modules",
     "https://jiosavan-api-with-playlist.vercel.app/api/modules"
   ],
